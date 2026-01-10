@@ -9,8 +9,41 @@ set -euo pipefail
 PROMPT_PARTS=()
 MAX_ITERATIONS=0
 COMPLETION_PROMISE="null"
+READ_ARGS_FROM_STDIN=false
 
-# Parse options and positional arguments
+# Check for --args-stdin flag first (must be only arg when used)
+if [[ "${1:-}" == "--args-stdin" ]]; then
+  READ_ARGS_FROM_STDIN=true
+  shift
+fi
+
+# If reading from stdin, get the full input and parse it
+if [[ "$READ_ARGS_FROM_STDIN" == "true" ]]; then
+  # Read entire stdin content
+  STDIN_CONTENT=$(cat)
+
+  # Parse --max-iterations from stdin content
+  if [[ "$STDIN_CONTENT" =~ --max-iterations[[:space:]]+([0-9]+) ]]; then
+    MAX_ITERATIONS="${BASH_REMATCH[1]}"
+    # Remove the flag from content
+    STDIN_CONTENT=$(echo "$STDIN_CONTENT" | sed -E 's/--max-iterations[[:space:]]+[0-9]+//')
+  fi
+
+  # Parse --completion-promise from stdin content (handles quoted strings)
+  # Match: --completion-promise "text" or --completion-promise 'text' or --completion-promise text
+  if [[ "$STDIN_CONTENT" =~ --completion-promise[[:space:]]+[\"\']([^\"\']+)[\"\'] ]]; then
+    COMPLETION_PROMISE="${BASH_REMATCH[1]}"
+    STDIN_CONTENT=$(echo "$STDIN_CONTENT" | sed -E "s/--completion-promise[[:space:]]+[\"'][^\"']+[\"']//")
+  elif [[ "$STDIN_CONTENT" =~ --completion-promise[[:space:]]+([^[:space:]]+) ]]; then
+    COMPLETION_PROMISE="${BASH_REMATCH[1]}"
+    STDIN_CONTENT=$(echo "$STDIN_CONTENT" | sed -E 's/--completion-promise[[:space:]]+[^[:space:]]+//')
+  fi
+
+  # Remaining content is the prompt (trim leading/trailing whitespace but preserve internal newlines)
+  PROMPT=$(echo "$STDIN_CONTENT" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+fi
+
+# Parse options and positional arguments (for non-stdin mode)
 while [[ $# -gt 0 ]]; do
   case $1 in
     -h|--help)
@@ -26,6 +59,7 @@ ARGUMENTS:
 OPTIONS:
   --max-iterations <n>           Maximum iterations before auto-stop (default: unlimited)
   --completion-promise '<text>'  Promise phrase (USE QUOTES for multi-word)
+  --args-stdin                   Read all arguments from stdin (for multi-line prompts)
   -h, --help                     Show this help message
 
 DESCRIPTION:
@@ -109,8 +143,11 @@ HELP_EOF
   esac
 done
 
-# Join all prompt parts with spaces
-PROMPT="${PROMPT_PARTS[*]}"
+# Get prompt from command-line arguments if not already set from stdin
+if [[ "$READ_ARGS_FROM_STDIN" != "true" ]]; then
+  # Join all prompt parts with spaces
+  PROMPT="${PROMPT_PARTS[*]}"
+fi
 
 # Validate prompt is non-empty
 if [[ -z "$PROMPT" ]]; then
