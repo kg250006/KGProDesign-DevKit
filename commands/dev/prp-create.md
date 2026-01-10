@@ -1,178 +1,322 @@
 ---
 description: "[KGP] Generate a comprehensive Product Requirement Prompt from feature requirements with research and context"
 argument-hint: <feature description or requirements file>
-allowed-tools: [Read, Write, Glob, Grep, WebSearch, WebFetch, AskUserQuestion]
+allowed-tools: [Read, Write, Glob, Grep, Bash, WebSearch, WebFetch, AskUserQuestion, Task]
 ---
 
 <objective>
 Generate a complete PRP (Product Requirement Prompt) for: $ARGUMENTS
 
-A PRP provides ALL context needed for one-pass implementation success. The goal is comprehensive context so the executing agent can implement without ambiguity.
-</objective>
+A PRP provides ALL context needed for Ralph Loop to execute implementation autonomously. The goal is comprehensive XML-structured micro-tasks that an agent can implement without ambiguity.
 
-<context>
-Check for existing PRPs: !`ls PRPs/active/ PRPs/completed/ 2>/dev/null | head -10`
-Project structure: !`find . -maxdepth 2 -type d | grep -v node_modules | head -20`
-</context>
+This command detects whether input needs expansion and routes through the appropriate workflow.
+</objective>
 
 <process>
 
-<step_1_clarify>
-**Clarify Requirements**
+<step_1_evaluate_input>
+**Evaluate Input Detail Level**
 
-If $ARGUMENTS is vague, use AskUserQuestion to gather:
-- What specific functionality is needed?
-- Who will use this feature?
-- What are the acceptance criteria?
-- Are there any constraints or dependencies?
-</step_1_clarify>
+Analyze $ARGUMENTS to classify as SHORT (needs expansion) or DETAILED (ready for PRP).
 
-<step_2_research_codebase>
-**Research Codebase**
+<short_criteria>
+Input is SHORT if ANY of these are true:
+- Under 50 words total
+- No mention of specific user flows or acceptance criteria
+- Generic terms without specifics ("add feature", "implement X", "create Y", "build Z")
+- Missing technical context (no framework, database, API, or integration mentions)
+- Single sentence or phrase without elaboration
+- Imperative command style without requirements ("add user auth", "fix login")
+</short_criteria>
 
-Search for related patterns:
+<detailed_criteria>
+Input is DETAILED if MOST of these are true:
+- 50+ words with specifics
+- Mentions user stories, flows, or use cases
+- Includes technical constraints, patterns, or architecture decisions
+- References existing code, integrations, or dependencies
+- Contains acceptance criteria or success metrics
+- Describes edge cases or error handling requirements
+</detailed_criteria>
+
+<classification_output>
+After analysis, state your classification:
+
 ```
-Glob: Find similar features/implementations
-Grep: Search for related code patterns
-Read: Examine key files that will be affected
+INPUT CLASSIFICATION: [SHORT | DETAILED]
+Word count: [N]
+Missing elements: [list what's missing for SHORT, or "N/A" for DETAILED]
 ```
 
-Document:
-- Existing patterns to follow
-- Files that need modification
-- Dependencies to consider
-</step_2_research_codebase>
+Then proceed to the appropriate step:
+- If SHORT: Go to step_2_expand
+- If DETAILED: Go to step_3_invoke_software_architect
+</classification_output>
+</step_1_evaluate_input>
 
-<step_3_research_external>
-**External Research**
+<step_2_expand>
+**Expand Short Input (Skip if DETAILED)**
 
-If the feature involves external libraries or APIs:
-- Search documentation
-- Find implementation examples
-- Note common pitfalls
-- Include relevant URLs in context
-</step_3_research_external>
+When input is classified as SHORT, use the Task tool to spawn a sub-agent that will expand the requirements through structured questioning.
 
-<step_4_generate_prp>
-**Generate PRP**
+<expansion_task>
+Use the Task tool with these parameters:
 
-Create PRP following this structure:
+```
+Task tool invocation:
+- description: "Expand vague feature requirements into detailed specification"
+- prompt: |
+    You are helping expand a short feature request into detailed requirements.
 
-```markdown
-# PRP: [Feature Name]
+    Original request: "$ARGUMENTS"
 
-## Goal
-[Specific end state to achieve - what should exist when done]
+    Your goal is to gather enough detail for a comprehensive PRP. Ask clarifying questions to understand:
 
-## Why
-[Business value, user impact, problems solved]
+    1. **User Stories**: Who uses this? What are their goals?
+    2. **Functional Requirements**: What specific behaviors are needed?
+    3. **Technical Context**: What frameworks, databases, APIs are involved?
+    4. **Acceptance Criteria**: How do we know when it's done?
+    5. **Edge Cases**: What could go wrong? How should errors be handled?
+    6. **Integration Points**: What existing code does this touch?
 
-## What
-[User-visible behavior and technical requirements]
+    Use AskUserQuestion tool to gather information through structured questions.
+    Limit to 3-5 focused questions (you can ask follow-ups based on answers).
 
-## Success Criteria
-- [ ] Specific measurable outcome 1
-- [ ] Specific measurable outcome 2
-- [ ] Specific measurable outcome 3
+    After gathering sufficient context, output an expanded feature description in this format:
 
-## Context
+    <expanded_requirements>
+    ## Feature: [Name]
 
-### Documentation
-- [URL 1]: Relevant section
-- [URL 2]: Relevant section
+    ### User Stories
+    - As a [role], I want [goal] so that [benefit]
 
-### Codebase Patterns
-- `path/to/file.ts`: Pattern to follow
-- `path/to/example.ts`: Reference implementation
+    ### Functional Requirements
+    - [Specific behavior 1]
+    - [Specific behavior 2]
 
-### Known Gotchas
-- [Issue 1]: How to handle
-- [Issue 2]: How to avoid
+    ### Technical Context
+    - Framework/Stack: [details]
+    - Database: [details]
+    - APIs: [details]
 
-## Implementation Blueprint
+    ### Acceptance Criteria
+    - [ ] [Measurable criterion 1]
+    - [ ] [Measurable criterion 2]
 
-### Data Models
-[If applicable - schema definitions]
+    ### Edge Cases
+    - [Case 1]: [How to handle]
 
-### Tasks (in order)
-1. **Task 1**: Description
-   - Files: `path/to/file`
-   - Approach: Pseudocode or description
+    ### Integration Points
+    - [Existing file/system]: [How it connects]
+    </expanded_requirements>
 
-2. **Task 2**: Description
-   - Files: `path/to/file`
-   - Approach: Pseudocode or description
+    The expanded requirements should be detailed enough that no further clarification is needed for PRP generation.
+```
 
-### Integration Points
-- [How this connects to existing code]
+After the Task completes, capture the expanded requirements output.
+</expansion_task>
 
-## Validation Loop
+<post_expansion>
+After receiving expanded requirements from the sub-agent:
 
-### Level 1: Syntax & Style
+1. Confirm the expansion is sufficient (50+ words, has acceptance criteria)
+2. If still insufficient, ask ONE direct follow-up question using AskUserQuestion
+3. Proceed to step_3_invoke_software_architect with the expanded requirements
+</post_expansion>
+</step_2_expand>
+
+<step_3_invoke_software_architect>
+**Invoke Software Architect Skill**
+
+Now generate the PRP using the software-architect skill's workflow.
+
+<load_skill>
+Read the skill router and workflow:
+
+```
+Read: @skills/software-architect/SKILL.md
+Read: @skills/software-architect/workflows/create-prp.md
+Read: @skills/software-architect/templates/prp-template.md
+Read: @skills/software-architect/references/prp-best-practices.md
+```
+</load_skill>
+
+<execute_workflow>
+Follow the create-prp.md workflow EXACTLY with these inputs:
+
+**Feature Requirements:**
+- If expanded: Use the expanded_requirements from step_2
+- If original was detailed: Use $ARGUMENTS directly
+
+**Workflow Steps to Execute:**
+1. Clarify Requirements (step_1_clarify) - may skip if already expanded
+2. Analyze Codebase (step_2_analyze_codebase) - REQUIRED, always do this
+3. Design Phases (step_3_design_phases) - break into Foundation, Core, Integration, Validation
+4. Create Tasks (step_4_create_tasks) - micro-tasks with XML structure
+5. Assign Agents (step_5_assign_agents) - backend-engineer, frontend-engineer, etc.
+6. Rank Tasks (step_6_rank_tasks) - effort (S/M/L/XL) and value (H/M/L)
+7. Add Validation (step_7_add_validation) - project-specific commands
+8. Write Document (step_8_write_document) - full XML PRP structure
+9. Save and Verify (step_9_save_and_verify)
+</execute_workflow>
+
+<xml_structure_requirements>
+The generated PRP MUST use the full XML structure from templates/prp-template.md:
+
+```xml
+<prp name="[feature-name]" version="1.0">
+  <metadata>...</metadata>
+  <goal>...</goal>
+  <context>...</context>
+  <codebase-analysis>
+    <existing-patterns>...</existing-patterns>
+    <affected-files>...</affected-files>
+    <dependencies>...</dependencies>
+    <gotchas>...</gotchas>
+  </codebase-analysis>
+  <phases>
+    <phase id="N" name="...">
+      <tasks>
+        <task id="N.N" agent="..." effort="..." value="...">
+          <description>...</description>
+          <files>...</files>
+          <pseudocode>...</pseudocode>
+          <acceptance-criteria>...</acceptance-criteria>
+          <handoff>...</handoff>
+        </task>
+      </tasks>
+    </phase>
+  </phases>
+  <validation>
+    <level name="syntax" run-after="each-task">...</level>
+    <level name="unit" run-after="phase">...</level>
+    <level name="integration" run-after="all">...</level>
+  </validation>
+  <success-criteria>...</success-criteria>
+  <anti-patterns>...</anti-patterns>
+</prp>
+```
+
+DO NOT use simplified markdown PRP format. Use full XML structure for Ralph Loop compatibility.
+</xml_structure_requirements>
+</step_3_invoke_software_architect>
+
+<step_4_save_and_report>
+**Save PRP and Report**
+
+<save_location>
+Save the PRP to: `PRPs/PRP-{feature-name}.md`
+
+Where {feature-name} is kebab-case derived from the feature (e.g., "user-authentication", "payment-integration").
+
+Create the PRPs directory if it doesn't exist:
 ```bash
-# Commands to run
-npm run lint
-npm run typecheck
+mkdir -p PRPs
 ```
+</save_location>
 
-### Level 2: Unit Tests
+<verification>
+After saving, verify:
+- [ ] File exists at correct path
+- [ ] XML structure is valid (all tags properly closed)
+- [ ] All tasks have agent assignments
+- [ ] All tasks have effort/value rankings
+- [ ] Validation commands are project-specific
+- [ ] Task count is appropriate (5-30 for typical feature)
+</verification>
+
+<report_output>
+Provide completion report:
+
+```
+## PRP Created
+
+**Location:** `PRPs/PRP-{feature-name}.md`
+
+**Summary:**
+- Input type: [SHORT (expanded) | DETAILED (direct)]
+- Phases: [X]
+- Tasks: [Y] total ([Z] high-priority)
+- Agents: [list of assigned agents]
+- Estimated scope: [S|M|L|XL]
+
+**Confidence Score:** [X]/10
+[Explanation: Why this score? What might need clarification?]
+
+**Execute with Ralph Loop (recommended):**
 ```bash
-# Test commands
-npm test -- --coverage
+/ralph-loop PRPs/PRP-{feature-name}.md
 ```
 
-### Level 3: Integration Tests
+**Or execute directly:**
 ```bash
-# Integration verification
-curl -X POST http://localhost:3000/api/...
+/prp-execute PRPs/PRP-{feature-name}.md
 ```
 
-## Final Checklist
-- [ ] All success criteria met
-- [ ] Level 1 validation passes
-- [ ] Level 2 validation passes
-- [ ] Level 3 validation passes
-- [ ] No regressions in existing tests
+**Or validate first:**
+```bash
+/prp-validate PRPs/PRP-{feature-name}.md
 ```
-</step_4_generate_prp>
-
-<step_5_save>
-**Save PRP**
-
-Create directory and save:
 ```
-PRPs/active/{feature-name}/prp.md
-```
-
-Report location and confidence score (1-10) for one-pass success.
-</step_5_save>
+</report_output>
+</step_4_save_and_report>
 
 </process>
 
 <quality_checklist>
-Before saving, verify:
-- [ ] All necessary context included
-- [ ] Validation gates are executable
-- [ ] References existing patterns
-- [ ] Clear implementation path
-- [ ] Error handling documented
-- [ ] Success criteria are measurable
+Before saving, verify the PRP meets these criteria:
+
+**Structure:**
+- [ ] Uses full XML structure (not simplified markdown)
+- [ ] All XML tags properly nested and closed
+- [ ] Phases are logically ordered (Foundation -> Core -> Integration -> Validation)
+
+**Tasks:**
+- [ ] Each task is micro-sized (15-30 min of focused work)
+- [ ] All tasks have agent assignments from valid list
+- [ ] All tasks have effort (S/M/L/XL) and value (H/M/L) rankings
+- [ ] Acceptance criteria are specific and verifiable (not "works correctly")
+- [ ] Handoff information specifies expects/produces
+
+**Context:**
+- [ ] Codebase patterns are specific (actual file paths, not placeholders)
+- [ ] Pseudocode matches project style
+- [ ] Dependencies list actual package names and versions
+
+**Validation:**
+- [ ] Commands are project-specific (detected from package.json, pyproject.toml, etc.)
+- [ ] All three levels present (syntax, unit, integration)
+- [ ] Commands will actually work in this project
 </quality_checklist>
 
-<output_format>
-## PRP Created
+<anti_patterns>
+Avoid these common mistakes:
 
-**Location:** `PRPs/active/{feature-name}/prp.md`
+**Input Handling:**
+- Don't skip expansion for genuinely vague inputs
+- Don't over-expand already-detailed inputs
+- Don't make up requirements not mentioned by user
 
-**Confidence Score:** X/10
-[Explanation of confidence level]
+**PRP Generation:**
+- Don't use simplified markdown format - use full XML
+- Don't use placeholder file paths like "src/feature/index.ts"
+- Don't generate vague acceptance criteria like "works correctly"
+- Don't skip codebase analysis phase
+- Don't forget validation commands
 
-**Ready for execution with:** `/prp-execute PRPs/active/{feature-name}/prp.md`
-</output_format>
+**Agent Assignment:**
+- Don't assign all tasks to one agent
+- Don't use invalid agent names (only: backend-engineer, frontend-engineer, data-engineer, qa-engineer, devops-engineer, document-specialist)
+- Don't forget to assign agent to every task
+</anti_patterns>
 
 <success_criteria>
+- Input evaluated and classified correctly
+- Short inputs expanded through sub-agent questioning
+- Software-architect workflow executed completely
+- PRP uses full XML structure with micro-tasks
+- All tasks have agent assignments and effort/value rankings
+- Validation commands are project-specific and executable
 - PRP saved to correct location
-- All template sections completed
-- Confidence score >= 7 for complex features
-- Executing agent needs no clarification
+- User provided clear next steps for execution
 </success_criteria>
