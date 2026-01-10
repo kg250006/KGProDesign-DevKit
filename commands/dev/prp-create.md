@@ -4,6 +4,31 @@ argument-hint: <feature description or requirements file>
 allowed-tools: [Read, Write, Glob, Grep, Bash, WebSearch, WebFetch, AskUserQuestion, Task]
 ---
 
+<agent_discovery>
+## Step 0: Discover Available Agents
+
+Before generating the PRP, scan for available specialized agents to enable intelligent task assignments:
+
+```
+Glob: agents/*.md
+```
+
+**Build agent registry from discovered agents:**
+For each agent file found, extract the name and core competencies. Standard agents include:
+
+| Agent | Specialization | Task Keywords |
+|-------|---------------|---------------|
+| backend-engineer | Server-side development | API, endpoint, service, auth, business logic |
+| frontend-engineer | UI development | UI, component, page, style, accessibility |
+| data-engineer | Data layer | schema, migration, query, database |
+| qa-engineer | Quality assurance | test, security, review, QA |
+| devops-engineer | Infrastructure | CI/CD, deploy, Docker, infrastructure |
+| document-specialist | Documentation | docs, README, technical writing |
+| project-coordinator | Project management | planning, sprint, coordination |
+
+**Use this agent registry when assigning agents to PRP tasks (step_5_assign_agents).**
+</agent_discovery>
+
 <objective>
 Generate a complete PRP (Product Requirement Prompt) for: $ARGUMENTS
 
@@ -306,8 +331,9 @@ Avoid these common mistakes:
 
 **Agent Assignment:**
 - Don't assign all tasks to one agent
-- Don't use invalid agent names (only: backend-engineer, frontend-engineer, data-engineer, qa-engineer, devops-engineer, document-specialist)
+- Use only agents discovered in step_0 agent_discovery (typically: backend-engineer, frontend-engineer, data-engineer, qa-engineer, devops-engineer, document-specialist, project-coordinator)
 - Don't forget to assign agent to every task
+- Match agent to task type based on keywords (see agent_discovery table)
 </anti_patterns>
 
 <success_criteria>

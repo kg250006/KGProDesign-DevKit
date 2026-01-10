@@ -5,9 +5,31 @@ arguments:
   - name: plan_path
     description: Path to PLAN.md file (e.g., .planning/phases/07-sidebar-reorganization/07-01-PLAN.md)
     required: true
+allowed-tools: [Read, Write, Edit, Bash, Glob, Grep, Task]
 ---
 
 Execute the plan at {{plan_path}} using **intelligent segmentation** for optimal quality.
+
+**Step 0: Discover Available Agents**
+
+Before execution, scan for specialized agents to delegate tasks effectively:
+
+```
+Glob: agents/*.md
+```
+
+Build an agent capability map from discovered agents. Standard mappings:
+| Task Type | Recommended Agent |
+|-----------|-------------------|
+| API, backend, auth, services | backend-engineer |
+| UI, components, frontend | frontend-engineer |
+| Database, schema, migrations | data-engineer |
+| Testing, security, QA | qa-engineer |
+| CI/CD, Docker, infrastructure | devops-engineer |
+| Documentation, PRDs | document-specialist |
+| Planning, coordination | project-coordinator |
+
+When spawning subagents via Task tool, use the most appropriate `subagent_type` based on task content.
 
 **Process:**
 
@@ -44,7 +66,13 @@ Execute the plan at {{plan_path}} using **intelligent segmentation** for optimal
 
    **3A: Fully Autonomous Execution**
    ```
-   Spawn Task tool (subagent_type="general-purpose"):
+   Analyze plan tasks and select the most appropriate agent:
+   - If plan is primarily API/backend work → subagent_type="KGP:backend-engineer"
+   - If plan is primarily UI/frontend work → subagent_type="KGP:frontend-engineer"
+   - If plan is primarily database work → subagent_type="KGP:data-engineer"
+   - If plan is mixed or unclear → subagent_type="general-purpose"
+
+   Spawn Task tool with selected subagent_type:
 
    Prompt: "Execute plan at {{plan_path}}
 
@@ -66,7 +94,15 @@ Execute the plan at {{plan_path}} using **intelligent segmentation** for optimal
    For each segment (autonomous block between checkpoints):
 
      IF segment is autonomous:
-       Spawn subagent:
+       Analyze segment tasks to select best agent:
+       - Backend tasks → subagent_type="KGP:backend-engineer"
+       - Frontend tasks → subagent_type="KGP:frontend-engineer"
+       - Database tasks → subagent_type="KGP:data-engineer"
+       - Testing tasks → subagent_type="KGP:qa-engineer"
+       - DevOps tasks → subagent_type="KGP:devops-engineer"
+       - Mixed/general → subagent_type="general-purpose"
+
+       Spawn subagent with selected type:
          "Execute tasks [X-Y] from {{plan_path}}
           Read plan for context and deviation rules.
           DO NOT create SUMMARY or commit.

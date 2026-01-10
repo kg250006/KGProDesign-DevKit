@@ -4,6 +4,28 @@ argument-hint: <path-to-prp.md> [--fix] [--strict]
 allowed-tools: [Read, Write, Edit, Bash, Glob, Grep, WebFetch, AskUserQuestion]
 ---
 
+<agent_discovery>
+## Agent Discovery for Validation
+
+Before validating, discover available agents to verify agent assignments in PRPs:
+
+```
+Glob: agents/*.md
+```
+
+**Valid Agent Names (from discovered agents):**
+Build a registry of valid agent names. Standard agents include:
+- backend-engineer
+- frontend-engineer
+- data-engineer
+- qa-engineer
+- devops-engineer
+- document-specialist
+- project-coordinator
+
+Use this registry in step_3_task_validation to verify agent assignments are valid.
+</agent_discovery>
+
 <objective>
 Validate PRP at $ARGUMENTS for Ralph Loop compatibility. Detect issues, categorize by severity, and automatically fix problems using pattern-based fixes or the software-architect skill.
 
@@ -85,13 +107,16 @@ For each `<task>` in each `<phase>`:
 | `<handoff>` | Optional but recommended | **WARNING** |
 
 **Agent Inference Logic:**
-If agent attribute missing, infer from description keywords:
-- "API", "endpoint", "service", "auth" → backend-engineer
-- "UI", "component", "page", "style", "CSS" → frontend-engineer
-- "schema", "migration", "query", "database" → data-engineer
-- "test", "security", "review" → qa-engineer
-- "CI/CD", "deploy", "Docker", "infrastructure" → devops-engineer
-- "documentation", "README", "docs" → document-specialist
+If agent attribute missing, infer from description keywords using discovered agents:
+- "API", "endpoint", "service", "auth", "backend" → backend-engineer
+- "UI", "component", "page", "style", "CSS", "frontend" → frontend-engineer
+- "schema", "migration", "query", "database", "data" → data-engineer
+- "test", "security", "review", "QA", "coverage" → qa-engineer
+- "CI/CD", "deploy", "Docker", "infrastructure", "monitoring" → devops-engineer
+- "documentation", "README", "docs", "technical writing" → document-specialist
+- "planning", "sprint", "coordination", "task breakdown" → project-coordinator
+
+**Validation:** Ensure inferred/assigned agent exists in the agent_discovery registry.
 
 Track issues:
 ```

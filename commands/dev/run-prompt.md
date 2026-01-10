@@ -2,13 +2,39 @@
 name: run-prompt
 description: Delegate one or more prompts to fresh sub-task contexts with parallel or sequential execution
 argument-hint: <prompt-number(s)-or-name> [--parallel|--sequential]
-allowed-tools: [Read, Task, Bash(ls:*), Bash(mv:*), Bash(git:*)]
+allowed-tools: [Read, Task, Bash(ls:*), Bash(mv:*), Bash(git:*), Glob]
 ---
 
 <context>
 Git status: !`git status --short`
 Recent prompts: !`ls -t ./prompts/*.md | head -5`
 </context>
+
+<agent_discovery>
+## Agent Discovery
+
+Before delegating prompts, scan for available specialized agents:
+
+```
+Glob: agents/*.md
+```
+
+**Agent Selection Strategy:**
+When reading each prompt's content, analyze it to determine the best agent:
+
+| Prompt Content Keywords | Recommended subagent_type |
+|------------------------|---------------------------|
+| API, endpoint, backend, auth, service | KGP:backend-engineer |
+| UI, component, frontend, style, accessibility | KGP:frontend-engineer |
+| database, schema, migration, query | KGP:data-engineer |
+| test, security, QA, review, coverage | KGP:qa-engineer |
+| CI/CD, deploy, Docker, infrastructure | KGP:devops-engineer |
+| documentation, README, docs | KGP:document-specialist |
+| planning, sprint, coordination | KGP:project-coordinator |
+| general, mixed, or unclear | general-purpose |
+
+**Important:** Match each prompt to the most appropriate agent rather than using `general-purpose` for everything. This improves execution quality by leveraging specialized agent expertise.
+</agent_discovery>
 
 <objective>
 Execute one or more prompts from `./prompts/` as delegated sub-tasks with fresh context. Supports single prompt execution, parallel execution of multiple independent prompts, and sequential execution of dependent prompts.
@@ -63,10 +89,18 @@ For each prompt number/name:
 <single_prompt>
 
 1. Read the complete contents of the prompt file
-2. Delegate as sub-task using Task tool with subagent_type="general-purpose"
-3. Wait for completion
-4. Archive prompt to `./prompts/completed/` with metadata
-5. Commit all work:
+2. Analyze prompt content to select the best agent (see agent_discovery section)
+3. Delegate as sub-task using Task tool with the selected subagent_type:
+   - Backend/API prompts → subagent_type="KGP:backend-engineer"
+   - Frontend/UI prompts → subagent_type="KGP:frontend-engineer"
+   - Database prompts → subagent_type="KGP:data-engineer"
+   - Testing prompts → subagent_type="KGP:qa-engineer"
+   - DevOps prompts → subagent_type="KGP:devops-engineer"
+   - Documentation prompts → subagent_type="KGP:document-specialist"
+   - General/mixed prompts → subagent_type="general-purpose"
+4. Wait for completion
+5. Archive prompt to `./prompts/completed/` with metadata
+6. Commit all work:
    - Stage files YOU modified with `git add [file]` (never `git add .`)
    - Determine appropriate commit type based on changes (fix|feat|refactor|style|docs|test|chore)
    - Commit with format: `[type]: [description]` (lowercase, specific, concise)
@@ -76,12 +110,14 @@ For each prompt number/name:
 <parallel_execution>
 
 1. Read all prompt files
-2. **Spawn all Task tools in a SINGLE MESSAGE** (this is critical for parallel execution):
+2. For each prompt, analyze content and select the best agent (see agent_discovery section)
+3. **Spawn all Task tools in a SINGLE MESSAGE** (this is critical for parallel execution):
+   - Each Task call should use the appropriate subagent_type based on prompt content
    <example>
-   Use Task tool for prompt 005
-   Use Task tool for prompt 006
-   Use Task tool for prompt 007
-   (All in one message with multiple tool calls)
+   Use Task tool for prompt 005 (backend work → subagent_type="KGP:backend-engineer")
+   Use Task tool for prompt 006 (frontend work → subagent_type="KGP:frontend-engineer")
+   Use Task tool for prompt 007 (testing → subagent_type="KGP:qa-engineer")
+   (All in one message with multiple tool calls, each with appropriate agent)
    </example>
 3. Wait for ALL to complete
 4. Archive all prompts with metadata
@@ -94,12 +130,12 @@ For each prompt number/name:
 
 <sequential_execution>
 
-1. Read first prompt file
-2. Spawn Task tool for first prompt
+1. Read first prompt file and analyze content to select best agent
+2. Spawn Task tool for first prompt with appropriate subagent_type
 3. Wait for completion
 4. Archive first prompt
-5. Read second prompt file
-6. Spawn Task tool for second prompt
+5. Read second prompt file and analyze content to select best agent
+6. Spawn Task tool for second prompt with appropriate subagent_type
 7. Wait for completion
 8. Archive second prompt
 9. Repeat for remaining prompts

@@ -4,6 +4,32 @@ argument-hint: [task description]
 allowed-tools: [Read, Write, Glob, SlashCommand, AskUserQuestion]
 ---
 
+<agent_discovery>
+## Agent Discovery for Prompt Creation
+
+Before creating prompts, discover available specialized agents:
+
+```
+Glob: agents/*.md
+```
+
+**Agent-to-Task Mapping:**
+When creating prompts, consider which agent will execute them via `/run-prompt`:
+
+| Task Type | Recommended Agent | Keywords |
+|-----------|-------------------|----------|
+| Backend work | backend-engineer | API, endpoint, auth, service, business logic |
+| Frontend work | frontend-engineer | UI, component, style, accessibility |
+| Database work | data-engineer | schema, migration, query, data model |
+| Testing work | qa-engineer | test, security, review, QA |
+| Infrastructure | devops-engineer | CI/CD, deploy, Docker |
+| Documentation | document-specialist | docs, README, technical guide |
+| Planning | project-coordinator | sprint, task breakdown |
+| General/mixed | general-purpose | unclear scope |
+
+**Prompt Design Tip:** When creating prompts, structure them with clear task type indicators so `/run-prompt` can automatically select the best agent for execution.
+</agent_discovery>
+
 <context>
 Before generating prompts, use the Glob tool to check `./prompts/*.md` to:
 1. Determine if the prompts directory exists

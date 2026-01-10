@@ -4,6 +4,29 @@ argument-hint: [project or feature description]
 allowed-tools: [Read, Write, Glob, Grep, AskUserQuestion]
 ---
 
+<agent_discovery>
+## Agent Discovery for Plan Creation
+
+Before creating plans, discover available specialized agents to enable intelligent task assignments:
+
+```
+Glob: agents/*.md
+```
+
+**Available Agents for Task Assignment:**
+| Agent | Specialization | Assign When Task Involves |
+|-------|---------------|---------------------------|
+| backend-engineer | Server-side development | APIs, auth, services, business logic |
+| frontend-engineer | UI development | Components, accessibility, styling |
+| data-engineer | Data layer | Schema, migrations, queries |
+| qa-engineer | Quality assurance | Testing, security, reviews |
+| devops-engineer | Infrastructure | CI/CD, Docker, deployment |
+| document-specialist | Documentation | PRDs, README, tech guides |
+| project-coordinator | Project management | Sprint planning, coordination |
+
+**Planning Best Practice:** Include `**Agent:** [agent-name]` in task definitions so execution commands (`/run-plan`) can delegate to the appropriate specialist.
+</agent_discovery>
+
 <objective>
 Create a project plan for: $ARGUMENTS
 
@@ -72,12 +95,14 @@ Gather information:
 ## Tasks
 
 ### Task 1: [Name]
+**Agent:** [backend-engineer | frontend-engineer | data-engineer | qa-engineer | devops-engineer | document-specialist]
 **Description:** [What to do]
 **Files:** [Files affected]
 **Verification:**
 - [ ] How to verify completion
 
 ### Task 2: [Name]
+**Agent:** [backend-engineer | frontend-engineer | data-engineer | qa-engineer | devops-engineer | document-specialist]
 **Description:** [What to do]
 **Files:** [Files affected]
 **Verification:**

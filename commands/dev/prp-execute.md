@@ -1,7 +1,7 @@
 ---
 description: "[KGP] Execute a PRP file through Ralph Loop for iterative task completion"
 argument-hint: <path-to-prp.md> [--max-iterations N] [--completion-promise 'PHRASE']
-allowed-tools: [Read, Bash, Glob, Grep]
+allowed-tools: [Read, Bash, Glob, Grep, Task]
 ---
 
 # PRP Execute via Ralph Loop
@@ -14,6 +14,37 @@ Parse its structure and construct a Ralph Loop invocation that will execute the 
 </objective>
 
 <process>
+
+<step_0_agent_discovery>
+## Step 0: Discover Available Agents
+
+Before execution, scan for specialized agents that can handle specific task types more effectively.
+
+**Scan agent directory:**
+```
+Glob: agents/*.md
+```
+
+**Build agent capability map from discovered agents:**
+For each agent file found, extract:
+- `name` from frontmatter
+- `description` for capability matching
+- Core competencies from the agent's content
+
+**Standard agent-to-task mapping (if agents found):**
+| Task Keywords | Recommended Agent |
+|--------------|-------------------|
+| API, endpoint, service, auth, backend, business logic | backend-engineer |
+| UI, component, page, style, frontend, accessibility | frontend-engineer |
+| schema, migration, query, database, data model | data-engineer |
+| test, security, review, QA, coverage | qa-engineer |
+| CI/CD, deploy, Docker, infrastructure, monitoring | devops-engineer |
+| documentation, README, docs, technical writing | document-specialist |
+| planning, sprint, task breakdown, coordination | project-coordinator |
+
+**Agent delegation strategy:**
+When executing tasks via Ralph Loop, include agent recommendations in the prompt so Claude can delegate appropriately using the Task tool with the matched `subagent_type`.
+</step_0_agent_discovery>
 
 <step_1_load_prp>
 ## Step 1: Load and Parse PRP
@@ -88,14 +119,24 @@ When ALL of these are true, output <promise>[COMPLETION_PROMISE]</promise>:
 - [ ] Criterion 2
 ...
 
+AVAILABLE AGENTS (use Task tool with subagent_type to delegate):
+[List agents discovered in step_0, with their specializations]
+- backend-engineer: APIs, auth, services, business logic
+- frontend-engineer: UI, components, accessibility, performance
+- data-engineer: Schema, migrations, queries, data modeling
+- qa-engineer: Testing, security, code review
+- devops-engineer: CI/CD, Docker, infrastructure
+- document-specialist: Documentation, PRDs, technical writing
+
 INSTRUCTIONS:
 1. Read the full PRP at [PRP_PATH]
-2. Work through tasks in phase order
-3. Run validation after completing each task
-4. If validation fails, fix before proceeding
-5. After all tasks complete, verify ALL success criteria
-6. ONLY output the promise when genuinely complete
-7. You can see your previous work in files and git history
+2. For each task, consider delegating to the most appropriate agent using Task tool
+3. Work through tasks in phase order
+4. Run validation after completing each task
+5. If validation fails, fix before proceeding
+6. After all tasks complete, verify ALL success criteria
+7. ONLY output the promise when genuinely complete
+8. You can see your previous work in files and git history
 ```
 </step_3_construct_prompt>
 
