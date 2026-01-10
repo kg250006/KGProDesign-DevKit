@@ -1,166 +1,182 @@
 ---
-description: "[KGP] Execute a PRP file with full validation and iterative refinement at each step"
-argument-hint: <path-to-prp.md>
-allowed-tools: [Read, Write, Edit, Bash, Glob, Grep, WebSearch, TodoWrite]
+description: "[KGP] Execute a PRP file through Ralph Loop for iterative task completion"
+argument-hint: <path-to-prp.md> [--max-iterations N] [--completion-promise 'PHRASE']
+allowed-tools: [Read, Bash, Glob, Grep]
 ---
 
-<objective>
-Implement feature using PRP at: $ARGUMENTS
+# PRP Execute via Ralph Loop
 
-Execute with discipline:
-1. Follow the PRP exactly
-2. Validate at each step
-3. Fix failures before proceeding
-4. Report completion status
+Execute a Product Requirement Prompt through the Ralph Loop iterative system for reliable task completion.
+
+<objective>
+Load the PRP at: $ARGUMENTS
+Parse its structure and construct a Ralph Loop invocation that will execute the PRP iteratively until all tasks are complete.
 </objective>
 
 <process>
 
-<step_1_load>
-**Load PRP**
+<step_1_load_prp>
+## Step 1: Load and Parse PRP
 
-Read the specified PRP file completely:
+Read the PRP file from the path provided in $ARGUMENTS (first non-flag argument).
+
+Extract these elements based on the PRP format:
+
+**For XML-structured PRPs (with `<prp>` tags):**
+- `name` from `<prp name="...">`
+- `goal` from `<goal>` element
+- `phases` and `tasks` from `<phases>` element
+- `validation` from `<validation>` element
+- `success-criteria` from `<success-criteria>` element
+
+**For Markdown-structured PRPs:**
+- `name` from the first `# PRP:` or `#` heading
+- `goal` from `## Goal` section
+- `tasks` from `## Implementation Blueprint` or `## Tasks` section
+- `validation` from `## Validation Loop` or `## Validation` section
+- `success-criteria` from `## Success Criteria` or the checklist items in `## What` section
+
+Count the total number of tasks found.
+</step_1_load_prp>
+
+<step_2_parse_options>
+## Step 2: Parse Command Options
+
+Parse $ARGUMENTS for optional overrides:
+
+- `--max-iterations N` - Override default iteration count
+- `--completion-promise 'PHRASE'` - Override default completion phrase
+
+Calculate defaults if not provided:
 ```
-Read: $ARGUMENTS
-```
-
-Extract and understand:
-- Goal and success criteria
-- Implementation tasks
-- Validation commands
-- Context and patterns
-</step_1_load>
-
-<step_2_preflight>
-**Pre-flight Check**
-
-Verify all prerequisites:
-- [ ] Referenced files exist
-- [ ] Dependencies are available
-- [ ] External URLs accessible (if needed)
-- [ ] No blocking issues
-
-If pre-flight fails, report issues before proceeding.
-</step_2_preflight>
-
-<step_3_plan>
-**Plan Execution**
-
-Use TodoWrite to create task list from PRP:
-```
-For each task in Implementation Blueprint:
-- Create todo item
-- Mark dependencies
-- Set initial status
-```
-</step_3_plan>
-
-<step_4_execute>
-**Execute Tasks**
-
-For each task:
-1. Mark task as in_progress
-2. Read relevant files
-3. Implement following PRP guidance
-4. Use patterns specified in context
-5. Run Level 1 validation (lint/types)
-6. Fix any failures
-7. Mark task complete
-
-**Validation Protocol (per task):**
-```bash
-# Level 1: Syntax
-npm run lint 2>/dev/null || ruff check --fix 2>/dev/null
-npm run typecheck 2>/dev/null || mypy . 2>/dev/null
+max_iterations = (task_count * 2) + 5
+completion_promise = "PRP COMPLETE"
 ```
 
-If validation fails:
-1. Read error message completely
-2. Understand root cause
-3. Fix the issue
-4. Re-run validation
-5. Only proceed when passing
-</step_4_execute>
+Example: A PRP with 7 tasks would default to (7 * 2) + 5 = 19 max iterations.
+</step_2_parse_options>
 
-<step_5_validate>
-**Final Validation**
+<step_3_construct_prompt>
+## Step 3: Construct Ralph Loop Prompt
 
-Run complete validation loop from PRP:
+Build the execution prompt using this template:
 
-Level 1: Syntax & Style
-```bash
-[Commands from PRP]
+```
+Execute PRP: [PRP-NAME]
+
+GOAL: [Goal extracted from PRP]
+
+TASKS:
+[Formatted list of phases/tasks from PRP, preserving structure]
+- Phase 1: [phase name]
+  - Task 1.1: [task description]
+  - Task 1.2: [task description]
+- Phase 2: [phase name]
+  - Task 2.1: [task description]
+  ...
+
+VALIDATION (run after each task):
+[Validation commands from PRP, or these defaults if none specified:]
+- Run linting: npm run lint || ruff check .
+- Run type checking: npm run typecheck || mypy .
+- Run tests: npm test || pytest
+
+COMPLETION CRITERIA:
+When ALL of these are true, output <promise>[COMPLETION_PROMISE]</promise>:
+[List of success criteria from PRP]
+- [ ] Criterion 1
+- [ ] Criterion 2
+...
+
+INSTRUCTIONS:
+1. Read the full PRP at [PRP_PATH]
+2. Work through tasks in phase order
+3. Run validation after completing each task
+4. If validation fails, fix before proceeding
+5. After all tasks complete, verify ALL success criteria
+6. ONLY output the promise when genuinely complete
+7. You can see your previous work in files and git history
+```
+</step_3_construct_prompt>
+
+<step_4_invoke_ralph_loop>
+## Step 4: Invoke Ralph Loop
+
+Display the execution plan to the user:
+
+```
+## PRP Execution Plan
+
+**PRP:** [name]
+**Path:** [path]
+**Tasks:** [task_count]
+**Max Iterations:** [max_iterations]
+**Completion Promise:** "[completion_promise]"
+
+Starting Ralph Loop execution...
 ```
 
-Level 2: Unit Tests
-```bash
-[Commands from PRP]
+Then invoke the Ralph Loop using the Skill tool:
+
+```
+/ralph-loop "[constructed prompt]" --max-iterations [N] --completion-promise '[PHRASE]'
 ```
 
-Level 3: Integration Tests
-```bash
-[Commands from PRP]
-```
-</step_5_validate>
-
-<step_6_checklist>
-**Complete Checklist**
-
-Go through Final Checklist from PRP:
-- [ ] Each success criterion met
-- [ ] All validation levels pass
-- [ ] No regressions
-
-Re-read PRP to verify completeness.
-</step_6_checklist>
-
-<step_7_report>
-**Report Status**
-
-Provide execution report.
-</step_7_report>
+The Ralph Loop will:
+1. Feed the prompt to Claude
+2. On each iteration exit, feed the SAME prompt back
+3. Claude sees previous work in files/git
+4. Continue until completion promise is output or max iterations reached
+</step_4_invoke_ralph_loop>
 
 </process>
 
-<output_format>
-## PRP Execution Report
+<fallback_handling>
+## Handling Edge Cases
 
-### PRP: [name]
-### Status: COMPLETE | PARTIAL | BLOCKED
+**If PRP path not found:**
+- Report error: "PRP file not found at: [path]"
+- Suggest using `/prp-create` to create a new PRP
 
-### Tasks Completed
-- [x] Task 1 - Brief description
-- [x] Task 2 - Brief description
-- [ ] Task 3 (if incomplete: reason)
+**If PRP structure unclear:**
+- Make best effort to extract goal and tasks from any markdown structure
+- Default to treating each `##` or `###` heading under "Tasks" or "Implementation" as a task
 
-### Validation Results
-| Level | Status | Details |
-|-------|--------|---------|
-| Syntax/Lint | PASS/FAIL | |
-| Types | PASS/FAIL | |
-| Unit Tests | X/Y passing | |
-| Integration | PASS/FAIL | |
+**If no validation commands found:**
+- Use default validation: `npm run lint && npm run typecheck && npm test` (for JS projects)
+- Or: `ruff check . && mypy . && pytest` (for Python projects)
+- Detect project type from package.json or pyproject.toml presence
 
-### Files Modified
-- `path/to/file1.ts` - [what changed]
-- `path/to/file2.ts` - [what changed]
+**If no success criteria found:**
+- Default criteria: "All tasks completed successfully" and "All validation checks pass"
+</fallback_handling>
 
-### Success Criteria
-- [x] Criterion 1
-- [x] Criterion 2
-- [ ] Criterion 3 (if not met: why)
+<example_invocation>
+## Example
 
-### Notes
-[Any deviations, discoveries, or issues]
+Given a PRP at `PRPs/active/auth-feature/prp.md` with 5 tasks:
 
-### Next Steps
-[If partial: what remains]
-[If complete: suggested follow-up]
-</output_format>
+```bash
+/prp-execute PRPs/active/auth-feature/prp.md
+```
+
+This will:
+1. Parse the PRP and find 5 tasks
+2. Calculate max_iterations = (5 * 2) + 5 = 15
+3. Use default completion_promise = "PRP COMPLETE"
+4. Construct the execution prompt
+5. Invoke: `/ralph-loop "[prompt]" --max-iterations 15 --completion-promise 'PRP COMPLETE'`
+
+With overrides:
+```bash
+/prp-execute PRPs/active/auth-feature/prp.md --max-iterations 10 --completion-promise 'AUTH FEATURE DONE'
+```
+</example_invocation>
 
 <success_criteria>
-- All PRP checklist items completed
-- All validation gates passing
-- No regressions in existing tests
-- Implementation matches PRP specifications
+- PRP file successfully loaded and parsed
+- Key elements (goal, tasks, validation, success criteria) extracted
+- Sensible max iterations calculated based on task count
+- Ralph Loop invoked with well-formed prompt
+- User informed of execution plan before loop starts
 </success_criteria>
