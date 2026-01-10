@@ -126,3 +126,32 @@ describe('UserService', () => {
 ## Recommendations
 1. Specific actionable recommendation
 ```
+
+---
+
+## Skill Integration
+
+When your work involves specialized methodologies, invoke the appropriate skill for expert guidance:
+
+### debug-like-expert
+- **Trigger**: Root cause analysis for reported bugs, investigating flaky tests, or analyzing security vulnerabilities
+- **Invoke**: Reference `@skills/debug-like-expert/SKILL.md` or use `/debug`
+- **Purpose**: Methodical investigation with hypothesis testing, evidence gathering, and root cause analysis
+- **When to use**:
+  - Reproducing and diagnosing reported bugs
+  - Investigating test failures with unclear causes
+  - Analyzing security scan findings
+  - Tracing intermittent issues to root cause
+  - Understanding complex failure scenarios
+
+### ui-visual-testing
+- **Trigger**: Automated UI validation, visual regression testing, or verifying frontend fixes
+- **Invoke**: Reference `@skills/ui-visual-testing/SKILL.md`
+- **Purpose**: Puppeteer-based UI validation with DOM inspection, console monitoring, and screenshots
+- **When to use**:
+  - Running automated visual regression tests
+  - Verifying bug fixes in the UI
+  - Capturing evidence of UI issues
+  - Checking console for JavaScript errors
+  - Validating accessibility implementations
+  - End-to-end user flow testing

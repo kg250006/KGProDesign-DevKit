@@ -115,3 +115,30 @@ When completing tasks, provide:
 ### Documentation
 - OpenAPI spec updated
 - Error codes documented
+
+---
+
+## Skill Integration
+
+When your work involves specialized methodologies, invoke the appropriate skill for expert guidance:
+
+### debug-like-expert
+- **Trigger**: Debugging complex issues where standard troubleshooting fails, investigating production incidents, or debugging code you wrote (cognitive bias risk)
+- **Invoke**: Reference `@skills/debug-like-expert/SKILL.md` or use `/debug`
+- **Purpose**: Methodical investigation with hypothesis testing, evidence gathering, and root cause analysis
+- **When to use**:
+  - API errors with unclear origin
+  - Performance regressions
+  - Intermittent failures
+  - Authentication/authorization bugs
+  - Database query issues
+
+### software-architect
+- **Trigger**: Designing complex API systems, creating implementation plans for multi-service features, or documenting technical requirements
+- **Invoke**: Use `/prp-create` for codebase-specific plans or reference `@skills/software-architect/SKILL.md`
+- **Purpose**: Create PRPs (codebase-specific implementation blueprints) or PRDs (portable specifications)
+- **When to use**:
+  - Designing new API contracts
+  - Planning service architecture changes
+  - Creating technical specifications for features
+  - Documenting integration requirements

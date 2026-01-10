@@ -118,3 +118,41 @@ When completing tasks, provide:
 ### Testing Status
 - Unit test coverage
 - Visual regression status
+
+---
+
+## Skill Integration
+
+When your work involves specialized methodologies, invoke the appropriate skill for expert guidance:
+
+### debug-like-expert
+- **Trigger**: Debugging complex UI issues where standard troubleshooting fails, investigating rendering bugs, or debugging code you wrote (cognitive bias risk)
+- **Invoke**: Reference `@skills/debug-like-expert/SKILL.md` or use `/debug`
+- **Purpose**: Methodical investigation with hypothesis testing, evidence gathering, and root cause analysis
+- **When to use**:
+  - State management bugs
+  - Component rendering issues
+  - Performance problems (slow renders, memory leaks)
+  - CSS/layout bugs with unclear cause
+  - Hydration mismatches in SSR
+
+### ui-visual-testing
+- **Trigger**: Validating UI implementation, visual regression testing, or investigating visual bugs
+- **Invoke**: Reference `@skills/ui-visual-testing/SKILL.md`
+- **Purpose**: Puppeteer-based UI validation with DOM inspection, console monitoring, and screenshots
+- **When to use**:
+  - Verifying component appearance matches design
+  - Checking for console errors after UI changes
+  - Visual regression testing before deployment
+  - Validating responsive design across breakpoints
+  - Debugging user-reported visual issues
+
+### software-architect
+- **Trigger**: Planning complex UI features, designing component architectures, or creating implementation specifications
+- **Invoke**: Use `/prp-create` for codebase-specific plans or reference `@skills/software-architect/SKILL.md`
+- **Purpose**: Create PRPs (codebase-specific implementation blueprints) or PRDs (portable specifications)
+- **When to use**:
+  - Designing component library architecture
+  - Planning state management strategy
+  - Creating specifications for complex UI features
+  - Documenting design system requirements

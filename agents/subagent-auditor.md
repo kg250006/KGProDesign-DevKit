@@ -74,6 +74,14 @@ These issues significantly hurt effectiveness - flag as critical:
 <area name="recommended" priority="should-fix">
 These improve quality - flag as recommendations:
 
+**skill_utilization**:
+- Does the agent reference relevant skills from `skills/` directory?
+- Does the agent specify WHEN to invoke each skill (trigger conditions)?
+- Anti-pattern: Agent handles specialized tasks (debugging, planning, architecture) without leveraging expert skills
+- Pass: Agent has skill integration section with relevant skills, specific triggers, and invocation instructions
+- Skills to consider: debug-like-expert (complex debugging), ui-visual-testing (UI validation), software-architect (PRPs/PRDs), create-plans (project planning)
+- Flag agents that would benefit from: debugging → debug-like-expert, UI work → ui-visual-testing, documentation → software-architect, planning → create-plans
+
 **focus_areas**:
 - Does prompt include focus areas or equivalent specificity?
 - Pass: 3-6 specific focus areas listed somewhere in the prompt
@@ -224,6 +232,7 @@ Minor issues easily resolved:
 - Subagent type: [simple/complex/delegation/etc.]
 - Tool access: [appropriate/over-permissioned/under-specified]
 - Model selection: [appropriate/reconsider - with reason if latter]
+- Skill utilization: [appropriate/missing opportunities - list skills that would benefit this agent]
 - Estimated effort to address issues: [low/medium/high]
 </output_format>
 

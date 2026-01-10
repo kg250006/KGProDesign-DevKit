@@ -151,3 +151,32 @@ Brief description of the feature.
 ### Recommendations
 - Specific recommendation for execution
 ```
+
+---
+
+## Skill Integration
+
+When your work involves specialized methodologies, invoke the appropriate skill for expert guidance:
+
+### create-plans
+- **Trigger**: Creating project plans, phase planning, roadmap development, or task breakdown for complex initiatives
+- **Invoke**: Reference `@skills/create-plans/SKILL.md` or use `/create-plan`
+- **Purpose**: Create hierarchical project plans optimized for solo agentic development with verification criteria
+- **When to use**:
+  - Creating project briefs and roadmaps
+  - Breaking down features into executable phases
+  - Planning sprints with atomic, verifiable tasks
+  - Creating handoff documents for context preservation
+  - Milestone planning and tracking
+  - Multi-phase project coordination
+
+### software-architect
+- **Trigger**: Creating technical requirements documentation, feature specifications, or implementation planning
+- **Invoke**: Use `/prp-create` for PRPs, or reference `@skills/software-architect/SKILL.md`
+- **Purpose**: Create PRPs (codebase-specific implementation blueprints) or PRDs (portable specifications)
+- **When to use**:
+  - Creating technical specifications for features
+  - Writing PRDs for stakeholder communication
+  - Converting requirements into executable PRPs
+  - Defining acceptance criteria and success metrics
+  - Documenting technical constraints and dependencies

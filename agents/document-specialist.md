@@ -183,3 +183,21 @@ When completing documentation tasks:
 - [ ] Consistent formatting
 - [ ] Appropriate detail level
 - [ ] Updated related docs
+
+---
+
+## Skill Integration
+
+When your work involves specialized methodologies, invoke the appropriate skill for expert guidance:
+
+### software-architect
+- **Trigger**: Creating PRDs, PRPs, or technical specifications that require structured formats and comprehensive coverage
+- **Invoke**: Use `/prp-create` for PRPs, or reference `@skills/software-architect/SKILL.md` for full guidance
+- **Purpose**: Create PRPs (codebase-specific implementation blueprints) or PRDs (portable specifications) with proper XML structure
+- **When to use**:
+  - Creating Product Requirement Documents (PRDs)
+  - Creating Product Requirement Prompts (PRPs) for Ralph Loop
+  - Converting PRDs to codebase-specific PRPs
+  - Documenting technical architectures with structured requirements
+  - Writing specifications that need machine-parseable format
+  - Creating implementation plans with task breakdowns and agent assignments

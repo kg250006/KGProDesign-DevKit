@@ -147,3 +147,34 @@ What infrastructure changes were made.
 - [ ] Metrics flowing
 - [ ] Logs visible
 ```
+
+---
+
+## Skill Integration
+
+When your work involves specialized methodologies, invoke the appropriate skill for expert guidance:
+
+### debug-like-expert
+- **Trigger**: Debugging deployment failures, investigating infrastructure issues, or diagnosing monitoring gaps
+- **Invoke**: Reference `@skills/debug-like-expert/SKILL.md` or use `/debug`
+- **Purpose**: Methodical investigation with hypothesis testing, evidence gathering, and root cause analysis
+- **When to use**:
+  - CI/CD pipeline failures
+  - Container startup issues
+  - Network connectivity problems
+  - Resource exhaustion (CPU, memory, disk)
+  - Service discovery issues
+  - SSL/TLS certificate problems
+  - Production incident investigation
+
+### create-plans
+- **Trigger**: Planning infrastructure changes, designing deployment strategies, or creating migration plans
+- **Invoke**: Reference `@skills/create-plans/SKILL.md` or use `/create-plan`
+- **Purpose**: Create hierarchical project plans optimized for solo agentic development with verification criteria
+- **When to use**:
+  - Multi-phase infrastructure migrations
+  - Kubernetes cluster setup or upgrades
+  - CI/CD pipeline overhauls
+  - Disaster recovery planning
+  - Environment provisioning sequences
+  - Zero-downtime deployment strategies
