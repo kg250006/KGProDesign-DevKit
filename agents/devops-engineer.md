@@ -178,3 +178,15 @@ When your work involves specialized methodologies, invoke the appropriate skill 
   - Disaster recovery planning
   - Environment provisioning sequences
   - Zero-downtime deployment strategies
+
+### deployment-expert
+- **Trigger**: Deploying projects to any platform (Netlify, Azure VM, FTP, GitHub production branches)
+- **Invoke**: Reference `@skills/deployment-expert/SKILL.md`
+- **Purpose**: Auto-detect deployment profiles, manage environment variables, handle builds and platform configurations
+- **When to use**:
+  - Deploying to Netlify, Azure VM (SSH/CLI), FTP servers, or GitHub production branches
+  - Setting up deployment profiles for new projects
+  - Managing production environment variables
+  - Troubleshooting deployment failures
+  - Verifying deployment health and status
+  - Configuring platform credentials and connections

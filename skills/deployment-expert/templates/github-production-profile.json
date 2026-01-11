@@ -1,0 +1,114 @@
+{
+  "$schema": "https://kgprodesign.dev/schemas/deployment-profile.json",
+  "version": "1.0",
+  "name": "{{PROJECT_NAME}}",
+  "created": "{{TIMESTAMP}}",
+  "lastDeploy": null,
+
+  "platform": "github-production",
+
+  "build": {
+    "command": "npm run build",
+    "output": "dist",
+    "environment": {
+      "NODE_ENV": "production"
+    },
+    "nodeVersion": "20"
+  },
+
+  "githubProduction": {
+    "branch": "production",
+    "baseBranch": "main",
+    "requirePR": true,
+    "protectedBranch": true,
+
+    "trigger": {
+      "method": "github-actions",
+      "workflowFile": ".github/workflows/deploy.yml",
+      "environment": "production"
+    },
+
+    "docker": {
+      "enabled": true,
+      "compose": true,
+      "file": "docker-compose.yml",
+      "registry": "ghcr.io/{{ORG}}/{{REPO}}",
+      "imageName": "{{PROJECT_NAME}}",
+      "buildArgs": {}
+    },
+
+    "server": {
+      "host": "{{SERVER_HOST}}",
+      "user": "{{SSH_USER}}",
+      "sshKeyPath": "~/.ssh/deploy_key",
+      "appPath": "/var/www/{{PROJECT_NAME}}"
+    },
+
+    "webhook": {
+      "enabled": false,
+      "url": "https://{{SERVER_HOST}}:9000/deploy",
+      "secretPath": "~/.deployment-expert/github-webhook-secret"
+    },
+
+    "cron": {
+      "enabled": true,
+      "schedule": "*/5 * * * *",
+      "script": "scripts/check-deploy.sh",
+      "logPath": "/var/log/{{PROJECT_NAME}}/cron.log"
+    }
+  },
+
+  "envVars": {
+    "required": [
+      "DATABASE_URL",
+      "REDIS_URL",
+      "JWT_SECRET"
+    ],
+    "optional": [
+      "SENTRY_DSN",
+      "ANALYTICS_ID"
+    ],
+    "source": ".env.production",
+    "githubSecrets": [
+      "DATABASE_URL",
+      "JWT_SECRET",
+      "SSH_KEY"
+    ]
+  },
+
+  "verification": {
+    "url": "https://{{DOMAIN}}",
+    "healthEndpoint": "/api/health",
+    "expectedStatus": 200,
+    "timeout": 60
+  },
+
+  "scripts": {
+    "preDeploy": "scripts/hooks/pre-deploy.sh",
+    "deploy": "scripts/deploy.sh",
+    "postDeploy": "scripts/hooks/post-deploy.sh",
+    "rollback": "scripts/rollback.sh",
+    "migrate": "scripts/migrate.sh"
+  },
+
+  "blueGreen": {
+    "enabled": false,
+    "activeSlot": "blue",
+    "ports": {
+      "blue": 3001,
+      "green": 3002
+    }
+  },
+
+  "notifications": {
+    "slack": {
+      "webhook": null,
+      "channel": "#deploys"
+    },
+    "github": {
+      "deploymentStatus": true
+    }
+  },
+
+  "history": []
+}

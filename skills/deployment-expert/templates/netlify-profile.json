@@ -1,0 +1,69 @@
+{
+  "$schema": "https://kgprodesign.dev/schemas/deployment-profile.json",
+  "version": "1.0",
+  "name": "{{PROJECT_NAME}}",
+  "created": "{{TIMESTAMP}}",
+  "lastDeploy": null,
+
+  "platform": "netlify",
+
+  "build": {
+    "command": "npm run build",
+    "output": "dist",
+    "environment": {
+      "NODE_ENV": "production"
+    },
+    "nodeVersion": "20"
+  },
+
+  "netlify": {
+    "siteId": "{{SITE_ID}}",
+    "siteName": "{{SITE_NAME}}",
+    "team": "{{TEAM_SLUG}}",
+    "forms": false,
+    "functions": false,
+    "functionsDir": "netlify/functions",
+    "redirects": true,
+    "headers": true,
+    "plugins": []
+  },
+
+  "envVars": {
+    "required": [
+      "DATABASE_URL",
+      "API_KEY"
+    ],
+    "optional": [
+      "ANALYTICS_ID",
+      "SENTRY_DSN"
+    ],
+    "source": ".env.production",
+    "publicPrefix": ["NEXT_PUBLIC_", "VITE_"],
+    "contexts": {
+      "production": [],
+      "deploy-preview": [],
+      "branch-deploy": []
+    }
+  },
+
+  "verification": {
+    "url": "https://{{SITE_NAME}}.netlify.app",
+    "healthEndpoint": "/api/health",
+    "expectedStatus": 200,
+    "timeout": 30
+  },
+
+  "scripts": {
+    "preDeploy": null,
+    "deploy": "netlify deploy --prod --dir={{BUILD_OUTPUT}}",
+    "postDeploy": null,
+    "rollback": "netlify rollback"
+  },
+
+  "notifications": {
+    "slack": null,
+    "email": null
+  },
+
+  "history": []
+}

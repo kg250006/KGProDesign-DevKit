@@ -1,0 +1,72 @@
+{
+  "$schema": "https://kgprodesign.dev/schemas/deployment-profile.json",
+  "version": "1.0",
+  "name": "{{PROJECT_NAME}}",
+  "created": "{{TIMESTAMP}}",
+  "lastDeploy": null,
+
+  "platform": "ftp",
+
+  "build": {
+    "command": "npm run build",
+    "output": "dist",
+    "environment": {
+      "NODE_ENV": "production"
+    }
+  },
+
+  "ftp": {
+    "host": "{{FTP_HOST}}",
+    "user": "{{FTP_USER}}",
+    "protocol": "sftp",
+    "port": 22,
+    "remotePath": "/public_html",
+    "passive": true,
+    "exclude": [
+      ".git",
+      ".gitignore",
+      "node_modules",
+      ".env",
+      ".env.*",
+      "*.log",
+      ".DS_Store"
+    ],
+    "include": [],
+    "parallel": 5,
+    "preserveTimestamps": true
+  },
+
+  "envVars": {
+    "required": [],
+    "optional": [],
+    "source": ".env.production",
+    "notes": "FTP sites typically use config files rather than environment variables. For PHP, upload .env file or configure in hosting panel."
+  },
+
+  "verification": {
+    "url": "https://{{DOMAIN}}",
+    "healthEndpoint": "",
+    "expectedStatus": 200,
+    "timeout": 30
+  },
+
+  "scripts": {
+    "preDeploy": null,
+    "deploy": "scripts/deploy-ftp.sh",
+    "postDeploy": null,
+    "rollback": null
+  },
+
+  "maintenance": {
+    "enabled": false,
+    "htaccessPath": ".htaccess-maintenance",
+    "normalHtaccessPath": ".htaccess-normal"
+  },
+
+  "notifications": {
+    "slack": null,
+    "email": null
+  },
+
+  "history": []
+}

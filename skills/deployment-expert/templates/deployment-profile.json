@@ -1,0 +1,46 @@
+{
+  "$schema": "https://kgprodesign.dev/schemas/deployment-profile.json",
+  "version": "1.0",
+  "name": "{{PROJECT_NAME}}",
+  "created": "{{TIMESTAMP}}",
+  "lastDeploy": null,
+
+  "platform": "{{PLATFORM}}",
+
+  "build": {
+    "command": "npm run build",
+    "output": "dist",
+    "environment": {
+      "NODE_ENV": "production"
+    },
+    "nodeVersion": "20"
+  },
+
+  "envVars": {
+    "required": [],
+    "optional": [],
+    "source": ".env.production",
+    "publicPrefix": ["NEXT_PUBLIC_", "VITE_"]
+  },
+
+  "verification": {
+    "url": "{{SITE_URL}}",
+    "healthEndpoint": "/api/health",
+    "expectedStatus": 200,
+    "timeout": 30
+  },
+
+  "scripts": {
+    "preDeploy": null,
+    "deploy": null,
+    "postDeploy": null,
+    "rollback": null
+  },
+
+  "notifications": {
+    "slack": null,
+    "email": null
+  },
+
+  "history": []
+}

@@ -142,3 +142,14 @@ When your work involves specialized methodologies, invoke the appropriate skill 
   - Planning service architecture changes
   - Creating technical specifications for features
   - Documenting integration requirements
+
+### deployment-expert
+- **Trigger**: Deploying backend services to production or staging environments
+- **Invoke**: Reference `@skills/deployment-expert/SKILL.md`
+- **Purpose**: Deploy to Netlify, Azure VM, FTP, or GitHub production branches with environment variable management
+- **When to use**:
+  - Deploying API services to production
+  - Setting up deployment profiles for backend projects
+  - Managing production environment variables and secrets
+  - Troubleshooting deployment failures
+  - Verifying API health after deployment

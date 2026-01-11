@@ -156,3 +156,14 @@ When your work involves specialized methodologies, invoke the appropriate skill 
   - Planning state management strategy
   - Creating specifications for complex UI features
   - Documenting design system requirements
+
+### deployment-expert
+- **Trigger**: Deploying frontend applications to production or staging environments
+- **Invoke**: Reference `@skills/deployment-expert/SKILL.md`
+- **Purpose**: Deploy to Netlify, Azure VM, FTP, or GitHub production branches with build optimization and environment variables
+- **When to use**:
+  - Deploying static sites or SPAs to production
+  - Setting up deployment profiles for frontend projects
+  - Managing production environment variables (API keys, feature flags)
+  - Troubleshooting build or deployment failures
+  - Verifying frontend application health after deployment

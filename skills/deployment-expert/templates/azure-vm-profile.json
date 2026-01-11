@@ -1,0 +1,83 @@
+{
+  "$schema": "https://kgprodesign.dev/schemas/deployment-profile.json",
+  "version": "1.0",
+  "name": "{{PROJECT_NAME}}",
+  "created": "{{TIMESTAMP}}",
+  "lastDeploy": null,
+
+  "platform": "azure-vm",
+
+  "build": {
+    "command": "npm run build",
+    "output": "dist",
+    "environment": {
+      "NODE_ENV": "production"
+    },
+    "nodeVersion": "20"
+  },
+
+  "azureVm": {
+    "host": "{{VM_HOST}}",
+    "user": "{{SSH_USER}}",
+    "sshKeyPath": "~/.ssh/azure_deploy",
+    "appPath": "/var/www/{{PROJECT_NAME}}",
+    "deployScript": "./scripts/deploy.sh",
+    "useSudo": false,
+    "processManager": "pm2",
+    "azure": {
+      "resourceGroup": "{{RESOURCE_GROUP}}",
+      "vmName": "{{VM_NAME}}",
+      "subscription": "{{SUBSCRIPTION_ID}}"
+    }
+  },
+
+  "envVars": {
+    "required": [
+      "DATABASE_URL",
+      "API_KEY",
+      "JWT_SECRET"
+    ],
+    "optional": [
+      "REDIS_URL",
+      "SENTRY_DSN"
+    ],
+    "source": ".env.production",
+    "serverPath": "/var/www/{{PROJECT_NAME}}/.env"
+  },
+
+  "verification": {
+    "url": "https://{{DOMAIN}}",
+    "healthEndpoint": "/api/health",
+    "expectedStatus": 200,
+    "timeout": 30
+  },
+
+  "scripts": {
+    "preDeploy": "scripts/hooks/pre-deploy.sh",
+    "deploy": "scripts/deploy.sh",
+    "postDeploy": "scripts/hooks/post-deploy.sh",
+    "rollback": "scripts/rollback.sh",
+    "healthCheck": "scripts/health-check.sh"
+  },
+
+  "cron": {
+    "enabled": false,
+    "schedule": "*/5 * * * *",
+    "script": "scripts/check-deploy.sh",
+    "logPath": "/var/log/{{PROJECT_NAME}}/cron.log"
+  },
+
+  "docker": {
+    "enabled": false,
+    "compose": true,
+    "file": "docker-compose.yml",
+    "registry": null
+  },
+
+  "notifications": {
+    "slack": null,
+    "email": null
+  },
+
+  "history": []
+}

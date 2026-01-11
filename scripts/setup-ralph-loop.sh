@@ -7,7 +7,7 @@ set -euo pipefail
 
 # Parse arguments
 PROMPT_PARTS=()
-MAX_ITERATIONS=0
+MAX_ITERATIONS=20
 COMPLETION_PROMISE="null"
 READ_ARGS_FROM_STDIN=false
 
