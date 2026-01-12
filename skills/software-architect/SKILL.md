@@ -18,7 +18,7 @@ PRPs are **implementation blueprints** tailored to your specific codebase. They 
 - Effort vs. value rankings for prioritization
 - Validation commands using your project's toolchain
 
-**Purpose:** Feed directly into `/ralph-loop` for iterative autonomous implementation.
+**Purpose:** Feed directly into `/$PLUGIN_NAME:ralph-loop` for iterative autonomous implementation.
 
 ### 2. PRDs - Product Requirement Documents (Codebase-Agnostic)
 

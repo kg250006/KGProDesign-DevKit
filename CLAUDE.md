@@ -28,16 +28,16 @@ Product Requirement Prompt - A structured specification that Claude executes to 
 
 ### PRP Lifecycle
 ```
-1. Create PRP    → /prp-create (gather requirements)
-2. Validate PRP  → /prp-validate (pre-flight checks)
-3. Execute PRP   → /prp-execute (Claude implements)
+1. Create PRP    → /$PLUGIN_NAME:prp-create (gather requirements)
+2. Validate PRP  → /$PLUGIN_NAME:prp-validate (pre-flight checks)
+3. Execute PRP   → /$PLUGIN_NAME:prp-execute (Claude implements)
 4. Verify        → Run tests, review changes
-5. Commit        → /commit
+5. Commit        → /$PLUGIN_NAME:commit
 ```
 
 ### PRP Creation
 ```bash
-/prp-create "Add user authentication with OAuth2"
+/$PLUGIN_NAME:prp-create "Add user authentication with OAuth2"
 ```
 Claude will:
 1. Ask clarifying questions
@@ -47,7 +47,7 @@ Claude will:
 
 ### PRP Execution
 ```bash
-/prp-execute PRPs/active/auth-oauth2/prp.md
+/$PLUGIN_NAME:prp-execute PRPs/active/auth-oauth2/prp.md
 ```
 Claude will:
 1. Parse the PRP specification
@@ -230,25 +230,25 @@ Expert debugging with hypothesis testing.
 
 ### PRP Commands
 
-#### /prp-create
+#### /$PLUGIN_NAME:prp-create
 Generate PRP from requirements.
 
 ```bash
-/prp-create "Feature description"
+/$PLUGIN_NAME:prp-create "Feature description"
 ```
 
-#### /prp-execute
+#### /$PLUGIN_NAME:prp-execute
 Execute PRP with validation.
 
 ```bash
-/prp-execute <path-to-prp.md>
+/$PLUGIN_NAME:prp-execute <path-to-prp.md>
 ```
 
-#### /prp-validate
+#### /$PLUGIN_NAME:prp-validate
 Pre-flight PRP validation.
 
 ```bash
-/prp-validate <path-to-prp.md>
+/$PLUGIN_NAME:prp-validate <path-to-prp.md>
 ```
 
 ### Workflow Commands

@@ -31,14 +31,14 @@ The technique is described as "deterministically bad in an undeterministic world
 
 ## Available Commands
 
-### /ralph-loop <PROMPT> [OPTIONS]
+### /$PLUGIN_NAME:ralph-loop <PROMPT> [OPTIONS]
 
 Start a Ralph loop in your current session.
 
 **Usage:**
 ```
-/ralph-loop "Refactor the cache layer" --max-iterations 20
-/ralph-loop "Add tests" --completion-promise "TESTS COMPLETE"
+/$PLUGIN_NAME:ralph-loop "Refactor the cache layer" --max-iterations 20
+/$PLUGIN_NAME:ralph-loop "Add tests" --completion-promise "TESTS COMPLETE"
 ```
 
 **Options:**
@@ -55,13 +55,13 @@ Start a Ralph loop in your current session.
 
 ---
 
-### /cancel-ralph
+### /$PLUGIN_NAME:cancel-ralph
 
 Cancel an active Ralph loop (removes the loop state file).
 
 **Usage:**
 ```
-/cancel-ralph
+/$PLUGIN_NAME:cancel-ralph
 ```
 
 **How it works:**
@@ -96,7 +96,7 @@ The "loop" doesn't mean Claude talks to itself. It means:
 ### Interactive Bug Fix
 
 ```
-/ralph-loop "Fix the token refresh logic in auth.ts. Output <promise>FIXED</promise> when all tests pass." --completion-promise "FIXED" --max-iterations 10
+/$PLUGIN_NAME:ralph-loop "Fix the token refresh logic in auth.ts. Output <promise>FIXED</promise> when all tests pass." --completion-promise "FIXED" --max-iterations 10
 ```
 
 You'll see Ralph:

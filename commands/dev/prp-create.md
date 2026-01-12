@@ -270,17 +270,17 @@ Provide completion report:
 
 **Execute with Ralph Loop (recommended):**
 ```bash
-/ralph-loop PRPs/PRP-{feature-name}.md
+/$PLUGIN_NAME:ralph-loop PRPs/PRP-{feature-name}.md
 ```
 
 **Or execute directly:**
 ```bash
-/prp-execute PRPs/PRP-{feature-name}.md
+/$PLUGIN_NAME:prp-execute PRPs/PRP-{feature-name}.md
 ```
 
 **Or validate first:**
 ```bash
-/prp-validate PRPs/PRP-{feature-name}.md
+/$PLUGIN_NAME:prp-validate PRPs/PRP-{feature-name}.md
 ```
 ```
 </report_output>

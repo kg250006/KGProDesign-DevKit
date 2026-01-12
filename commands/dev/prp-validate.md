@@ -29,7 +29,7 @@ Use this registry in step_3_task_validation to verify agent assignments are vali
 <objective>
 Validate PRP at $ARGUMENTS for Ralph Loop compatibility. Detect issues, categorize by severity, and automatically fix problems using pattern-based fixes or the software-architect skill.
 
-This ensures PRPs can be executed by `/prp-execute` without errors.
+This ensures PRPs can be executed by `/$PLUGIN_NAME:prp-execute` without errors.
 </objective>
 
 <options>
@@ -411,19 +411,19 @@ ELSE:
 [If READY:]
 PRP is ready for execution. Run:
 ```
-/prp-execute [path-to-prp]
+/$PLUGIN_NAME:prp-execute [path-to-prp]
 ```
 
 [If FIXED:]
 Issues were auto-fixed. Review changes and run:
 ```
-/prp-execute [path-to-prp]
+/$PLUGIN_NAME:prp-execute [path-to-prp]
 ```
 
 [If NEEDS_FIXES:]
 Address remaining issues manually or run with --fix flag:
 ```
-/prp-validate [path-to-prp] --fix
+/$PLUGIN_NAME:prp-validate [path-to-prp] --fix
 ```
 
 [If BLOCKED:]
@@ -432,7 +432,7 @@ Critical issues prevent execution. Address these first:
 
 Consider regenerating with software-architect skill:
 ```
-/prp-create "[feature description]"
+/$PLUGIN_NAME:prp-create "[feature description]"
 ```
 </output_format>
 

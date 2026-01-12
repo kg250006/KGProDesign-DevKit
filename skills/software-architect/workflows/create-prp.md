@@ -220,12 +220,12 @@ Report completion with confidence score.
 
 **Execute with:**
 ```bash
-/ralph-loop PRPs/PRP-{feature-name}.md
+/$PLUGIN_NAME:ralph-loop PRPs/PRP-{feature-name}.md
 ```
 
 **Or validate first:**
 ```bash
-/prp-validate PRPs/PRP-{feature-name}.md
+/$PLUGIN_NAME:prp-validate PRPs/PRP-{feature-name}.md
 ```
 </output_format>
 

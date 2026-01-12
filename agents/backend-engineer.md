@@ -135,7 +135,7 @@ When your work involves specialized methodologies, invoke the appropriate skill 
 
 ### software-architect
 - **Trigger**: Designing complex API systems, creating implementation plans for multi-service features, or documenting technical requirements
-- **Invoke**: Use `/prp-create` for codebase-specific plans or reference `@skills/software-architect/SKILL.md`
+- **Invoke**: Use `/$PLUGIN_NAME:prp-create` for codebase-specific plans or reference `@skills/software-architect/SKILL.md`
 - **Purpose**: Create PRPs (codebase-specific implementation blueprints) or PRDs (portable specifications)
 - **When to use**:
   - Designing new API contracts

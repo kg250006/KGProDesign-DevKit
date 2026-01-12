@@ -294,7 +294,7 @@ Report conversion summary with traceability coverage.
 
 **Execute with:**
 ```bash
-/ralph-loop PRPs/PRP-{feature-name}.md
+/$PLUGIN_NAME:ralph-loop PRPs/PRP-{feature-name}.md
 ```
 </output_format>
 

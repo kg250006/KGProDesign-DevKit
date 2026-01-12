@@ -86,12 +86,12 @@ claude
 
 ### 2. Create Your First PRP
 ```bash
-/prp-create "Add user authentication"
+/$PLUGIN_NAME:prp-create "Add user authentication"
 ```
 
 ### 3. Execute the PRP
 ```bash
-/prp-execute PRPs/active/user-auth/prp.md
+/$PLUGIN_NAME:prp-execute PRPs/active/user-auth/prp.md
 ```
 
 ## Available Agents
@@ -115,9 +115,9 @@ claude
 - `/debug [issue]` - Expert debugging
 
 ### PRP Workflow
-- `/prp-create` - Generate Product Requirement Prompt
-- `/prp-execute` - Execute PRP with validation
-- `/prp-validate` - Pre-flight PRP validation
+- `/$PLUGIN_NAME:prp-create` - Generate Product Requirement Prompt
+- `/$PLUGIN_NAME:prp-execute` - Execute PRP with validation
+- `/$PLUGIN_NAME:prp-validate` - Pre-flight PRP validation
 
 ### Workflow
 - `/commit` - Smart git commit

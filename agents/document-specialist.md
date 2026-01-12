@@ -192,7 +192,7 @@ When your work involves specialized methodologies, invoke the appropriate skill 
 
 ### software-architect
 - **Trigger**: Creating PRDs, PRPs, or technical specifications that require structured formats and comprehensive coverage
-- **Invoke**: Use `/prp-create` for PRPs, or reference `@skills/software-architect/SKILL.md` for full guidance
+- **Invoke**: Use `/$PLUGIN_NAME:prp-create` for PRPs, or reference `@skills/software-architect/SKILL.md` for full guidance
 - **Purpose**: Create PRPs (codebase-specific implementation blueprints) or PRDs (portable specifications) with proper XML structure
 - **When to use**:
   - Creating Product Requirement Documents (PRDs)

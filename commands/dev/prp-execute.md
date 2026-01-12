@@ -160,7 +160,7 @@ Starting Ralph Loop execution...
 Then invoke the Ralph Loop using the Skill tool:
 
 ```
-/ralph-loop "[constructed prompt]" --max-iterations [N] --completion-promise '[PHRASE]'
+/$PLUGIN_NAME:ralph-loop "[constructed prompt]" --max-iterations [N] --completion-promise '[PHRASE]'
 ```
 
 The Ralph Loop will:
@@ -177,7 +177,7 @@ The Ralph Loop will:
 
 **If PRP path not found:**
 - Report error: "PRP file not found at: [path]"
-- Suggest using `/prp-create` to create a new PRP
+- Suggest using `/$PLUGIN_NAME:prp-create` to create a new PRP
 
 **If PRP structure unclear:**
 - Make best effort to extract goal and tasks from any markdown structure
@@ -198,7 +198,7 @@ The Ralph Loop will:
 Given a PRP at `PRPs/active/auth-feature/prp.md` with 5 tasks:
 
 ```bash
-/prp-execute PRPs/active/auth-feature/prp.md
+/$PLUGIN_NAME:prp-execute PRPs/active/auth-feature/prp.md
 ```
 
 This will:
@@ -206,11 +206,11 @@ This will:
 2. Calculate max_iterations = (5 * 2) + 5 = 15
 3. Use default completion_promise = "PRP COMPLETE"
 4. Construct the execution prompt
-5. Invoke: `/ralph-loop "[prompt]" --max-iterations 15 --completion-promise 'PRP COMPLETE'`
+5. Invoke: `/$PLUGIN_NAME:ralph-loop "[prompt]" --max-iterations 15 --completion-promise 'PRP COMPLETE'`
 
 With overrides:
 ```bash
-/prp-execute PRPs/active/auth-feature/prp.md --max-iterations 10 --completion-promise 'AUTH FEATURE DONE'
+/$PLUGIN_NAME:prp-execute PRPs/active/auth-feature/prp.md --max-iterations 10 --completion-promise 'AUTH FEATURE DONE'
 ```
 </example_invocation>
 
