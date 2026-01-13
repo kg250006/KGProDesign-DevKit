@@ -1,0 +1,198 @@
+# Industry Configuration
+# Defines industry-specific compliance requirements and considerations
+
+industries:
+  saas:
+    name: "Software as a Service (SaaS)"
+    compliance_frameworks:
+      - name: "SOC 2"
+        description: "Security and availability controls"
+        required: "recommended"
+        renewal: "annual"
+      - name: "GDPR"
+        description: "EU data protection"
+        required: "if_eu_customers"
+      - name: "CCPA"
+        description: "California consumer privacy"
+        required: "if_ca_customers"
+    key_documents:
+      - "Terms of Service"
+      - "Privacy Policy"
+      - "Data Processing Agreement"
+      - "Acceptable Use Policy"
+      - "SLA"
+    reference_files:
+      - "references/industry-saas.md"
+    common_risks:
+      - "Data breach liability"
+      - "Service availability failures"
+      - "Customer data ownership disputes"
+      - "Open source license violations"
+
+  ecommerce:
+    name: "E-Commerce / Online Retail"
+    compliance_frameworks:
+      - name: "PCI-DSS"
+        description: "Payment card security"
+        required: "if_handling_payments"
+      - name: "Sales Tax"
+        description: "Multi-state nexus"
+        required: "required"
+      - name: "FTC Compliance"
+        description: "Truth in advertising"
+        required: "required"
+    key_documents:
+      - "Terms of Sale"
+      - "Return Policy"
+      - "Shipping Policy"
+      - "Privacy Policy"
+    reference_files:
+      - "references/industry-ecommerce.md"
+    common_risks:
+      - "Product liability"
+      - "Sales tax compliance"
+      - "Chargebacks and fraud"
+      - "Advertising claims"
+
+  healthcare:
+    name: "Healthcare / Health Tech"
+    compliance_frameworks:
+      - name: "HIPAA"
+        description: "Health information privacy"
+        required: "if_handling_phi"
+      - name: "FDA"
+        description: "Medical device regulations"
+        required: "if_medical_device"
+      - name: "State Medical Regulations"
+        description: "Varies by service type"
+        required: "varies"
+    key_documents:
+      - "HIPAA Privacy Policy"
+      - "Business Associate Agreements"
+      - "Consent Forms"
+      - "Breach Notification Plan"
+    reference_files: []
+    common_risks:
+      - "PHI breach liability"
+      - "Medical device classification"
+      - "Provider licensing"
+      - "False claims liability"
+
+  financial_services:
+    name: "Financial Services / FinTech"
+    compliance_frameworks:
+      - name: "SEC/FINRA"
+        description: "Securities regulations"
+        required: "if_securities"
+      - name: "State Money Transmitter"
+        description: "Money transmission licenses"
+        required: "if_money_transmission"
+      - name: "AML/BSA"
+        description: "Anti-money laundering"
+        required: "if_financial_institution"
+      - name: "PCI-DSS"
+        description: "Payment card security"
+        required: "if_handling_payments"
+    key_documents:
+      - "Privacy Notice (GLBA)"
+      - "AML Policy"
+      - "Customer Agreements"
+      - "Risk Disclosures"
+    reference_files: []
+    common_risks:
+      - "Regulatory enforcement"
+      - "Money transmission violations"
+      - "Securities law compliance"
+      - "Fraud liability"
+
+  professional_services:
+    name: "Professional Services / Consulting"
+    compliance_frameworks:
+      - name: "Professional Licensing"
+        description: "State-specific requirements"
+        required: "varies"
+      - name: "E&O Insurance"
+        description: "Professional liability coverage"
+        required: "recommended"
+    key_documents:
+      - "Master Service Agreement"
+      - "Engagement Letters"
+      - "NDAs"
+      - "Limitation of Liability"
+    reference_files: []
+    common_risks:
+      - "Professional malpractice"
+      - "Scope creep"
+      - "IP ownership disputes"
+      - "Confidentiality breaches"
+
+  marketplace:
+    name: "Marketplace / Platform"
+    compliance_frameworks:
+      - name: "Platform Liability"
+        description: "Section 230, DSA compliance"
+        required: "varies"
+      - name: "Sales Tax"
+        description: "Marketplace facilitator rules"
+        required: "required"
+      - name: "Content Moderation"
+        description: "User content policies"
+        required: "recommended"
+    key_documents:
+      - "Marketplace Terms"
+      - "Seller Terms"
+      - "Buyer Terms"
+      - "Content Policy"
+      - "Payment Terms"
+    reference_files: []
+    common_risks:
+      - "Content liability"
+      - "Seller disputes"
+      - "Payment processing issues"
+      - "Trademark infringement claims"
+
+  education:
+    name: "Education / EdTech"
+    compliance_frameworks:
+      - name: "FERPA"
+        description: "Student education records"
+        required: "if_k12_or_higher_ed"
+      - name: "COPPA"
+        description: "Children's online privacy"
+        required: "if_under_13"
+      - name: "State Student Privacy"
+        description: "State-specific requirements"
+        required: "varies"
+    key_documents:
+      - "Student Privacy Policy"
+      - "Parental Consent Forms"
+      - "School Data Agreements"
+      - "Terms of Service"
+    reference_files: []
+    common_risks:
+      - "Student data breaches"
+      - "COPPA violations"
+      - "Accessibility requirements"
+      - "Content accuracy"
+
+# Industry selection prompts
+selection_prompts:
+  - question: "What type of business are you operating?"
+    options:
+      - "SaaS / Software"
+      - "E-commerce / Online Retail"
+      - "Healthcare / Health Tech"
+      - "Financial Services / FinTech"
+      - "Professional Services"
+      - "Marketplace / Platform"
+      - "Education / EdTech"
+      - "Other"
+  - question: "Do you handle any of the following sensitive data types?"
+    multi_select: true
+    options:
+      - "Personal health information (PHI)"
+      - "Payment card data"
+      - "Children's data (under 13)"
+      - "Student education records"
+      - "Financial account information"
+      - "None of the above"

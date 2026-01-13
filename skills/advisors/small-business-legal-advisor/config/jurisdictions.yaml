@@ -1,0 +1,209 @@
+# Jurisdiction Configuration
+# State-specific legal requirements and considerations
+
+formation_states:
+  delaware:
+    name: "Delaware"
+    best_for:
+      - "C-Corps seeking VC investment"
+      - "Companies planning to go public"
+      - "Businesses with multiple investors"
+    advantages:
+      - "Business-friendly Court of Chancery"
+      - "Well-developed case law"
+      - "Familiar to investors"
+      - "Privacy protections"
+      - "Flexible governance"
+    disadvantages:
+      - "Franchise tax for corporations"
+      - "May need foreign qualification in operating state"
+    formation_costs:
+      llc: 90
+      corp: 89
+    annual_costs:
+      llc_annual_report: 300
+      corp_franchise_tax_min: 175
+    deadlines:
+      annual_report: "March 1"
+      franchise_tax: "March 1"
+    notes: "Standard choice for startups seeking funding"
+
+  wyoming:
+    name: "Wyoming"
+    best_for:
+      - "LLCs seeking privacy"
+      - "Single-member LLCs"
+      - "Asset protection"
+    advantages:
+      - "No state income tax"
+      - "Strong privacy protections"
+      - "Low fees"
+      - "Asset protection statutes"
+    disadvantages:
+      - "Less case law than Delaware"
+      - "May need foreign qualification"
+    formation_costs:
+      llc: 100
+      corp: 100
+    annual_costs:
+      llc_annual_report: 60
+      corp_annual_report: 60
+    deadlines:
+      annual_report: "Anniversary of formation"
+    notes: "Good for privacy-focused businesses without investor needs"
+
+  california:
+    name: "California"
+    best_for:
+      - "Businesses operating primarily in CA"
+      - "Local service businesses"
+    advantages:
+      - "No foreign qualification needed if operating in CA"
+      - "Strong consumer protections"
+    disadvantages:
+      - "$800 minimum franchise tax"
+      - "Complex regulations"
+      - "High compliance burden"
+    formation_costs:
+      llc: 70
+      corp: 100
+    annual_costs:
+      franchise_tax_min: 800
+      statement_of_information: 25
+    deadlines:
+      statement_of_information: "Within 90 days of anniversary"
+      franchise_tax: "15th day of 4th month"
+    employment_considerations:
+      - "No non-competes enforced"
+      - "Extensive leave requirements"
+      - "Pay transparency required"
+      - "Meal and rest break requirements"
+    notes: "Consider Delaware + CA qualification if seeking investment"
+
+  new_york:
+    name: "New York"
+    best_for:
+      - "Businesses operating primarily in NY"
+      - "Local presence required"
+    advantages:
+      - "Major business center"
+      - "Established legal framework"
+    disadvantages:
+      - "Publication requirement (expensive)"
+      - "Higher taxes"
+    formation_costs:
+      llc: 200
+      corp: 125
+    annual_costs:
+      biennial_statement: 9
+    special_requirements:
+      - name: "Publication"
+        description: "LLCs must publish notice in two newspapers for 6 weeks"
+        estimated_cost: "500-2000"
+    notes: "Publication requirement adds significant cost to LLC formation"
+
+  texas:
+    name: "Texas"
+    best_for:
+      - "Texas-based businesses"
+      - "No state income tax preference"
+    advantages:
+      - "No state income tax"
+      - "Business-friendly environment"
+      - "Lower costs than CA/NY"
+    disadvantages:
+      - "Franchise tax (margin tax)"
+    formation_costs:
+      llc: 300
+      corp: 300
+    annual_costs:
+      franchise_tax: "Varies by revenue"
+    deadlines:
+      franchise_tax: "May 15"
+      annual_report: "Anniversary of formation"
+    notes: "Good for Texas-based operations"
+
+# State employment law variations
+employment_law_variations:
+  california:
+    at_will_modifications:
+      - "Implied contract exceptions"
+      - "Public policy exceptions"
+    non_compete_enforceability: "Not enforceable"
+    minimum_wage: "Check current state minimum (higher than federal)"
+    leave_requirements:
+      - "Paid Family Leave"
+      - "Paid Sick Leave"
+      - "Pregnancy Disability Leave"
+      - "Kin Care"
+    required_policies:
+      - "Sexual harassment prevention (training required)"
+      - "Lactation accommodation"
+      - "Pay transparency"
+    final_pay:
+      termination: "Immediate"
+      resignation: "72 hours (or immediate if 72 hours notice given)"
+
+  new_york:
+    at_will_modifications:
+      - "Standard at-will with exceptions"
+    non_compete_enforceability: "Enforceable if reasonable"
+    minimum_wage: "Check current (varies by region)"
+    leave_requirements:
+      - "Paid Family Leave"
+      - "Paid Sick Leave"
+    required_policies:
+      - "Sexual harassment policy (specific language required)"
+      - "Pay transparency"
+    final_pay:
+      termination: "Next regular payday"
+      resignation: "Next regular payday"
+
+  texas:
+    at_will_modifications:
+      - "Strong at-will state"
+    non_compete_enforceability: "Enforceable if reasonable"
+    minimum_wage: "Federal minimum"
+    leave_requirements: []
+    required_policies: []
+    final_pay:
+      termination: "Within 6 days"
+      resignation: "Next regular payday"
+
+# Privacy law applicability
+privacy_laws:
+  ccpa:
+    name: "California Consumer Privacy Act / CPRA"
+    applies_when:
+      - "Do business in California"
+      - "AND meet one of: $25M+ revenue, 100K+ consumers/devices, 50%+ revenue from selling data"
+    key_requirements:
+      - "Privacy policy disclosures"
+      - "Consumer rights (access, delete, opt-out)"
+      - "Do Not Sell mechanism"
+    reference: "references/industry-saas.md#privacy-compliance"
+
+  other_state_privacy:
+    states:
+      - name: "Virginia VCDPA"
+        threshold: "100K+ consumers or 25K+ consumers + 50% revenue from data"
+      - name: "Colorado CPA"
+        threshold: "100K+ consumers or 25K+ consumers + revenue from data"
+      - name: "Connecticut CTDPA"
+        threshold: "100K+ consumers or 25K+ consumers + 25%+ revenue from data"
+      - name: "Utah UCPA"
+        threshold: "$25M+ revenue AND 100K+ consumers or 25K+ consumers + 50% revenue"
+
+# Multi-state compliance triggers
+nexus_triggers:
+  employment:
+    - "Employee working in state"
+    - "Remote employee residing in state"
+  sales_tax:
+    - "Physical presence"
+    - "Economic nexus (typically $100K or 200 transactions)"
+  foreign_qualification:
+    - "Physical office or facility"
+    - "Employees in state"
+    - "Significant sales or business activities"
+    - "Real property ownership"
