@@ -130,7 +130,7 @@ When your work involves specialized methodologies, invoke the appropriate skill 
 
 ### debug-like-expert
 - **Trigger**: Debugging schema issues, investigating query performance problems, or diagnosing data integrity issues
-- **Invoke**: Reference `@skills/debug-like-expert/SKILL.md` or use `/debug`
+- **Invoke**: Use `/$PLUGIN_NAME:debug-like-expert` or `/debug`
 - **Purpose**: Methodical investigation with hypothesis testing, evidence gathering, and root cause analysis
 - **When to use**:
   - Slow query investigation and optimization

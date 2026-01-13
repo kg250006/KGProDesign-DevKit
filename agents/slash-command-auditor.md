@@ -34,17 +34,18 @@ During audits, prioritize evaluation of:
 <critical_workflow>
 **MANDATORY**: Read best practices FIRST, before auditing:
 
-1. Read @skills/create-slash-commands/SKILL.md for overview
-2. Read @skills/create-slash-commands/references/arguments.md for argument patterns
-3. Read @skills/create-slash-commands/references/patterns.md for command patterns
-4. Read @skills/create-slash-commands/references/tool-restrictions.md for security patterns
-5. Handle edge cases:
+1. Invoke `/$PLUGIN_NAME:create-slash-commands` to load skill overview and best practices
+2. The skill provides guidance on:
+   - Argument patterns
+   - Command patterns
+   - Tool restrictions and security patterns
+3. Handle edge cases:
    - If reference files are missing or unreadable, note in findings under "Configuration Issues" and proceed with available content
    - If YAML frontmatter is malformed, flag as critical issue
    - If command references external files that don't exist, flag as critical issue and recommend fixing broken references
    - If command is <10 lines, note as "simple command" in context and evaluate accordingly
-6. Read the command file
-7. Evaluate against best practices from steps 1-4
+4. Read the command file
+5. Evaluate against best practices from steps 1-2
 
 **Use ACTUAL patterns from references, not memory.**
 </critical_workflow>

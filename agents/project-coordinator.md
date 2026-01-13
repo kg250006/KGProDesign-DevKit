@@ -160,7 +160,7 @@ When your work involves specialized methodologies, invoke the appropriate skill 
 
 ### create-plans
 - **Trigger**: Creating project plans, phase planning, roadmap development, or task breakdown for complex initiatives
-- **Invoke**: Reference `@skills/create-plans/SKILL.md` or use `/create-plan`
+- **Invoke**: Use `/$PLUGIN_NAME:create-plans` or `/create-plan`
 - **Purpose**: Create hierarchical project plans optimized for solo agentic development with verification criteria
 - **When to use**:
   - Creating project briefs and roadmaps
@@ -172,7 +172,7 @@ When your work involves specialized methodologies, invoke the appropriate skill 
 
 ### software-architect
 - **Trigger**: Creating technical requirements documentation, feature specifications, or implementation planning
-- **Invoke**: Use `/$PLUGIN_NAME:prp-create` for PRPs, or reference `@skills/software-architect/SKILL.md`
+- **Invoke**: Use `/$PLUGIN_NAME:prp-create` for PRPs, or `/$PLUGIN_NAME:software-architect`
 - **Purpose**: Create PRPs (codebase-specific implementation blueprints) or PRDs (portable specifications)
 - **When to use**:
   - Creating technical specifications for features
@@ -180,3 +180,39 @@ When your work involves specialized methodologies, invoke the appropriate skill 
   - Converting requirements into executable PRPs
   - Defining acceptance criteria and success metrics
   - Documenting technical constraints and dependencies
+
+### digital-marketing
+- **Trigger**: Planning marketing initiatives, product launches, or coordinating marketing campaigns
+- **Invoke**: Use `/$PLUGIN_NAME:digital-marketing`
+- **Purpose**: Strategic marketing planning, launch coordination, and campaign management
+- **When to use**:
+  - Coordinating product or business launch timelines
+  - Planning marketing campaign sprints
+  - Breaking down go-to-market initiatives into tasks
+  - Tracking content creation and publication schedules
+  - Managing marketing funnel development projects
+  - Coordinating cross-functional marketing efforts
+
+### small-business-legal-advisor
+- **Trigger**: Planning compliance initiatives, contract reviews, or legal documentation projects
+- **Invoke**: Use `/$PLUGIN_NAME:small-business-legal-advisor`
+- **Purpose**: Legal guidance for business operations, compliance planning, and risk assessment
+- **When to use**:
+  - Planning compliance audit timelines
+  - Coordinating contract review processes
+  - Breaking down legal documentation into tasks
+  - Tracking privacy policy and terms of service updates
+  - Managing IP protection initiatives
+  - Risk assessment and mitigation planning
+
+### smb-growth-agent
+- **Trigger**: Planning business growth initiatives, product lifecycle management, or technology projects for small businesses
+- **Invoke**: Use `/$PLUGIN_NAME:smb-growth-agent`
+- **Purpose**: Strategic business advisory and product lifecycle planning for small businesses
+- **When to use**:
+  - Planning digital product development for SMB clients
+  - Coordinating healthcare technology projects with compliance requirements
+  - Breaking down business growth strategies into actionable phases
+  - Managing ongoing support and maintenance schedules
+  - Planning technology modernization initiatives
+  - Coordinating cross-functional business improvement projects

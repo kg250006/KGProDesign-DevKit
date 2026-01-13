@@ -271,7 +271,7 @@ ELSE:
 **Complex Fixes (invoke software-architect skill):**
 
 For issues requiring context or decisions:
-1. Load @skills/software-architect/SKILL.md
+1. Invoke `/$PLUGIN_NAME:software-architect`
 2. Describe the specific issue
 3. Let the skill regenerate the section with proper structure
 4. The skill will:
@@ -439,7 +439,7 @@ Consider regenerating with software-architect skill:
 <software_architect_integration>
 When invoking the software-architect skill for complex fixes:
 
-1. Read: @skills/software-architect/SKILL.md
+1. Invoke `/$PLUGIN_NAME:software-architect`
 2. Signal intent: "Fix PRP issues" or "Regenerate section"
 3. Provide context:
    - Current PRP content

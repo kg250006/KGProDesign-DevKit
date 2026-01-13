@@ -36,18 +36,19 @@ During audits, prioritize evaluation of:
 <critical_workflow>
 **MANDATORY**: Read best practices FIRST, before auditing:
 
-1. Read @skills/create-agent-skills/SKILL.md for overview
-2. Read @skills/create-agent-skills/references/use-xml-tags.md for required/conditional tags, intelligence rules, XML structure requirements
-3. Read @skills/create-agent-skills/references/skill-structure.md for YAML, naming, progressive disclosure patterns
-4. Read @skills/create-agent-skills/references/common-patterns.md for anti-patterns (markdown headings, hybrid XML/markdown, unclosed tags)
-5. Read @skills/create-agent-skills/references/core-principles.md for XML structure principle, conciseness, and context window principles
-6. Handle edge cases:
+1. Invoke `/$PLUGIN_NAME:create-agent-skills` to load skill overview and best practices
+2. The skill provides guidance on:
+   - Required/conditional tags and intelligence rules
+   - YAML, naming, progressive disclosure patterns
+   - Anti-patterns (markdown headings, hybrid XML/markdown, unclosed tags)
+   - XML structure principle, conciseness, and context window principles
+3. Handle edge cases:
    - If reference files are missing or unreadable, note in findings under "Configuration Issues" and proceed with available content
    - If YAML frontmatter is malformed, flag as critical issue
    - If skill references external files that don't exist, flag as critical issue and recommend fixing broken references
    - If skill is <100 lines, note as "simple skill" in context and evaluate accordingly
-7. Read the skill files (SKILL.md and any references/, docs/, scripts/ subdirectories)
-8. Evaluate against best practices from steps 1-5
+4. Read the skill files (SKILL.md and any references/, docs/, scripts/ subdirectories)
+5. Evaluate against best practices from steps 1-2
 
 **Use ACTUAL patterns from references, not memory.**
 </critical_workflow>

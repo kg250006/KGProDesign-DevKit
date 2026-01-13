@@ -192,7 +192,7 @@ When your work involves specialized methodologies, invoke the appropriate skill 
 
 ### software-architect
 - **Trigger**: Creating PRDs, PRPs, or technical specifications that require structured formats and comprehensive coverage
-- **Invoke**: Use `/$PLUGIN_NAME:prp-create` for PRPs, or reference `@skills/software-architect/SKILL.md` for full guidance
+- **Invoke**: Use `/$PLUGIN_NAME:prp-create` for PRPs, or `/$PLUGIN_NAME:software-architect` for full guidance
 - **Purpose**: Create PRPs (codebase-specific implementation blueprints) or PRDs (portable specifications) with proper XML structure
 - **When to use**:
   - Creating Product Requirement Documents (PRDs)
@@ -201,3 +201,39 @@ When your work involves specialized methodologies, invoke the appropriate skill 
   - Documenting technical architectures with structured requirements
   - Writing specifications that need machine-parseable format
   - Creating implementation plans with task breakdowns and agent assignments
+
+### digital-marketing
+- **Trigger**: Creating marketing documentation, launch playbooks, content strategies, or customer-facing materials
+- **Invoke**: Use `/$PLUGIN_NAME:digital-marketing`
+- **Purpose**: Strategic marketing planning, launch playbooks, customer journey design, funnel architecture, and content strategy
+- **When to use**:
+  - Writing marketing strategy documents
+  - Creating launch playbooks and go-to-market documentation
+  - Documenting customer journeys and sales funnels
+  - Developing content calendars and campaign briefs
+  - Creating customer avatar profiles and brand positioning guides
+  - Writing email sequence documentation
+
+### small-business-legal-advisor
+- **Trigger**: Creating legal documentation, compliance guides, contract templates, or privacy policies
+- **Invoke**: Use `/$PLUGIN_NAME:small-business-legal-advisor`
+- **Purpose**: Business formation guidance, contract templates, IP protection documentation, and compliance awareness
+- **When to use**:
+  - Creating terms of service and privacy policy documents
+  - Documenting compliance requirements (HIPAA, PCI, GDPR)
+  - Writing NDA templates and contract documentation
+  - Creating business formation guides
+  - Documenting intellectual property protection strategies
+  - Writing legal risk assessment documentation
+
+### smb-growth-agent
+- **Trigger**: Creating business strategy documentation, product lifecycle guides, or small business advisory content
+- **Invoke**: Use `/$PLUGIN_NAME:smb-growth-agent`
+- **Purpose**: Strategic business advisory, product lifecycle management, and technology planning for small businesses
+- **When to use**:
+  - Writing business growth strategy documents
+  - Creating product roadmap documentation
+  - Documenting technology planning and architecture decisions
+  - Writing ROI analysis and business case documents
+  - Creating maintenance and support documentation
+  - Documenting compliance requirements for healthcare or regulated industries

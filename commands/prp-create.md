@@ -156,14 +156,16 @@ After receiving expanded requirements from the sub-agent:
 Now generate the PRP using the software-architect skill's workflow.
 
 <load_skill>
-Read the skill router and workflow:
+Invoke the software-architect skill for PRP creation guidance:
 
 ```
-Read: @skills/software-architect/SKILL.md
-Read: @skills/software-architect/workflows/create-prp.md
-Read: @skills/software-architect/templates/prp-template.md
-Read: @skills/software-architect/references/prp-best-practices.md
+Invoke: /$PLUGIN_NAME:software-architect
 ```
+
+The skill provides:
+- PRP creation workflow
+- PRP template structure
+- Best practices for PRPs
 </load_skill>
 
 <execute_workflow>

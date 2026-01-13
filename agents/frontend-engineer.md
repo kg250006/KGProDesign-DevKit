@@ -127,7 +127,7 @@ When your work involves specialized methodologies, invoke the appropriate skill 
 
 ### debug-like-expert
 - **Trigger**: Debugging complex UI issues where standard troubleshooting fails, investigating rendering bugs, or debugging code you wrote (cognitive bias risk)
-- **Invoke**: Reference `@skills/debug-like-expert/SKILL.md` or use `/debug`
+- **Invoke**: Use `/$PLUGIN_NAME:debug-like-expert` or `/debug`
 - **Purpose**: Methodical investigation with hypothesis testing, evidence gathering, and root cause analysis
 - **When to use**:
   - State management bugs
@@ -138,7 +138,7 @@ When your work involves specialized methodologies, invoke the appropriate skill 
 
 ### ui-visual-testing
 - **Trigger**: Validating UI implementation, visual regression testing, or investigating visual bugs
-- **Invoke**: Reference `@skills/ui-visual-testing/SKILL.md`
+- **Invoke**: Use `/$PLUGIN_NAME:ui-visual-testing`
 - **Purpose**: Puppeteer-based UI validation with DOM inspection, console monitoring, and screenshots
 - **When to use**:
   - Verifying component appearance matches design
@@ -149,7 +149,7 @@ When your work involves specialized methodologies, invoke the appropriate skill 
 
 ### software-architect
 - **Trigger**: Planning complex UI features, designing component architectures, or creating implementation specifications
-- **Invoke**: Use `/$PLUGIN_NAME:prp-create` for codebase-specific plans or reference `@skills/software-architect/SKILL.md`
+- **Invoke**: Use `/$PLUGIN_NAME:prp-create` for codebase-specific plans or `/$PLUGIN_NAME:software-architect`
 - **Purpose**: Create PRPs (codebase-specific implementation blueprints) or PRDs (portable specifications)
 - **When to use**:
   - Designing component library architecture
@@ -159,7 +159,7 @@ When your work involves specialized methodologies, invoke the appropriate skill 
 
 ### deployment-expert
 - **Trigger**: Deploying frontend applications to production or staging environments
-- **Invoke**: Reference `@skills/deployment-expert/SKILL.md`
+- **Invoke**: Use `/$PLUGIN_NAME:deployment-expert`
 - **Purpose**: Deploy to Netlify, Azure VM, FTP, or GitHub production branches with build optimization and environment variables
 - **When to use**:
   - Deploying static sites or SPAs to production

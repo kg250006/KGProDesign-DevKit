@@ -156,7 +156,7 @@ When your work involves specialized methodologies, invoke the appropriate skill 
 
 ### debug-like-expert
 - **Trigger**: Debugging deployment failures, investigating infrastructure issues, or diagnosing monitoring gaps
-- **Invoke**: Reference `@skills/debug-like-expert/SKILL.md` or use `/debug`
+- **Invoke**: Use `/$PLUGIN_NAME:debug-like-expert` or `/debug`
 - **Purpose**: Methodical investigation with hypothesis testing, evidence gathering, and root cause analysis
 - **When to use**:
   - CI/CD pipeline failures
@@ -169,7 +169,7 @@ When your work involves specialized methodologies, invoke the appropriate skill 
 
 ### create-plans
 - **Trigger**: Planning infrastructure changes, designing deployment strategies, or creating migration plans
-- **Invoke**: Reference `@skills/create-plans/SKILL.md` or use `/create-plan`
+- **Invoke**: Use `/$PLUGIN_NAME:create-plans` or `/create-plan`
 - **Purpose**: Create hierarchical project plans optimized for solo agentic development with verification criteria
 - **When to use**:
   - Multi-phase infrastructure migrations
@@ -181,7 +181,7 @@ When your work involves specialized methodologies, invoke the appropriate skill 
 
 ### deployment-expert
 - **Trigger**: Deploying projects to any platform (Netlify, Azure VM, FTP, GitHub production branches)
-- **Invoke**: Reference `@skills/deployment-expert/SKILL.md`
+- **Invoke**: Use `/$PLUGIN_NAME:deployment-expert`
 - **Purpose**: Auto-detect deployment profiles, manage environment variables, handle builds and platform configurations
 - **When to use**:
   - Deploying to Netlify, Azure VM (SSH/CLI), FTP servers, or GitHub production branches

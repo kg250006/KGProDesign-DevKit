@@ -124,7 +124,7 @@ When your work involves specialized methodologies, invoke the appropriate skill 
 
 ### debug-like-expert
 - **Trigger**: Debugging complex issues where standard troubleshooting fails, investigating production incidents, or debugging code you wrote (cognitive bias risk)
-- **Invoke**: Reference `@skills/debug-like-expert/SKILL.md` or use `/debug`
+- **Invoke**: Use `/$PLUGIN_NAME:debug-like-expert` or `/debug`
 - **Purpose**: Methodical investigation with hypothesis testing, evidence gathering, and root cause analysis
 - **When to use**:
   - API errors with unclear origin
@@ -135,7 +135,7 @@ When your work involves specialized methodologies, invoke the appropriate skill 
 
 ### software-architect
 - **Trigger**: Designing complex API systems, creating implementation plans for multi-service features, or documenting technical requirements
-- **Invoke**: Use `/$PLUGIN_NAME:prp-create` for codebase-specific plans or reference `@skills/software-architect/SKILL.md`
+- **Invoke**: Use `/$PLUGIN_NAME:prp-create` for codebase-specific plans or `/$PLUGIN_NAME:software-architect`
 - **Purpose**: Create PRPs (codebase-specific implementation blueprints) or PRDs (portable specifications)
 - **When to use**:
   - Designing new API contracts
@@ -145,7 +145,7 @@ When your work involves specialized methodologies, invoke the appropriate skill 
 
 ### deployment-expert
 - **Trigger**: Deploying backend services to production or staging environments
-- **Invoke**: Reference `@skills/deployment-expert/SKILL.md`
+- **Invoke**: Use `/$PLUGIN_NAME:deployment-expert`
 - **Purpose**: Deploy to Netlify, Azure VM, FTP, or GitHub production branches with environment variable management
 - **When to use**:
   - Deploying API services to production

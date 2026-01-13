@@ -135,7 +135,7 @@ When your work involves specialized methodologies, invoke the appropriate skill 
 
 ### debug-like-expert
 - **Trigger**: Root cause analysis for reported bugs, investigating flaky tests, or analyzing security vulnerabilities
-- **Invoke**: Reference `@skills/debug-like-expert/SKILL.md` or use `/debug`
+- **Invoke**: Use `/$PLUGIN_NAME:debug-like-expert` or `/debug`
 - **Purpose**: Methodical investigation with hypothesis testing, evidence gathering, and root cause analysis
 - **When to use**:
   - Reproducing and diagnosing reported bugs
@@ -146,7 +146,7 @@ When your work involves specialized methodologies, invoke the appropriate skill 
 
 ### ui-visual-testing
 - **Trigger**: Automated UI validation, visual regression testing, or verifying frontend fixes
-- **Invoke**: Reference `@skills/ui-visual-testing/SKILL.md`
+- **Invoke**: Use `/$PLUGIN_NAME:ui-visual-testing`
 - **Purpose**: Puppeteer-based UI validation with DOM inspection, console monitoring, and screenshots
 - **When to use**:
   - Running automated visual regression tests
