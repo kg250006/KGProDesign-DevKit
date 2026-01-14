@@ -1,0 +1,338 @@
+#!/bin/bash
+# Pre-Deployment Validation Script Template
+# Replace {placeholders} with your values
+#
+# Run this BEFORE deploying to catch common issues early.
+# Usage: ./validate-deployment.sh
+
+set -euo pipefail
+
+# =============================================================================
+# CONFIGURATION
+# =============================================================================
+APP_NAME="{app-name}"
+COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.prod.yml}"
+ENV_FILE="${ENV_FILE:-.env.production}"
+MIN_DISK_SPACE_GB=5
+NPM_CONTAINER="nginx-proxy-manager"
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+# =============================================================================
+# HELPER FUNCTIONS
+# =============================================================================
+pass() { echo -e "${GREEN}[PASS]${NC} $*"; }
+fail() { echo -e "${RED}[FAIL]${NC} $*"; FAILED=1; }
+warn() { echo -e "${YELLOW}[WARN]${NC} $*"; }
+info() { echo "[INFO] $*"; }
+
+FAILED=0
+
+# =============================================================================
+# SYSTEM CHECKS
+# =============================================================================
+echo ""
+echo "═══════════════════════════════════════════════════════════"
+echo "PRE-DEPLOYMENT VALIDATION: $APP_NAME"
+echo "═══════════════════════════════════════════════════════════"
+echo ""
+
+echo "## System Requirements"
+echo ""
+
+# Check disk space
+AVAILABLE_GB=$(df / | awk 'NR==2 {print int($4/1024/1024)}')
+if [[ $AVAILABLE_GB -ge $MIN_DISK_SPACE_GB ]]; then
+    pass "Disk space: ${AVAILABLE_GB}GB available (need ${MIN_DISK_SPACE_GB}GB)"
+else
+    fail "Disk space: ${AVAILABLE_GB}GB available (need ${MIN_DISK_SPACE_GB}GB)"
+    warn "Run: docker system prune -af && journalctl --vacuum-time=7d"
+fi
+
+# Check Docker
+if command -v docker &> /dev/null; then
+    DOCKER_VERSION=$(docker --version | cut -d' ' -f3 | tr -d ',')
+    pass "Docker installed: v$DOCKER_VERSION"
+else
+    fail "Docker not installed"
+fi
+
+# Check Docker Compose v2
+if docker compose version &> /dev/null; then
+    COMPOSE_VERSION=$(docker compose version | grep -oP '\d+\.\d+\.\d+')
+    pass "Docker Compose v2 installed: v$COMPOSE_VERSION"
+else
+    fail "Docker Compose v2 not installed (run: docker compose version)"
+fi
+
+# Check Docker daemon running
+if docker info &> /dev/null; then
+    pass "Docker daemon running"
+else
+    fail "Docker daemon not running"
+fi
+
+# =============================================================================
+# FILE CHECKS
+# =============================================================================
+echo ""
+echo "## Required Files"
+echo ""
+
+# Check compose file
+if [[ -f "$COMPOSE_FILE" ]]; then
+    pass "Compose file exists: $COMPOSE_FILE"
+else
+    fail "Compose file not found: $COMPOSE_FILE"
+fi
+
+# Check environment file
+if [[ -f "$ENV_FILE" ]]; then
+    pass "Environment file exists: $ENV_FILE"
+    # Check file is not empty
+    if [[ -s "$ENV_FILE" ]]; then
+        VAR_COUNT=$(grep -cE '^[A-Z_]+=' "$ENV_FILE" || echo 0)
+        pass "Environment file has $VAR_COUNT variables"
+    else
+        fail "Environment file is empty"
+    fi
+else
+    fail "Environment file not found: $ENV_FILE"
+fi
+
+# =============================================================================
+# ENVIRONMENT VARIABLE CHECKS
+# =============================================================================
+echo ""
+echo "## Required Environment Variables"
+echo ""
+
+# Load env file
+if [[ -f "$ENV_FILE" ]]; then
+    set -a
+    source "$ENV_FILE"
+    set +a
+fi
+
+# Check critical variables (add your required vars)
+REQUIRED_VARS=(
+    "POSTGRES_PASSWORD"
+    "SECRET_KEY"
+    # "DATABASE_URL"
+    # "API_KEY"
+)
+
+for var in "${REQUIRED_VARS[@]}"; do
+    if [[ -n "${!var:-}" ]]; then
+        # Show that it's set without revealing value
+        pass "$var is set (${#!var} chars)"
+    else
+        fail "$var is not set"
+    fi
+done
+
+# Check NEXT_PUBLIC vars (build-time)
+NEXT_PUBLIC_VARS=$(grep -E '^NEXT_PUBLIC_' "$ENV_FILE" 2>/dev/null | cut -d= -f1 || echo "")
+if [[ -n "$NEXT_PUBLIC_VARS" ]]; then
+    info "NEXT_PUBLIC_* variables found (will be baked into frontend build):"
+    echo "$NEXT_PUBLIC_VARS" | while read var; do
+        echo "  - $var"
+    done
+fi
+
+# =============================================================================
+# DOCKER COMPOSE VALIDATION
+# =============================================================================
+echo ""
+echo "## Docker Compose Configuration"
+echo ""
+
+# Validate compose file syntax
+if docker compose -f "$COMPOSE_FILE" config &> /dev/null; then
+    pass "Compose file syntax valid"
+else
+    fail "Compose file syntax invalid"
+    docker compose -f "$COMPOSE_FILE" config 2>&1 | head -10
+fi
+
+# Check for required networks
+if grep -q "npm-network" "$COMPOSE_FILE"; then
+    # Check if external network exists
+    if docker network ls | grep -q "nginx-proxy-manager_npm-public"; then
+        pass "External NPM network exists"
+    else
+        warn "External NPM network not found (may need to start NPM first)"
+    fi
+fi
+
+# =============================================================================
+# NPM CHECKS (if applicable)
+# =============================================================================
+echo ""
+echo "## Nginx Proxy Manager"
+echo ""
+
+if docker ps --format '{{.Names}}' | grep -q "^${NPM_CONTAINER}$"; then
+    pass "NPM container running"
+
+    # Check NPM config
+    if docker exec ${NPM_CONTAINER} nginx -t &> /dev/null; then
+        pass "NPM nginx config valid"
+    else
+        fail "NPM nginx config invalid"
+        docker exec ${NPM_CONTAINER} nginx -t 2>&1 | head -5
+    fi
+else
+    warn "NPM container not running (may be on different host)"
+fi
+
+# =============================================================================
+# PORT CLASH DETECTION
+# =============================================================================
+echo ""
+echo "## Port Clash Detection"
+echo ""
+
+# Check if compose file exposes ports to host (anti-pattern)
+if grep -E '^\s*ports:' "$COMPOSE_FILE" &> /dev/null; then
+    # Extract exposed ports from compose file
+    EXPOSED_PORTS=$(grep -A1 '^\s*ports:' "$COMPOSE_FILE" | grep -oE '[0-9]+:[0-9]+' | cut -d: -f1 | sort -u || echo "")
+
+    if [[ -n "$EXPOSED_PORTS" ]]; then
+        warn "Compose file exposes ports to host (may cause clashes with other apps):"
+        for PORT in $EXPOSED_PORTS; do
+            # Check if port is already in use
+            if ss -tlnp 2>/dev/null | grep -q ":${PORT} " || netstat -tlnp 2>/dev/null | grep -q ":${PORT} "; then
+                fail "Port $PORT is already in use on host!"
+                # Show what's using it
+                echo "  In use by: $(ss -tlnp 2>/dev/null | grep ":${PORT} " | awk '{print $NF}' || netstat -tlnp 2>/dev/null | grep ":${PORT} " | awk '{print $NF}')"
+            else
+                warn "Port $PORT will be exposed to host"
+            fi
+        done
+        echo ""
+        warn "RECOMMENDATION: Use Docker DNS + NPM instead of exposing ports"
+        warn "  - Remove 'ports:' from compose file"
+        warn "  - Add services to npm-network"
+        warn "  - Configure NPM to forward to container:internal_port"
+    fi
+else
+    pass "No host ports exposed (using Docker DNS - correct pattern)"
+fi
+
+# Check for common port conflicts with existing containers
+COMMON_PORTS="80 443 3000 5000 8000 8080 5432 6379 27017"
+CONFLICTS_FOUND=0
+for PORT in $COMMON_PORTS; do
+    # Check both TCP listeners and Docker port bindings
+    if ss -tlnp 2>/dev/null | grep -q ":${PORT} " || docker ps --format '{{.Ports}}' | grep -q "0.0.0.0:${PORT}->"; then
+        if [[ $CONFLICTS_FOUND -eq 0 ]]; then
+            info "Ports already in use on this host:"
+            CONFLICTS_FOUND=1
+        fi
+        USING=$(ss -tlnp 2>/dev/null | grep ":${PORT} " | awk '{print $NF}' | head -1)
+        DOCKER_USING=$(docker ps --format '{{.Names}}: {{.Ports}}' | grep "0.0.0.0:${PORT}->" | head -1)
+        if [[ -n "$DOCKER_USING" ]]; then
+            echo "  - Port $PORT: $DOCKER_USING"
+        elif [[ -n "$USING" ]]; then
+            echo "  - Port $PORT: $USING"
+        fi
+    fi
+done
+
+if [[ $CONFLICTS_FOUND -eq 0 ]]; then
+    info "No common port conflicts detected"
+fi
+
+# =============================================================================
+# DOCKERFILE CHECKS
+# =============================================================================
+echo ""
+echo "## Dockerfile Validation"
+echo ""
+
+# Check backend Dockerfile
+BACKEND_DOCKERFILE=$(grep -oP 'dockerfile:\s*\K[^\s]+' "$COMPOSE_FILE" | head -1 || echo "Dockerfile")
+if [[ -f "$BACKEND_DOCKERFILE" ]]; then
+    pass "Backend Dockerfile exists: $BACKEND_DOCKERFILE"
+
+    # Check health check uses 127.0.0.1
+    if grep -q "127.0.0.1" "$BACKEND_DOCKERFILE"; then
+        pass "Health check uses 127.0.0.1 (IPv6 safe)"
+    elif grep -q "localhost" "$BACKEND_DOCKERFILE"; then
+        warn "Health check uses 'localhost' - consider changing to 127.0.0.1 to avoid IPv6 issues"
+    fi
+else
+    warn "Backend Dockerfile not found: $BACKEND_DOCKERFILE"
+fi
+
+# Check frontend Dockerfile if exists
+FRONTEND_DIR=$(grep -oP 'context:\s*\K[^\s]+' "$COMPOSE_FILE" | grep -E "(frontend|client)" | head -1 || echo "")
+if [[ -n "$FRONTEND_DIR" && -d "$FRONTEND_DIR" ]]; then
+    FRONTEND_DOCKERFILE="$FRONTEND_DIR/Dockerfile.prod"
+    if [[ -f "$FRONTEND_DOCKERFILE" ]]; then
+        pass "Frontend Dockerfile exists: $FRONTEND_DOCKERFILE"
+
+        # Check health check uses 127.0.0.1
+        if grep -q "127.0.0.1" "$FRONTEND_DOCKERFILE"; then
+            pass "Frontend health check uses 127.0.0.1 (IPv6 safe)"
+        elif grep -q "localhost" "$FRONTEND_DOCKERFILE"; then
+            warn "Frontend health check uses 'localhost' - consider changing to 127.0.0.1"
+        fi
+    fi
+fi
+
+# =============================================================================
+# GIT CHECKS
+# =============================================================================
+echo ""
+echo "## Git Repository"
+echo ""
+
+if [[ -d ".git" ]]; then
+    pass "Git repository found"
+
+    # Check for uncommitted changes
+    if git diff --quiet && git diff --cached --quiet; then
+        pass "No uncommitted changes"
+    else
+        warn "Uncommitted changes detected"
+    fi
+
+    # Check remote
+    REMOTE_URL=$(git remote get-url origin 2>/dev/null || echo "none")
+    if [[ "$REMOTE_URL" == git@* ]]; then
+        pass "Git remote uses SSH: ${REMOTE_URL:0:50}..."
+    elif [[ "$REMOTE_URL" == https://* ]]; then
+        warn "Git remote uses HTTPS (consider SSH for cron auto-deploy)"
+    else
+        warn "Git remote not configured"
+    fi
+else
+    warn "Not a git repository"
+fi
+
+# =============================================================================
+# SUMMARY
+# =============================================================================
+echo ""
+echo "═══════════════════════════════════════════════════════════"
+
+if [[ $FAILED -eq 0 ]]; then
+    echo -e "${GREEN}VALIDATION PASSED${NC} - Ready to deploy"
+    echo ""
+    echo "Deploy with:"
+    echo "  docker compose -f $COMPOSE_FILE up -d --build"
+    echo ""
+    echo "Don't forget to reload NPM after deploy:"
+    echo "  docker exec nginx-proxy-manager nginx -s reload"
+else
+    echo -e "${RED}VALIDATION FAILED${NC} - Fix issues before deploying"
+    exit 1
+fi
+
+echo "═══════════════════════════════════════════════════════════"

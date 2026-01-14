@@ -76,6 +76,8 @@ What would you like to do?
 4. Check deployment status
 5. Troubleshoot deployment issues
 6. Connect/configure account (Netlify, Azure, FTP)
+7. Set up VM auto-deploy (cron-based git monitoring)
+8. Run post-deploy health checks
 
 **Then read the matching workflow and follow it.**
 </intake>
@@ -87,8 +89,10 @@ What would you like to do?
 | 2, "setup", "profile", "configure", "first" | `workflows/setup-profile.md` |
 | 3, "env", "variables", "secrets", "config" | `workflows/manage-env-vars.md` |
 | 4, "status", "check", "verify" | `workflows/check-status.md` |
-| 5, "trouble", "fix", "debug", "broken", "failed" | `workflows/troubleshoot.md` |
+| 5, "trouble", "fix", "debug", "broken", "failed", "502", "error" | `workflows/troubleshoot.md` |
 | 6, "connect", "account", "auth", "login" | `workflows/connect-account.md` |
+| 7, "auto-deploy", "cron", "vm setup", "git monitoring" | `workflows/vm-auto-deploy-setup.md` |
+| 8, "health", "post-deploy", "verify deployment" | `workflows/post-deploy-health.md` |
 
 **Platform auto-detection:**
 - If `.deployment-profile.json` exists → read platform, route to platform-specific reference
@@ -239,8 +243,10 @@ All in `workflows/`:
 | setup-profile.md | Create deployment profile for new project |
 | manage-env-vars.md | Sync and manage environment variables |
 | check-status.md | Verify deployment status and health |
-| troubleshoot.md | Debug failed deployments |
+| troubleshoot.md | Debug failed deployments (includes VM/Docker issues) |
 | connect-account.md | Set up platform credentials |
+| vm-auto-deploy-setup.md | **NEW:** Set up cron-based git monitoring auto-deploy |
+| post-deploy-health.md | **NEW:** Comprehensive post-deploy health checks with NPM reload |
 </workflows_index>
 
 <templates_index>
@@ -248,6 +254,7 @@ All in `workflows/`:
 
 All in `templates/`:
 
+**Profiles:**
 | File | Purpose |
 |------|---------|
 | deployment-profile.json | Base profile structure |
@@ -255,6 +262,15 @@ All in `templates/`:
 | azure-vm-profile.json | Azure VM profile |
 | ftp-profile.json | FTP deployment profile |
 | github-production-profile.json | GitHub production branch profile |
+
+**Docker/VM Templates (NEW):**
+| File | Purpose |
+|------|---------|
+| docker-compose.prod.template.yml | Production Docker Compose with health checks, NPM network |
+| Dockerfile.backend.template | Python/FastAPI backend with 127.0.0.1 health check |
+| Dockerfile.frontend.template | Next.js frontend with standalone mode, 127.0.0.1 health check |
+| validate-deployment.sh.template | Pre-deployment validation script |
+| operations-runbook.template.md | VM operations manual template |
 </templates_index>
 
 <success_criteria>
@@ -265,4 +281,160 @@ A successful deployment:
 - Environment variables verified
 - Live site responds correctly
 - User notified of deployment URL and status
+- **For VM/Docker:** NPM reloaded after container rebuild
 </success_criteria>
+
+<critical_gotchas>
+## Critical Gotchas (Must Know!)
+
+These are battle-tested lessons from production incidents. Memorize them.
+
+### Priority 0: Always Read the Runbook First
+When entering any VM for deployment or troubleshooting:
+```bash
+cat /opt/containers/OPERATIONS-RUNBOOK.md
+```
+This is the source of truth for that VM's specific procedures.
+
+### Priority 1: Never Run Cron Jobs with Sudo
+```bash
+# WRONG - root can't access deploy user's SSH keys
+sudo /opt/cron/jobs/auto-deploy.sh
+
+# CORRECT - run as deploy user
+/opt/cron/jobs/auto-deploy.sh
+```
+
+### Priority 2: Always Reload NPM After Container Rebuilds
+```bash
+# This fixes 502 Bad Gateway after deploy
+docker exec nginx-proxy-manager nginx -s reload
+```
+NPM caches container IPs. After rebuild, containers get new IPs.
+
+### Priority 3: Use 127.0.0.1 NOT localhost in Health Checks
+```dockerfile
+# WRONG - may resolve to IPv6 (::1)
+HEALTHCHECK CMD curl http://localhost:3000/health
+
+# CORRECT - explicit IPv4
+HEALTHCHECK CMD curl http://127.0.0.1:3000/health
+```
+
+### Priority 4: Logrotate Creates Files as Root
+```
+# In /etc/logrotate.d/{app}, specify ownership:
+create 0664 {deploy-user} {deploy-user}
+```
+Otherwise deploy user can't write to rotated log.
+
+### Priority 5: Use SSH Deploy Keys, NOT Personal Access Tokens
+- Deploy keys are repository-specific (more secure)
+- No expiration issues
+- Won't be leaked in logs
+```bash
+ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519
+# Add public key to GitHub repo settings → Deploy keys
+```
+
+### Priority 6: PostgreSQL Boolean Defaults
+```python
+# WRONG - PostgreSQL rejects
+server_default=sa.text("0")
+
+# CORRECT
+server_default=sa.text("false")
+```
+
+### Priority 7: stat Command Differs Between Linux/macOS
+```bash
+# Linux
+stat -c %Y file.txt
+
+# macOS
+stat -f %m file.txt
+```
+Scripts should handle both.
+
+### Priority 8: Docker Compose v1 vs v2
+```bash
+# Old (v1) - deprecated
+docker-compose up
+
+# New (v2) - use this
+docker compose up
+```
+
+### Priority 9: Avoid Port Clashes - Use Docker DNS Instead
+```yaml
+# WRONG - Exposes ports to host, causes clashes with other apps
+services:
+  backend:
+    ports:
+      - "8000:8000"  # Will clash if another app uses 8000
+  frontend:
+    ports:
+      - "3000:3000"  # Will clash if another app uses 3000
+
+# CORRECT - No host ports, use NPM with Docker DNS
+services:
+  backend:
+    # No ports exposed - NPM routes via container name
+    networks:
+      - npm-network
+  frontend:
+    networks:
+      - npm-network
+
+# NPM proxy host config:
+# Forward hostname: {app}-backend-prod (Docker DNS name)
+# Forward port: 8000 (internal container port)
+```
+
+**Why this matters:**
+- Multiple apps on same VM will clash if they all expose port 3000, 8000, etc.
+- Docker DNS lets NPM route to containers by name without host port binding
+- Each app can use the same internal ports (3000, 8000) without conflict
+- Only NPM exposes ports 80/443 to the outside world
+
+**Check for port conflicts:**
+```bash
+# See what's using ports on host
+sudo netstat -tlnp | grep -E ":(80|443|3000|8000|5432)"
+# Or
+sudo ss -tlnp | grep -E ":(80|443|3000|8000|5432)"
+
+# Check Docker port bindings
+docker ps --format '{{.Names}}: {{.Ports}}'
+```
+</critical_gotchas>
+
+<vm_quick_commands>
+## VM Quick Commands
+
+**Fix 502 Bad Gateway:**
+```bash
+docker exec nginx-proxy-manager nginx -s reload
+```
+
+**Check auto-deploy status:**
+```bash
+tail -50 /opt/cron/logs/{app}-deploy.log
+cat /opt/cron/state/{app}-failures  # Failure count
+```
+
+**Reset circuit breaker:**
+```bash
+echo 0 > /opt/cron/state/{app}-failures
+```
+
+**Free disk space:**
+```bash
+docker system prune -af && journalctl --vacuum-time=7d
+```
+
+**Full health check:**
+```bash
+docker ps | grep {app} && curl -sf https://{domain}/api/health && df -h / | tail -1
+```
+</vm_quick_commands>

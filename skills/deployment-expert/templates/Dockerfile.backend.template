@@ -1,0 +1,101 @@
+# Backend Dockerfile Template (Python/FastAPI)
+# Replace {placeholders} with your values
+#
+# Key features:
+# - Multi-stage build for smaller image
+# - Non-root user for security
+# - Health check using 127.0.0.1 (not localhost)
+# - UV package manager for fast installs
+
+# =============================================================================
+# STAGE 1: Builder
+# =============================================================================
+FROM python:3.12-slim AS builder
+
+WORKDIR /app
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install UV for fast package management
+RUN pip install uv
+
+# Copy dependency files
+COPY pyproject.toml uv.lock* ./
+
+# Install dependencies (creates virtual environment in .venv)
+RUN uv sync --frozen --no-dev
+
+# =============================================================================
+# STAGE 2: Runtime
+# =============================================================================
+FROM python:3.12-slim AS runtime
+
+WORKDIR /app
+
+# Install runtime dependencies only
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user for security
+RUN groupadd --gid 1000 appgroup && \
+    useradd --uid 1000 --gid appgroup --shell /bin/bash --create-home appuser
+
+# Copy virtual environment from builder
+COPY --from=builder /app/.venv /app/.venv
+
+# Copy application code
+COPY --chown=appuser:appgroup ./src ./src
+# COPY --chown=appuser:appgroup ./alembic ./alembic  # If using Alembic migrations
+# COPY --chown=appuser:appgroup ./alembic.ini ./
+
+# Set environment
+ENV PATH="/app/.venv/bin:$PATH"
+ENV PYTHONPATH="/app/src"
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+
+# Switch to non-root user
+USER appuser
+
+# Expose port (documentation only, NPM handles actual routing)
+EXPOSE 8000
+
+# Health check - CRITICAL: Use 127.0.0.1 NOT localhost
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://127.0.0.1:8000/health || exit 1
+
+# Start the application
+# Adjust the module path to match your project structure
+CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+# =============================================================================
+# ALTERNATIVE: For Gunicorn with Uvicorn workers (production)
+# =============================================================================
+# CMD ["gunicorn", "src.main:app", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "-b", "0.0.0.0:8000"]
+
+# =============================================================================
+# NOTES
+# =============================================================================
+# 1. Ensure your app has a /health endpoint that returns 200:
+#
+#    @app.get("/health")
+#    async def health():
+#        return {"status": "healthy"}
+#
+# 2. For database migrations, run as init container or entrypoint:
+#
+#    # Option A: Separate init command
+#    docker compose run --rm backend alembic upgrade head
+#
+#    # Option B: Entrypoint script (create entrypoint.sh)
+#    #!/bin/bash
+#    alembic upgrade head
+#    exec "$@"
+#
+# 3. Build with:
+#    docker build -f Dockerfile.backend.prod -t {app}-backend:prod .

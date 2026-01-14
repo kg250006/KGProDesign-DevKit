@@ -1,0 +1,223 @@
+# Docker Compose Production Template
+# Replace all {placeholders} with your values
+#
+# Key features:
+# - Health checks on all services
+# - External NPM network for reverse proxy
+# - No ports exposed to host (NPM handles routing)
+# - Proper dependency ordering
+# - Resource limits (adjust as needed)
+# - Security: uses 127.0.0.1 not localhost in health checks
+
+version: '3.8'
+
+services:
+  # =============================================================================
+  # DATABASE
+  # =============================================================================
+  database:
+    image: postgres:16-alpine
+    container_name: {app}-db-prod
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Database password is required}
+      POSTGRES_DB: ${POSTGRES_DB:-appdb}
+    volumes:
+      - postgres_data_prod:/var/lib/postgresql/data
+      # Optional: backup directory mount
+      # - /opt/database_backups:/backups
+    networks:
+      - {app}-backend
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-appdb}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    # Security: No port exposure (internal only)
+    # ports:
+    #   - "5432:5432"  # Only enable for debugging
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  # =============================================================================
+  # BACKEND API
+  # =============================================================================
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend.prod
+      args:
+        # Build-time arguments (if needed)
+        PYTHON_VERSION: "3.12"
+    image: {app}-backend:prod
+    container_name: {app}-backend-prod
+    restart: unless-stopped
+    environment:
+      # Database connection (use Docker DNS name 'database')
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@database:5432/${POSTGRES_DB:-appdb}
+      # Application settings
+      ENVIRONMENT: production
+      DEBUG: "false"
+      # Secret key (generate with: openssl rand -hex 32)
+      SECRET_KEY: ${SECRET_KEY:?Secret key is required}
+      # CORS (adjust for your frontend domain)
+      CORS_ORIGINS: ${CORS_ORIGINS:-https://{domain}}
+      # Add other env vars as needed
+      # API_KEY: ${API_KEY}
+    networks:
+      - {app}-backend
+      - {app}-frontend
+      - npm-network  # External network for NPM access
+    depends_on:
+      database:
+        condition: service_healthy
+    healthcheck:
+      # Use curl for Python/FastAPI backends
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    # No port exposure (NPM handles routing via Docker DNS)
+    # ports:
+    #   - "8000:8000"  # Only enable for debugging
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+
+  # =============================================================================
+  # FRONTEND
+  # =============================================================================
+  frontend:
+    build:
+      context: ./frontend  # Adjust path to your frontend directory
+      dockerfile: Dockerfile.prod
+      args:
+        # Build-time env vars for Next.js (NEXT_PUBLIC_*)
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://{domain}/api/v1}
+    image: {app}-frontend:prod
+    container_name: {app}-frontend-prod
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      # Runtime env vars (if any)
+      # NEXT_PUBLIC_* vars must be set at build time, not runtime
+    networks:
+      - {app}-frontend
+      - npm-network  # External network for NPM access
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      # CRITICAL: Use 127.0.0.1 NOT localhost to avoid IPv6 issues
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://127.0.0.1:3000/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)}).on('error', () => process.exit(1))\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    # No port exposure (NPM handles routing via Docker DNS)
+    # ports:
+    #   - "3000:3000"  # Only enable for debugging
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  # =============================================================================
+  # OPTIONAL: REDIS (for caching/sessions)
+  # =============================================================================
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: {app}-redis-prod
+  #   restart: unless-stopped
+  #   networks:
+  #     - {app}-backend
+  #   healthcheck:
+  #     test: ["CMD", "redis-cli", "ping"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         memory: 128M
+
+  # =============================================================================
+  # OPTIONAL: WORKER (background jobs)
+  # =============================================================================
+  # worker:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.backend.prod
+  #   image: {app}-worker:prod
+  #   container_name: {app}-worker-prod
+  #   restart: unless-stopped
+  #   command: celery -A app.worker worker --loglevel=info
+  #   environment:
+  #     DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@database:5432/${POSTGRES_DB}
+  #     REDIS_URL: redis://redis:6379/0
+  #   networks:
+  #     - {app}-backend
+  #   depends_on:
+  #     database:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+
+# =============================================================================
+# NETWORKS
+# =============================================================================
+networks:
+  # Internal network for backend services (DB, Redis, etc.)
+  {app}-backend:
+    driver: bridge
+
+  # Internal network connecting frontend to backend
+  {app}-frontend:
+    driver: bridge
+
+  # External network for Nginx Proxy Manager access
+  # This network must already exist (created by NPM)
+  npm-network:
+    external: true
+    name: nginx-proxy-manager_npm-public
+    # If your NPM uses a different network name, adjust accordingly:
+    # name: npm_default
+    # name: nginx-proxy-manager_default
+
+# =============================================================================
+# VOLUMES
+# =============================================================================
+volumes:
+  postgres_data_prod:
+    # Named volume for persistent database storage
+    # Data persists across container rebuilds
+
+# =============================================================================
+# USAGE NOTES
+# =============================================================================
+# 1. Copy this file to your project root as docker-compose.prod.yml
+# 2. Replace all {placeholders}:
+#    - {app} → your app name (e.g., myapp)
+#    - {domain} → your domain (e.g., example.com)
+# 3. Create .env.production with required variables:
+#    POSTGRES_PASSWORD=<secure-password>
+#    SECRET_KEY=<generate-with-openssl-rand-hex-32>
+#    NEXT_PUBLIC_API_URL=https://yourdomain.com/api/v1
+# 4. Ensure NPM network exists:
+#    docker network ls | grep npm
+# 5. Deploy:
+#    docker compose -f docker-compose.prod.yml up -d --build
+# 6. CRITICAL: After deploy, reload NPM:
+#    docker exec nginx-proxy-manager nginx -s reload
