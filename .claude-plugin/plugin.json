@@ -1,7 +1,7 @@
 {
   "name": "KGP",
   "description": "Universal Claude Code development toolkit - 8 streamlined agents, 26 essential commands (including Ralph Loop), PRP workflow integration, and hooks for any project",
-  "version": "1.5.8",
+  "version": "1.6.0",
   "author": {
     "name": "KGProDesign"
   },

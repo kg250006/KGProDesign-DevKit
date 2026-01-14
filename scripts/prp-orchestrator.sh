@@ -11,6 +11,42 @@ set -euo pipefail
 # Get script directory for relative paths
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# macOS compatibility: use gtimeout if available, otherwise use bash fallback
+if command -v timeout &> /dev/null; then
+  TIMEOUT_CMD="timeout"
+elif command -v gtimeout &> /dev/null; then
+  TIMEOUT_CMD="gtimeout"
+else
+  TIMEOUT_CMD="bash_timeout"
+fi
+
+# Pure bash timeout function for macOS without coreutils
+bash_timeout() {
+  local timeout_seconds="$1"
+  shift
+
+  # Run command in background
+  "$@" &
+  local pid=$!
+
+  # Start a watchdog in background
+  (
+    sleep "$timeout_seconds"
+    kill -TERM "$pid" 2>/dev/null
+  ) &
+  local watchdog=$!
+
+  # Wait for command to finish
+  wait "$pid" 2>/dev/null
+  local exit_code=$?
+
+  # Kill watchdog if command finished before timeout
+  kill "$watchdog" 2>/dev/null
+  wait "$watchdog" 2>/dev/null
+
+  return $exit_code
+}
+
 # Default values
 MAX_RETRIES=3
 TIMEOUT=300  # 5 minutes per task
@@ -235,7 +271,7 @@ EOF
       SUCCEEDED=$((SUCCEEDED + 1))
       echo "Status: SUCCESS (dry-run)" >> "$PROGRESS_FILE"
       echo "Task $TASK_ID: SUCCESS (dry-run)"
-    elif timeout "$TIMEOUT" claude -p "Read .claude/current-task.md and execute the task described. When complete, simply exit." 2>&1; then
+    elif $TIMEOUT_CMD "$TIMEOUT" claude -p "Read .claude/current-task.md and execute the task described. When complete, simply exit." 2>&1; then
       SUCCESS=true
       SUCCEEDED=$((SUCCEEDED + 1))
       echo "Status: SUCCESS" >> "$PROGRESS_FILE"

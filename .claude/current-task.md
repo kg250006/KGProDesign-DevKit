@@ -3,19 +3,19 @@
 You are executing a single task from a PRP. Focus ONLY on this task.
 
 ## Task Description
-Create a file .claude/test-task-3.txt. Verify you cannot see task 1 or 2 in your context.
+Create a file test-output/test-task-3.txt. Verify you cannot see task 1 or 2 in your context.
 
 ## Files to Modify
-- [create] .claude/test-task-3.txt
+- [create] test-output/test-task-3.txt
 
 ## Implementation Guide
 ```
 # Write file - should have NO context from tasks 1-2
-echo "Task 3 executed at $(date)" > .claude/test-task-3.txt
+echo "Task 3 executed at $(date)" > test-output/test-task-3.txt
 ```
 
 ## Acceptance Criteria
-- File .claude/test-task-3.txt exists
+- File test-output/test-task-3.txt exists
 - Task completed without context from previous tasks
 
 ## Instructions
