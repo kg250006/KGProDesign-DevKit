@@ -289,6 +289,41 @@ Pre-flight PRP validation.
 /$PLUGIN_NAME:prp-validate <path-to-prp.md>
 ```
 
+#### /$PLUGIN_NAME:prp-execute-isolated
+Execute PRP with hard session isolation - each task runs in a fresh Claude session.
+
+```bash
+# Basic usage
+/$PLUGIN_NAME:prp-execute-isolated PRPs/feature.md
+
+# With retry configuration
+/$PLUGIN_NAME:prp-execute-isolated PRPs/feature.md --max-retries 5
+
+# With longer timeout
+/$PLUGIN_NAME:prp-execute-isolated PRPs/feature.md --timeout 600
+```
+
+**When to use:**
+- PRPs with 10+ tasks (prevents context rot)
+- When deterministic execution is required
+- When previous runs showed Claude "optimizing" by combining tasks
+
+**How it works:**
+1. External shell script orchestrates (not Claude)
+2. Each task written to `.claude/current-task.md`
+3. Fresh Claude session spawned per task
+4. Claude sees ONLY current task (not full PRP)
+5. Progress logged to `.claude/prp-progress.md`
+
+**Comparison:**
+
+| Aspect | prp-execute | prp-execute-isolated |
+|--------|-------------|---------------------|
+| **Context** | Shared (one session) | Isolated (fresh per task) |
+| **Control** | Claude decides | Script controls |
+| **Task visibility** | Claude sees all tasks | Claude sees only current |
+| **Use case** | Quick, interactive | Complex, deterministic |
+
 ### Workflow Commands
 
 #### /commit
@@ -456,6 +491,25 @@ Git conflict resolution.
 2. **Review before executing:** PRPs are editable - refine them
 3. **Break large features:** Multiple small PRPs beat one large PRP
 4. **Save successful PRPs:** Build a library of working patterns
+
+### Session Isolation Philosophy
+
+For complex PRPs (10+ tasks), every task should run in a completely separate session:
+
+**HARD LINE:** Each task gets its own fresh context window. No judgment. No optimization. Even if a task is 2% of context, it gets its own fresh window.
+
+**Why this matters:**
+- **Prevents context rot** - Claude's performance degrades as context fills
+- **Ensures deterministic execution** - Same PRP always executes the same way
+- **Removes Claude's ability to "optimize"** - Claude cannot decide to combine tasks
+- **Reproducible results** - Fresh context means consistent behavior
+
+**Commands comparison:**
+
+| Command | Isolation | Control | Best For |
+|---------|-----------|---------|----------|
+| `prp-execute` | Shared context | Claude decides | Quick PRPs (< 5 tasks) |
+| `prp-execute-isolated` | Fresh per task | Script controls | Complex PRPs (10+ tasks) |
 
 ### For Code Review
 

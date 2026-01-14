@@ -91,6 +91,50 @@ Cancel an active Ralph loop (removes the loop state file).
 
 ---
 
+### /$PLUGIN_NAME:prp-execute-isolated <PRP> [OPTIONS]
+
+Execute a PRP with hard session isolation - each task in its own fresh context.
+
+**Usage:**
+```
+/$PLUGIN_NAME:prp-execute-isolated PRPs/feature.md
+/$PLUGIN_NAME:prp-execute-isolated PRPs/feature.md --max-retries 5 --timeout 600
+```
+
+**Options:**
+- `--max-retries <n>` - Max retry attempts per task (default: 3)
+- `--timeout <n>` - Timeout in seconds per task (default: 300)
+
+**How it works:**
+1. External orchestrator script takes control
+2. Parses PRP and extracts individual tasks
+3. For each task: writes to file, spawns fresh Claude, waits, logs result
+4. Claude sees ONLY current task - never the full PRP
+5. Progress tracked in `.claude/prp-progress.md`
+
+**When to use:**
+- Complex PRPs (10+ tasks)
+- When you need guaranteed context isolation
+- When previous `prp-execute` runs showed unwanted optimization
+
+**Comparison:**
+- `prp-execute` - Claude controls, shared context, interactive
+- `prp-execute-isolated` - Script controls, fresh context per task, batch mode
+
+**Monitoring:**
+```bash
+# View progress
+cat .claude/prp-progress.md
+
+# View current task
+cat .claude/current-task.md
+
+# Watch in real-time
+tail -f .claude/prp-progress.md
+```
+
+---
+
 ## Available Agents
 
 Use the Task tool with `subagent_type` to delegate work to specialized agents during Ralph Loop iterations:

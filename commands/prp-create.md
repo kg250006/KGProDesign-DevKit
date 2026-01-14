@@ -270,19 +270,24 @@ Provide completion report:
 **Confidence Score:** [X]/10
 [Explanation: Why this score? What might need clarification?]
 
-**Execute with Ralph Loop (recommended):**
+**Execute with task isolation (recommended):**
 ```bash
-/$PLUGIN_NAME:ralph-loop PRPs/PRP-{feature-name}.md
+/KGP:prp-execute-isolated PRPs/PRP-{feature-name}.md
+```
+
+**Execute with Ralph Loop :**
+```bash
+/KGP:ralph-loop PRPs/PRP-{feature-name}.md
 ```
 
 **Or execute directly:**
 ```bash
-/$PLUGIN_NAME:prp-execute PRPs/PRP-{feature-name}.md
+/KGP:prp-execute PRPs/PRP-{feature-name}.md
 ```
 
 **Or validate first:**
 ```bash
-/$PLUGIN_NAME:prp-validate PRPs/PRP-{feature-name}.md
+/KGP:prp-validate PRPs/PRP-{feature-name}.md
 ```
 ```
 </report_output>
