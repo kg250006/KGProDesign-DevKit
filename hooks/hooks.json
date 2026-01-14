@@ -1,5 +1,5 @@
 {
-  "description": "KGProDesign-DevKit hooks - includes Ralph Loop stop hook for self-referential loops",
+  "description": "KGProDesign-DevKit hooks - includes Ralph Loop stop hook and SessionStart hook for session isolation",
   "hooks": {
     "Stop": [
       {
@@ -7,6 +7,16 @@
           {
             "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/stop-hook.js\""
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/session-start-hook.js\""
           }
         ]
       }

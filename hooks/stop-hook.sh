@@ -111,6 +111,77 @@ if [[ -z "$LAST_OUTPUT" ]]; then
   exit 0
 fi
 
+# Extract additional fields from frontmatter for progress tracking
+MAX_RETRIES=$(echo "$FRONTMATTER" | grep '^max_retries:' | sed 's/max_retries: *//' || echo "0")
+ISOLATION_MODE=$(echo "$FRONTMATTER" | grep '^isolation_mode:' | sed 's/isolation_mode: *//' || echo "false")
+
+# Detect task status from output
+TASK_STATUS="IN_PROGRESS"
+TASK_NOTES=""
+
+if echo "$LAST_OUTPUT" | grep -qi "completed\|success\|done\|finished"; then
+  TASK_STATUS="SUCCESS"
+fi
+
+if echo "$LAST_OUTPUT" | grep -qi "error\|failed\|exception\|cannot"; then
+  TASK_STATUS="FAILED"
+  # Extract error context (first line mentioning error)
+  TASK_NOTES=$(echo "$LAST_OUTPUT" | grep -i "error\|failed\|exception" | head -1 | cut -c1-100)
+fi
+
+# Retry tracking - if task failed and max_retries is set
+if [[ ! "$MAX_RETRIES" =~ ^[0-9]+$ ]]; then
+  MAX_RETRIES=0
+fi
+
+CONSECUTIVE_FAILURES=$(echo "$FRONTMATTER" | grep '^consecutive_failures:' | sed 's/consecutive_failures: *//' || echo "0")
+if [[ ! "$CONSECUTIVE_FAILURES" =~ ^[0-9]+$ ]]; then
+  CONSECUTIVE_FAILURES=0
+fi
+
+# Track consecutive failures for retry logic
+if [[ "$TASK_STATUS" == "FAILED" ]]; then
+  CONSECUTIVE_FAILURES=$((CONSECUTIVE_FAILURES + 1))
+
+  # Check if max retries exceeded
+  if [[ $MAX_RETRIES -gt 0 ]] && [[ $CONSECUTIVE_FAILURES -ge $MAX_RETRIES ]]; then
+    echo "Ralph loop: Max retries ($MAX_RETRIES) reached after consecutive failures"
+    TASK_STATUS="BLOCKED"
+    # Reset consecutive failures after blocking
+    CONSECUTIVE_FAILURES=0
+  fi
+else
+  # Reset consecutive failures on success
+  CONSECUTIVE_FAILURES=0
+fi
+
+# Update consecutive_failures in state file
+TEMP_FILE="${RALPH_STATE_FILE}.tmp.$$"
+if grep -q '^consecutive_failures:' "$RALPH_STATE_FILE"; then
+  sed "s/^consecutive_failures: .*/consecutive_failures: $CONSECUTIVE_FAILURES/" "$RALPH_STATE_FILE" > "$TEMP_FILE"
+else
+  # Add consecutive_failures field after max_retries if not present
+  sed "/^max_retries:/a\\
+consecutive_failures: $CONSECUTIVE_FAILURES" "$RALPH_STATE_FILE" > "$TEMP_FILE"
+fi
+mv "$TEMP_FILE" "$RALPH_STATE_FILE"
+
+# Update progress file with iteration results
+PROGRESS_FILE=".claude/ralph-progress.md"
+PROGRESS_TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+
+if [[ -f "$PROGRESS_FILE" ]]; then
+  cat >> "$PROGRESS_FILE" <<EOF
+
+### Iteration $ITERATION
+- Timestamp: $PROGRESS_TIMESTAMP
+- Status: $TASK_STATUS
+$(if [[ -n "$TASK_NOTES" ]]; then echo "- Notes: $TASK_NOTES"; fi)
+$(if [[ "$TASK_STATUS" == "FAILED" ]] && [[ $MAX_RETRIES -gt 0 ]]; then echo "- Retries: $CONSECUTIVE_FAILURES/$MAX_RETRIES"; fi)
+
+EOF
+fi
+
 # Check for completion promise (only if set)
 if [[ "$COMPLETION_PROMISE" != "null" ]] && [[ -n "$COMPLETION_PROMISE" ]]; then
   # Extract text from <promise> tags using Perl for multiline support
@@ -155,6 +226,33 @@ TEMP_FILE="${RALPH_STATE_FILE}.tmp.$$"
 sed "s/^iteration: .*/iteration: $NEXT_ITERATION/" "$RALPH_STATE_FILE" > "$TEMP_FILE"
 mv "$TEMP_FILE" "$RALPH_STATE_FILE"
 
+# Handle isolation mode (fresh context per iteration)
+if [[ "$ISOLATION_MODE" == "true" ]]; then
+  # In isolation mode, we allow the session to exit cleanly
+  # Set continue_next: true so wrapper script or SessionStart hook knows to resume
+  TEMP_FILE="${RALPH_STATE_FILE}.tmp.$$"
+  sed 's/^continue_next: false/continue_next: true/' "$RALPH_STATE_FILE" > "$TEMP_FILE"
+  mv "$TEMP_FILE" "$RALPH_STATE_FILE"
+
+  echo ""
+  echo "==============================================================="
+  echo "Ralph Loop - Fresh Context Mode (Iteration $ITERATION complete)"
+  echo "==============================================================="
+  echo ""
+  echo "Session will now exit cleanly for fresh context."
+  echo ""
+  echo "To continue: /\$PLUGIN_NAME:ralph-loop --resume"
+  echo "   or use ralph-auto.sh for automatic continuation"
+  echo ""
+  echo "Progress: .claude/ralph-progress.md"
+  echo "Next iteration: $NEXT_ITERATION"
+  echo "==============================================================="
+
+  # Allow exit - wrapper script will detect continue_next: true and restart
+  exit 0
+fi
+
+# In-session mode: Block exit and continue in same session
 # Build system message with iteration count and completion promise info
 if [[ "$COMPLETION_PROMISE" != "null" ]] && [[ -n "$COMPLETION_PROMISE" ]]; then
   SYSTEM_MSG="Ralph iteration $NEXT_ITERATION | To stop: output <promise>$COMPLETION_PROMISE</promise> (ONLY when statement is TRUE - do not lie to exit!)"

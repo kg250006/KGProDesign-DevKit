@@ -407,6 +407,106 @@ sudo ss -tlnp | grep -E ":(80|443|3000|8000|5432)"
 # Check Docker port bindings
 docker ps --format '{{.Names}}: {{.Ports}}'
 ```
+
+### Priority 10: ALWAYS Check .deployment-profile.json for SSH Credentials (CRITICAL)
+**Never assume Azure AD SSH works - ALWAYS check the profile first!**
+
+```bash
+# WRONG - Assuming Azure AD SSH will work
+az ssh vm --resource-group myRG --name myVM
+
+# CORRECT - Check the deployment profile for auth method
+cat .deployment-profile.json | jq -r '.azureVm.authMethod, .azureVm.sshKeyPath, .azureVm.host, .azureVm.user'
+```
+
+**If authMethod is "ssh-key" (traditional SSH):**
+```bash
+# Use the key specified in the profile
+ssh -i ~/.ssh/kgp_vm_deploy kgpadmin@74.249.103.192
+```
+
+**If authMethod is "azure-ad" (Azure AD):**
+```bash
+az ssh vm --resource-group myRG --name myVM
+```
+
+**CRITICAL LESSON LEARNED:**
+A production incident occurred because Azure AD SSH was assumed to work when the VM was configured for traditional SSH key authentication. This led to:
+- False assumption that VM was unreachable/down
+- Unnecessary subscription-level actions
+- Wasted time and potential service disruption
+
+**Before ANY VM operation:**
+1. Read `.deployment-profile.json`
+2. Check `authMethod` field
+3. Use the correct authentication method
+4. Test connection with a simple command first: `ssh user@host "echo 'Connection OK'"`
+
+### Priority 11: Connect App Containers to NPM Network After Rebuild (CRITICAL)
+**Container rebuilds break network connections - must reconnect before reloading nginx!**
+
+```bash
+# WRONG - Reload NPM without reconnecting containers (will still get 502)
+docker compose up -d --build
+docker exec nginx-proxy-manager nginx -s reload
+
+# CORRECT - Reconnect to NPM network, THEN reload
+docker compose up -d --build
+
+# Wait for containers to be healthy
+sleep 10
+
+# Reconnect containers to NPM network (they lose connection on rebuild)
+docker network connect npm-network {app}-backend-prod 2>/dev/null || true
+docker network connect npm-network {app}-frontend-prod 2>/dev/null || true
+
+# NOW reload NPM to pick up new container IPs
+docker exec nginx-proxy-manager nginx -s reload
+```
+
+**Why this happens:**
+- When you `docker compose down` or rebuild, containers get removed from external networks
+- Even if docker-compose.yml specifies `npm-network`, external networks need explicit reconnection
+- NPM can't route to containers that aren't on its network
+
+**Full deploy script pattern:**
+```bash
+#!/bin/bash
+set -e
+
+# Pull and rebuild
+cd /opt/containers/{app}
+git fetch origin production
+git reset --hard origin/production
+docker compose down
+docker compose up -d --build
+
+# Wait for containers to start
+echo "Waiting for containers to start..."
+sleep 15
+
+# Reconnect to NPM network
+echo "Reconnecting containers to NPM network..."
+docker network connect npm-network {app}-backend-prod 2>/dev/null || echo "Backend already connected or network issue"
+docker network connect npm-network {app}-frontend-prod 2>/dev/null || echo "Frontend already connected or network issue"
+
+# Reload NPM to refresh DNS
+echo "Reloading NPM..."
+docker exec nginx-proxy-manager nginx -s reload
+
+# Verify
+sleep 5
+curl -sf https://{domain}/api/health && echo "Deployment successful!"
+```
+
+**Check network connections:**
+```bash
+# See which networks a container is connected to
+docker inspect {app}-backend-prod --format '{{range $key, $value := .NetworkSettings.Networks}}{{$key}} {{end}}'
+
+# See which containers are on npm-network
+docker network inspect npm-network --format '{{range .Containers}}{{.Name}} {{end}}'
+```
 </critical_gotchas>
 
 <vm_quick_commands>

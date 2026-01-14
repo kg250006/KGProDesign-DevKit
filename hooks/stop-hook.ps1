@@ -190,6 +190,78 @@ if ([string]::IsNullOrWhiteSpace($lastOutput)) {
     exit 0
 }
 
+# Extract additional fields from frontmatter for progress tracking
+$maxRetries = Get-FrontmatterValue -Content $frontmatter -Key "max_retries"
+$isolationMode = Get-FrontmatterValue -Content $frontmatter -Key "isolation_mode"
+if (-not $maxRetries -or $maxRetries -notmatch '^\d+$') { $maxRetries = "0" }
+if (-not $isolationMode) { $isolationMode = "false" }
+$maxRetriesNum = [int]$maxRetries
+
+# Detect task status from output
+$taskStatus = "IN_PROGRESS"
+$taskNotes = ""
+
+if ($lastOutput -match 'completed|success|done|finished') {
+    $taskStatus = "SUCCESS"
+}
+
+if ($lastOutput -match 'error|failed|exception|cannot') {
+    $taskStatus = "FAILED"
+    # Extract error context (first line mentioning error)
+    $errorLine = ($lastOutput -split "`n" | Where-Object { $_ -match 'error|failed|exception' } | Select-Object -First 1)
+    if ($errorLine) {
+        $taskNotes = $errorLine.Substring(0, [Math]::Min(100, $errorLine.Length))
+    }
+}
+
+# Retry tracking - track consecutive failures
+$consecutiveFailures = Get-FrontmatterValue -Content $frontmatter -Key "consecutive_failures"
+if (-not $consecutiveFailures -or $consecutiveFailures -notmatch '^\d+$') { $consecutiveFailures = "0" }
+$consecutiveFailuresNum = [int]$consecutiveFailures
+
+if ($taskStatus -eq "FAILED") {
+    $consecutiveFailuresNum++
+
+    # Check if max retries exceeded
+    if ($maxRetriesNum -gt 0 -and $consecutiveFailuresNum -ge $maxRetriesNum) {
+        Write-Host "Ralph loop: Max retries ($maxRetries) reached after consecutive failures"
+        $taskStatus = "BLOCKED"
+        $consecutiveFailuresNum = 0
+    }
+} else {
+    # Reset consecutive failures on success
+    $consecutiveFailuresNum = 0
+}
+
+# Update consecutive_failures in state file
+if ($stateContent -match 'consecutive_failures:\s*\d+') {
+    $stateContent = $stateContent -replace '(?m)^consecutive_failures:\s*\d+', "consecutive_failures: $consecutiveFailuresNum"
+} else {
+    # Add consecutive_failures field after max_retries if not present
+    $stateContent = $stateContent -replace '(?m)^(max_retries:\s*\d+)', "`$1`nconsecutive_failures: $consecutiveFailuresNum"
+}
+
+# Update progress file with iteration results
+$progressFile = ".claude/ralph-progress.md"
+$progressTimestamp = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+
+if (Test-Path $progressFile) {
+    $progressEntry = @"
+
+### Iteration $iterationNum
+- Timestamp: $progressTimestamp
+- Status: $taskStatus
+"@
+    if ($taskNotes) {
+        $progressEntry += "`n- Notes: $taskNotes"
+    }
+    if ($taskStatus -eq "FAILED" -and $maxRetriesNum -gt 0) {
+        $progressEntry += "`n- Retries: $consecutiveFailuresNum/$maxRetries"
+    }
+    $progressEntry += "`n"
+    Add-Content -Path $progressFile -Value $progressEntry
+}
+
 # Check for completion promise (only if set and not null)
 if ($completionPromise -and $completionPromise -ne "null") {
     # Extract text from <promise> tags - non-greedy match for FIRST tag
@@ -242,6 +314,35 @@ try {
     Remove-Item -Path $tempFile -Force -ErrorAction SilentlyContinue
 }
 
+# Re-read updated content for isolation mode handling
+$stateContent = Get-Content $ralphStateFile -Raw -ErrorAction Stop
+
+# Handle isolation mode (fresh context per iteration)
+if ($isolationMode -eq "true") {
+    # In isolation mode, we allow the session to exit cleanly
+    # Set continue_next: true so wrapper script or SessionStart hook knows to resume
+    $stateContent = $stateContent -replace '(?m)^continue_next:\s*false', 'continue_next: true'
+    Set-Content -Path $ralphStateFile -Value $stateContent -NoNewline
+
+    Write-Host ""
+    Write-Host "==============================================================="
+    Write-Host "Ralph Loop - Fresh Context Mode (Iteration $iterationNum complete)"
+    Write-Host "==============================================================="
+    Write-Host ""
+    Write-Host "Session will now exit cleanly for fresh context."
+    Write-Host ""
+    Write-Host "To continue: /${pluginName}:ralph-loop -Resume"
+    Write-Host "   or use ralph-auto.ps1 for automatic continuation"
+    Write-Host ""
+    Write-Host "Progress: .claude/ralph-progress.md"
+    Write-Host "Next iteration: $nextIteration"
+    Write-Host "==============================================================="
+
+    # Allow exit - wrapper script will detect continue_next: true and restart
+    exit 0
+}
+
+# In-session mode: Block exit and continue in same session
 # Build system message with iteration count and completion promise info
 if ($completionPromise -and $completionPromise -ne "null") {
     $systemMsg = "Ralph iteration $nextIteration | To stop: output <promise>$completionPromise</promise> (ONLY when statement is TRUE - do not lie to exit!)"

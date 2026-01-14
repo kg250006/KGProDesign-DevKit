@@ -17,6 +17,14 @@ param(
     [Alias("completion-promise")]
     [string]$CompletionPromise = "null",
 
+    [Alias("max-retries")]
+    [int]$MaxRetries = 0,
+
+    [Alias("fresh-context")]
+    [switch]$FreshContext,
+
+    [switch]$Resume,
+
     [switch]$ArgsStdin,
 
     [Alias("h")]
@@ -55,6 +63,7 @@ Ralph Loop - Interactive self-referential development loop
 
 USAGE:
   /${PluginName}:ralph-loop [PROMPT...] [OPTIONS]
+  /${PluginName}:ralph-loop -Resume [OPTIONS]
 
 ARGUMENTS:
   PROMPT...    Initial prompt to start the loop (can be multiple words without quotes)
@@ -62,6 +71,9 @@ ARGUMENTS:
 OPTIONS:
   -MaxIterations <n>           Maximum iterations before auto-stop (default: 20)
   -CompletionPromise '<text>'  Promise phrase (USE QUOTES for multi-word)
+  -MaxRetries <n>              Max retries per task before marking blocked (default: 0/disabled)
+  -FreshContext                Enable session isolation mode (fresh context each iteration)
+  -Resume                      Resume from previous progress file
   -ArgsStdin                   Read all arguments from stdin (for multi-line prompts)
   -Help, -h                    Show this help message
 
@@ -76,11 +88,20 @@ DESCRIPTION:
   - Tasks requiring self-correction and refinement
   - Learning how Ralph works
 
+FRESH CONTEXT MODE (-FreshContext):
+  For long-running tasks (10+ iterations), enables session isolation:
+  - Each iteration ends the session cleanly
+  - Progress is tracked in .claude/ralph-progress.md
+  - Use -Resume to continue after each iteration
+  - Prevents context rot for complex tasks
+
 EXAMPLES:
   /${PluginName}:ralph-loop Build a todo API -CompletionPromise 'DONE' -MaxIterations 20
   /${PluginName}:ralph-loop -MaxIterations 10 Fix the auth bug
   /${PluginName}:ralph-loop Refactor cache layer  (runs forever)
   /${PluginName}:ralph-loop -CompletionPromise 'TASK COMPLETE' Create a REST API
+  /${PluginName}:ralph-loop -FreshContext -MaxIterations 30 Complex refactoring
+  /${PluginName}:ralph-loop -Resume  (continue interrupted loop)
 
 STOPPING:
   Only by reaching -MaxIterations or detecting -CompletionPromise
@@ -92,6 +113,32 @@ MONITORING:
 
   # View full state:
   Get-Content .claude/${PluginName}:ralph-loop.local.md -TotalCount 10
+
+  # View progress (fresh-context mode):
+  Get-Content .claude/ralph-progress.md
+
+AVAILABLE AGENTS:
+  Use the Task tool with subagent_type to delegate work to specialized agents:
+
+  backend-engineer     - APIs, auth, services, business logic, server-side scripts
+  frontend-engineer    - UI components, accessibility, performance, responsive design
+  data-engineer        - Schema design, migrations, queries, data modeling
+  qa-engineer          - Testing, security, code review, quality analysis
+  devops-engineer      - CI/CD, Docker, infrastructure, monitoring
+  document-specialist  - Documentation, PRDs, technical writing, README files
+  project-coordinator  - Sprint planning, task breakdown, progress tracking
+
+  Example Task tool usage in your prompt:
+    "Use the Task tool with subagent_type='backend-engineer' to implement the API"
+    "Delegate to qa-engineer agent to write tests for this feature"
+
+AUTOMATIC RESPAWN (fresh-context mode):
+  For fully automatic session respawn, use the wrapper scripts:
+    ./scripts/ralph-auto.sh     (macOS/Linux)
+    ./scripts/ralph-auto.ps1    (Windows)
+
+  The wrapper monitors the state file and automatically restarts
+  Claude sessions when continue_next: true is detected.
 "@
     Write-Output $helpText
     exit 0
@@ -119,6 +166,24 @@ if ($ArgsStdin) {
         $stdinContent = $stdinContent -replace '--completion-promise\s+\S+', ''
     }
 
+    # Parse --fresh-context flag
+    if ($stdinContent -match '--fresh-context') {
+        $FreshContext = $true
+        $stdinContent = $stdinContent -replace '--fresh-context', ''
+    }
+
+    # Parse --max-retries from stdin content
+    if ($stdinContent -match '--max-retries\s+(\d+)') {
+        $MaxRetries = [int]$Matches[1]
+        $stdinContent = $stdinContent -replace '--max-retries\s+\d+', ''
+    }
+
+    # Parse --resume flag
+    if ($stdinContent -match '--resume') {
+        $Resume = $true
+        $stdinContent = $stdinContent -replace '--resume', ''
+    }
+
     # Remaining content is the prompt (trim leading/trailing whitespace but preserve internal newlines)
     $Prompt = $stdinContent.Trim()
 } else {
@@ -128,7 +193,100 @@ if ($ArgsStdin) {
     }
 }
 
-# Validate prompt is non-empty
+# Handle resume mode
+if ($Resume) {
+    $stateFile = ".claude/${PluginName}:ralph-loop.local.md"
+
+    if (-not (Test-Path $stateFile)) {
+        Write-Host "Error: No active Ralph loop to resume" -ForegroundColor Red
+        Write-Host ""
+        Write-Host "   No state file found at: $stateFile"
+        Write-Host "   Start a new loop with: /${PluginName}:ralph-loop 'your prompt'"
+        exit 1
+    }
+
+    $stateContent = Get-Content $stateFile -Raw
+
+    if ($stateContent -notmatch 'active:\s*true') {
+        Write-Host "Error: Ralph loop is not active" -ForegroundColor Red
+        Write-Host ""
+        Write-Host "   State file exists but loop is not active."
+        Write-Host "   Start a new loop with: /${PluginName}:ralph-loop 'your prompt'"
+        exit 1
+    }
+
+    # Extract values from frontmatter
+    $resumeIteration = "1"
+    $resumeMaxIter = "20"
+    $resumePromise = "null"
+    $resumeIsolation = "false"
+    $resumeMaxRetries = "0"
+
+    if ($stateContent -match '(?m)^iteration:\s*(\d+)') { $resumeIteration = $Matches[1] }
+    if ($stateContent -match '(?m)^max_iterations:\s*(\d+)') { $resumeMaxIter = $Matches[1] }
+    if ($stateContent -match '(?m)^completion_promise:\s*"?([^"\r\n]+)"?') { $resumePromise = $Matches[1] }
+    if ($stateContent -match '(?m)^isolation_mode:\s*(\w+)') { $resumeIsolation = $Matches[1] }
+    if ($stateContent -match '(?m)^max_retries:\s*(\d+)') { $resumeMaxRetries = $Matches[1] }
+
+    # Extract prompt (everything after second ---)
+    $resumePromptText = ""
+    if ($stateContent -match '(?s)^---\r?\n.*?\r?\n---\r?\n(.*)$') {
+        $resumePromptText = $Matches[1]
+    }
+
+    # Reset continue_next marker
+    if ($stateContent -match 'continue_next:\s*true') {
+        $stateContent = $stateContent -replace '(?m)^continue_next:\s*true', 'continue_next: false'
+        Set-Content -Path $stateFile -Value $stateContent -NoNewline
+    }
+
+    # Display resume info
+    Write-Output "Resuming Ralph loop from iteration $resumeIteration"
+    Write-Output ""
+    Write-Output "State file: $stateFile"
+    Write-Output "Progress: .claude/ralph-progress.md"
+    Write-Output "Max iterations: $resumeMaxIter"
+    Write-Output "Isolation mode: $resumeIsolation"
+    if ($resumePromise -ne "null") {
+        Write-Output "Completion promise: $resumePromise"
+    }
+
+    # Show progress summary if available
+    $progressFile = ".claude/ralph-progress.md"
+    if (Test-Path $progressFile) {
+        $progressContent = Get-Content $progressFile -Raw
+        $successCount = ([regex]::Matches($progressContent, 'Status: SUCCESS')).Count
+        $failedCount = ([regex]::Matches($progressContent, 'Status: FAILED')).Count
+        $blockedCount = ([regex]::Matches($progressContent, 'Status: BLOCKED')).Count
+
+        Write-Output ""
+        Write-Output "Progress Summary:"
+        Write-Output "  Completed: $successCount"
+        Write-Output "  Failed: $failedCount"
+        Write-Output "  Blocked: $blockedCount"
+    }
+
+    Write-Output ""
+    Write-Output $resumePromptText
+
+    # Display completion promise requirements if set
+    if ($resumePromise -ne "null" -and $resumePromise) {
+        Write-Output @"
+
+===============================================================
+CRITICAL - Ralph Loop Completion Promise
+===============================================================
+
+To complete this loop, output this EXACT text:
+  <promise>$resumePromise</promise>
+===============================================================
+"@
+    }
+
+    exit 0
+}
+
+# Validate prompt is non-empty (for new loops)
 if ([string]::IsNullOrWhiteSpace($Prompt)) {
     Write-Host "Error: No prompt provided" -ForegroundColor Red
     Write-Host ""
@@ -156,6 +314,9 @@ if ($CompletionPromise -and $CompletionPromise -ne "null") {
     $completionPromiseYaml = "null"
 }
 
+# Prepare isolation mode YAML value
+$isolationModeYaml = if ($FreshContext) { "true" } else { "false" }
+
 # Get current UTC timestamp
 $timestamp = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
 
@@ -166,8 +327,13 @@ $stateContent = @"
 active: true
 iteration: 1
 max_iterations: $MaxIterations
+max_retries: $MaxRetries
 completion_promise: $completionPromiseYaml
+isolation_mode: $isolationModeYaml
 started_at: "$timestamp"
+continue_next: false
+current_task: null
+task_retries: {}
 ---
 
 $Prompt
@@ -175,16 +341,40 @@ $Prompt
 
 Set-Content -Path $stateFilePath -Value $stateContent -NoNewline
 
+# Initialize progress file (new loop or fresh start - skip if resuming)
+if (-not $Resume) {
+    $modeDisplay = if ($FreshContext) { "fresh-context" } else { "in-session" }
+    $progressContent = @"
+# Ralph Loop Progress Log
+
+## Session Info
+- Source: $Prompt
+- Started: $timestamp
+- Mode: $modeDisplay
+- Max Iterations: $MaxIterations
+- Max Retries: $MaxRetries
+- Completion Promise: $CompletionPromise
+
+## Iterations
+
+"@
+    Set-Content -Path ".claude/ralph-progress.md" -Value $progressContent
+}
+
 # Output setup message
 $maxIterDisplay = if ($MaxIterations -gt 0) { $MaxIterations } else { "unlimited" }
+$maxRetriesDisplay = if ($MaxRetries -gt 0) { "$MaxRetries per task" } else { "disabled" }
 $promiseDisplay = if ($CompletionPromise -ne "null") { "$CompletionPromise (ONLY output when TRUE - do not lie!)" } else { "none (runs forever)" }
+$isolationDisplay = if ($FreshContext) { "ENABLED (fresh context per iteration)" } else { "disabled (in-session)" }
 
 Write-Output @"
 Ralph loop activated in this session!
 
 Iteration: 1
 Max iterations: $maxIterDisplay
+Max retries: $maxRetriesDisplay
 Completion promise: $promiseDisplay
+Isolation mode: $isolationDisplay
 
 The stop hook is now active. When you try to exit, the SAME PROMPT will be
 fed back to you. You'll see your previous work in files, creating a

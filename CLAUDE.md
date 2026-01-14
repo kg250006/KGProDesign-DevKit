@@ -69,6 +69,44 @@ uv run scripts/prp_runner.py --prp-path PRPs/active/feature.md --output-format j
 uv run scripts/prp_runner.py --prp feature-name --output-format stream-json
 ```
 
+### Ralph Loop (Iterative Development)
+
+Ralph Loop is an iterative self-referential development loop that feeds Claude's output back as input until completion.
+
+```bash
+# Basic usage
+/$PLUGIN_NAME:ralph-loop "Build a REST API for todos" --completion-promise 'DONE' --max-iterations 20
+
+# Fresh context mode (prevents context rot for long tasks)
+/$PLUGIN_NAME:ralph-loop "Complex refactoring" --fresh-context --max-iterations 30 --completion-promise 'TASK COMPLETE'
+
+# Resume an interrupted loop
+/$PLUGIN_NAME:ralph-loop --resume
+```
+
+**Options:**
+- `--max-iterations N` - Maximum iterations before auto-stop (default: 20)
+- `--completion-promise 'TEXT'` - Promise phrase to output when complete
+- `--max-retries N` - Max retries per task before marking blocked (default: 0/disabled)
+- `--fresh-context` - Enable session isolation mode (fresh context each iteration)
+- `--resume` - Resume from previous progress file
+
+**Fresh Context Mode:**
+For long-running tasks (10+ iterations), `--fresh-context` enables session isolation:
+- Each iteration ends the session cleanly with zero context
+- Progress tracked in `.claude/ralph-progress.md`
+- Use `--resume` or `ralph-auto.sh` wrapper for continuation
+- Prevents context rot for complex multi-phase tasks
+
+**Monitoring:**
+```bash
+# View current iteration
+head -10 .claude/ralph-loop.local.md
+
+# View progress (fresh-context mode)
+cat .claude/ralph-progress.md
+```
+
 ---
 
 ## Framework Templates

@@ -279,12 +279,14 @@ mv tmp.json .deployment-profile.json
 |---------|--------------|-----------|
 | 404 Not Found | Wrong output dir | Check build.output in profile |
 | 502 Bad Gateway | App crashed OR NPM DNS stale | Reload NPM: `docker exec nginx-proxy-manager nginx -s reload` |
+| 502 persists after reload | Container not on npm-network | `docker network connect npm-network {app}-backend-prod` then reload |
 | Build timeout | Large dependencies | Increase timeout, cache deps |
 | SSL error | Cert expired | Renew certificate |
 | Env var undefined | Not synced to platform | Run env sync workflow |
 | Forms not working | Client-rendered | Use static HTML forms |
 | Slow deploys | No caching | Enable build cache |
-| Permission denied | Wrong SSH key | Check key path and permissions |
+| Permission denied (SSH) | Wrong SSH key OR wrong auth method | **CHECK profile first:** `jq '.azureVm.authMethod' .deployment-profile.json` |
+| az ssh vm fails | VM uses traditional SSH, not Azure AD | Use: `ssh -i {keyPath} user@host` per profile |
 | Disk full during build | Docker images accumulated | `docker system prune -af && journalctl --vacuum-time=7d` |
 | Frontend container unhealthy | Health check uses localhost (IPv6) | Change to 127.0.0.1 in Dockerfile |
 | Cron git fetch fails | SSH config missing | Create ~/.ssh/config with IdentityFile |
@@ -433,7 +435,69 @@ sudo mkdir -p /mnt/backups/postgres
 sudo chown {deploy-user}:{deploy-user} /mnt/backups/postgres
 ```
 
-### Issue 8: Port Already in Use / Address Already Bound (HIGH)
+### Issue 8: Wrong SSH Authentication Method Assumed (CRITICAL)
+**Symptoms:** `az ssh vm` fails with "Azure AD authentication not enabled" or similar
+**Root Cause:** Assumed Azure AD SSH works when VM is configured for traditional SSH key auth
+**CRITICAL LESSON:** A production incident occurred from this - VM was wrongly assumed to be down, leading to unnecessary subscription actions
+
+**Diagnosis:**
+```bash
+# FIRST: Check the deployment profile
+cat .deployment-profile.json | jq -r '.azureVm.authMethod'
+
+# Check SSH key path in profile
+cat .deployment-profile.json | jq -r '.azureVm.sshKeyPath, .azureVm.host, .azureVm.user'
+```
+
+**Fix:**
+```bash
+# If authMethod is "ssh-key" (traditional SSH):
+ssh -i ~/.ssh/kgp_vm_deploy kgpadmin@74.249.103.192 "echo 'Connection OK'"
+
+# If authMethod is "azure-ad":
+az ssh vm --resource-group myRG --name myVM
+```
+
+**Prevention:**
+- ALWAYS read `.deployment-profile.json` before any VM operation
+- Never assume Azure AD SSH is configured
+- Test connection with simple command before proceeding
+- Update profile with correct `authMethod` field
+
+### Issue 9: Containers Not Connected to NPM Network After Rebuild (CRITICAL)
+**Symptoms:** 502 Bad Gateway persists even after NPM reload following container rebuild
+**Root Cause:** Container rebuilds disconnect containers from external networks. NPM reload doesn't help if containers aren't on the network.
+
+**Diagnosis:**
+```bash
+# Check which networks container is on
+docker inspect {app}-backend-prod --format '{{range $key, $value := .NetworkSettings.Networks}}{{$key}} {{end}}'
+
+# Check which containers are on npm-network
+docker network inspect npm-network --format '{{range .Containers}}{{.Name}} {{end}}'
+
+# If container is NOT listed on npm-network, this is the problem
+```
+
+**Fix:**
+```bash
+# Reconnect containers to NPM network
+docker network connect npm-network {app}-backend-prod 2>/dev/null || true
+docker network connect npm-network {app}-frontend-prod 2>/dev/null || true
+
+# NOW reload NPM
+docker exec nginx-proxy-manager nginx -s reload
+
+# Verify
+sleep 3
+curl -sf https://{domain}/api/health
+```
+
+**Prevention:**
+- Add network reconnection step to deploy scripts BEFORE NPM reload
+- Use the full deploy pattern from SKILL.md Priority 11
+
+### Issue 10: Port Already in Use / Address Already Bound (HIGH)
 **Symptoms:** Container fails to start with "port is already allocated" or "address already in use"
 **Root Cause:** Another container or process is using the same host port
 **Diagnosis:**
@@ -489,9 +553,25 @@ services:
 ## Quick Diagnosis Tree
 
 ```
+Can't connect to VM?
+├─ FIRST: Check deployment profile for auth method!
+│   └─ cat .deployment-profile.json | jq '.azureVm.authMethod'
+├─ authMethod is "ssh-key"?
+│   └─ Use: ssh -i {sshKeyPath} {user}@{host}
+├─ authMethod is "azure-ad"?
+│   └─ Use: az ssh vm --resource-group {rg} --name {vm}
+└─ Still failing?
+    ├─ Check key permissions → chmod 600 ~/.ssh/key
+    ├─ Check NSG rules → az network nsg rule list
+    └─ Test simple command → ssh user@host "echo OK"
+
 Site not working?
 ├─ Getting 502?
-│   ├─ After deploy? → Reload NPM: docker exec nginx-proxy-manager nginx -s reload
+│   ├─ After deploy?
+│   │   ├─ FIRST: Check container is on npm-network
+│   │   │   └─ docker network inspect npm-network | grep {app}
+│   │   ├─ Not on network? → docker network connect npm-network {app}-backend-prod
+│   │   └─ THEN: Reload NPM → docker exec nginx-proxy-manager nginx -s reload
 │   ├─ Container stopped? → Check logs: docker logs {app}-backend-prod
 │   └─ NPM not running? → docker compose up -d nginx-proxy-manager
 ├─ Getting 404?
@@ -503,6 +583,16 @@ Site not working?
     ├─ Check logs → docker compose logs --tail 100
     ├─ OOM? → Increase memory limits
     └─ Missing env var? → Check .env.production
+
+502 persists after NPM reload?
+├─ Check container on npm-network
+│   └─ docker inspect {app}-backend-prod --format '{{range $key, $value := .NetworkSettings.Networks}}{{$key}} {{end}}'
+├─ Not on network?
+│   ├─ docker network connect npm-network {app}-backend-prod
+│   ├─ docker network connect npm-network {app}-frontend-prod
+│   └─ THEN reload: docker exec nginx-proxy-manager nginx -s reload
+└─ Still failing?
+    └─ Check NPM proxy host config → Forward hostname matches container name
 
 Cron not deploying?
 ├─ Check if running → grep CRON /var/log/syslog | tail -10

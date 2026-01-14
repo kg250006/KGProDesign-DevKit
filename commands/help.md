@@ -39,19 +39,39 @@ Start a Ralph loop in your current session.
 ```
 /$PLUGIN_NAME:ralph-loop "Refactor the cache layer" --max-iterations 20
 /$PLUGIN_NAME:ralph-loop "Add tests" --completion-promise "TESTS COMPLETE"
+/$PLUGIN_NAME:ralph-loop "Complex feature" --fresh-context --max-iterations 30
+/$PLUGIN_NAME:ralph-loop --resume
 ```
 
 **Options:**
-- `--max-iterations <n>` - Max iterations before auto-stop
+- `--max-iterations <n>` - Max iterations before auto-stop (default: 20)
 - `--completion-promise <text>` - Promise phrase to signal completion
+- `--max-retries <n>` - Max retries per task before marking blocked (default: 0/disabled)
+- `--fresh-context` - Enable session isolation mode (fresh context each iteration)
+- `--resume` - Resume from previous progress file
+- `--args-stdin` - Read all arguments from stdin (for multi-line prompts)
 
 **How it works:**
-1. Creates `.claude/.ralph-loop.local.md` state file
+1. Creates `.claude/ralph-loop.local.md` state file
 2. You work on the task
 3. When you try to exit, stop hook intercepts
 4. Same prompt fed back
 5. You see your previous work
 6. Continues until promise detected or max iterations
+
+### Fresh Context Mode (--fresh-context)
+
+For long-running tasks (10+ iterations), enables session isolation to prevent context rot:
+- Each iteration ends the session cleanly with zero context
+- Progress tracked in `.claude/ralph-progress.md`
+- Use `--resume` to continue manually, or use wrapper scripts for automatic continuation
+- Prevents degraded performance from overly long conversations
+
+**Wrapper scripts for automatic respawn:**
+```bash
+./scripts/ralph-auto.sh     # macOS/Linux
+./scripts/ralph-auto.ps1    # Windows
+```
 
 ---
 
@@ -66,8 +86,39 @@ Cancel an active Ralph loop (removes the loop state file).
 
 **How it works:**
 - Checks for active loop state file
-- Removes `.claude/.ralph-loop.local.md`
+- Removes `.claude/ralph-loop.local.md`
 - Reports cancellation with iteration count
+
+---
+
+## Available Agents
+
+Use the Task tool with `subagent_type` to delegate work to specialized agents during Ralph Loop iterations:
+
+| Agent | Specialization | Use For |
+|-------|---------------|---------|
+| `backend-engineer` | Server-side development | APIs, auth, services, business logic, scripts |
+| `frontend-engineer` | UI development | Components, accessibility, performance, responsive design |
+| `data-engineer` | Database & data | Schema design, migrations, queries, data modeling |
+| `qa-engineer` | Quality assurance | Testing, security, code review, quality analysis |
+| `devops-engineer` | Infrastructure | CI/CD, Docker, infrastructure, monitoring |
+| `document-specialist` | Documentation | PRDs, technical writing, README files, API docs |
+| `project-coordinator` | Project management | Sprint planning, task breakdown, progress tracking |
+
+**How to delegate to agents:**
+
+Include instructions in your Ralph Loop prompt to leverage agents:
+
+```
+"For API implementation tasks, use the Task tool with subagent_type='backend-engineer'"
+"Delegate testing to the qa-engineer agent"
+"Use frontend-engineer for UI components"
+```
+
+**Example prompt with agent delegation:**
+```
+/$PLUGIN_NAME:ralph-loop "Build a REST API with tests. Use backend-engineer for API code, qa-engineer for tests, and document-specialist for API docs." --completion-promise "API COMPLETE" --max-iterations 25
+```
 
 ---
 
@@ -113,12 +164,18 @@ You'll see Ralph:
 - Tasks requiring iteration and refinement
 - Iterative development with self-correction
 - Greenfield projects
+- Complex multi-phase implementations (use `--fresh-context`)
+- PRP execution with multiple tasks
 
 **Not good for:**
 - Tasks requiring human judgment or design decisions
 - One-shot operations
 - Tasks with unclear success criteria
 - Debugging production issues (use targeted debugging instead)
+
+**Choosing the right mode:**
+- **In-session (default):** Quick iterations (< 10), interactive work
+- **Fresh-context (`--fresh-context`):** Long tasks (10+ iterations), complex PRPs, prevents context rot
 
 ## Learn More
 
