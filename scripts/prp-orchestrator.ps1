@@ -38,18 +38,33 @@ $TaskTemplate = Join-Path $PluginRoot "templates\current-task.md.template"
 # Safety configuration
 $BlockedTools = "WebFetch,WebSearch,KillShell,Task,NotebookEdit"
 
-# Check pre-requisites for isolated execution
+# Check pre-requisites for isolated execution and resolve paths
+# Returns hashtable with resolved executable paths
 function Test-Prerequisites {
     $missing = @()
+    $paths = @{}
 
     # Node.js is required for task extraction
-    if (-not (Get-Command "node" -ErrorAction SilentlyContinue)) {
+    $nodeCmd = Get-Command "node" -ErrorAction SilentlyContinue
+    if (-not $nodeCmd) {
         $missing += "node (required for PRP parsing)"
+    } else {
+        $paths.Node = $nodeCmd.Source
     }
 
     # Claude CLI must be installed
-    if (-not (Get-Command "claude" -ErrorAction SilentlyContinue)) {
+    # IMPORTANT: On Windows, npm creates three wrappers: claude (POSIX), claude.cmd (CMD), claude.ps1 (PowerShell)
+    # We MUST use claude.cmd because System.Diagnostics.Process with UseShellExecute=$false
+    # cannot execute POSIX shell scripts directly
+    $claudeCmd = Get-Command "claude.cmd" -ErrorAction SilentlyContinue
+    if (-not $claudeCmd) {
+        # Fallback to 'claude' for non-Windows or if .cmd doesn't exist
+        $claudeCmd = Get-Command "claude" -ErrorAction SilentlyContinue
+    }
+    if (-not $claudeCmd) {
         $missing += "claude (Claude CLI must be installed)"
+    } else {
+        $paths.Claude = $claudeCmd.Source
     }
 
     if ($missing.Count -gt 0) {
@@ -61,10 +76,13 @@ function Test-Prerequisites {
         Write-Host "Install missing dependencies and try again." -ForegroundColor Red
         exit 1
     }
+
+    return $paths
 }
 
-# Run pre-requisite check
-Test-Prerequisites
+# Run pre-requisite check and get resolved paths
+$ResolvedPaths = Test-Prerequisites
+$ClaudePath = $ResolvedPaths.Claude
 
 # Show help
 if ($Help -or [string]::IsNullOrWhiteSpace($PrpFile)) {
@@ -258,7 +276,8 @@ $($Task.acceptance_criteria)
                 # CRITICAL: Use --dangerously-skip-permissions to prevent interactive prompts that cause hangs
                 # Safety is enforced via --disallowedTools instead
                 $pinfo = New-Object System.Diagnostics.ProcessStartInfo
-                $pinfo.FileName = "claude"
+                # Use resolved full path - UseShellExecute=$false doesn't search PATH
+                $pinfo.FileName = $ClaudePath
 
                 $ClaudePrompt = "Read .claude/current-task.md and execute the task described. When complete, simply exit."
                 if ($NoSafety) {
