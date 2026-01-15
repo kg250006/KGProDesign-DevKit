@@ -15,41 +15,141 @@ PLUGIN_ROOT="$(dirname "$SCRIPT_DIR")"
 # Task template file
 TASK_TEMPLATE="$PLUGIN_ROOT/templates/current-task.md.template"
 
-# macOS compatibility: use gtimeout if available, otherwise use bash fallback
+# Check pre-requisites for isolated execution
+check_prerequisites() {
+  local missing=()
+
+  # Node.js is required for task extraction
+  if ! command -v node &> /dev/null; then
+    missing+=("node (required for PRP parsing)")
+  fi
+
+  # Claude CLI must be installed
+  if ! command -v claude &> /dev/null; then
+    missing+=("claude (Claude CLI must be installed)")
+  fi
+
+  # tmux is required on macOS/Linux when no native timeout command
+  if [[ "$(uname)" != "MINGW"* ]] && [[ "$(uname)" != "CYGWIN"* ]]; then
+    if ! command -v timeout &> /dev/null && ! command -v gtimeout &> /dev/null; then
+      if ! command -v tmux &> /dev/null; then
+        missing+=("tmux (required for task timeout on macOS/Linux)")
+        missing+=("  Install with: brew install tmux")
+      fi
+    fi
+  fi
+
+  if [[ ${#missing[@]} -gt 0 ]]; then
+    echo "Error: Missing pre-requisites for isolated PRP execution:" >&2
+    for item in "${missing[@]}"; do
+      echo "  - $item" >&2
+    done
+    echo "" >&2
+    echo "Install missing dependencies and try again." >&2
+    exit 1
+  fi
+}
+
+# Cleanup orphaned tmux sessions from previous interrupted runs
+cleanup_orphaned_sessions() {
+  if command -v tmux &> /dev/null; then
+    local orphans
+    orphans=$(tmux list-sessions -F '#{session_name}' 2>/dev/null | grep '^prp-task-' || true)
+    if [[ -n "$orphans" ]]; then
+      echo "$orphans" | while read -r session; do
+        echo "Cleaning up orphaned session: $session" >&2
+        tmux kill-session -t "$session" 2>/dev/null || true
+      done
+    fi
+  fi
+}
+
+# tmux-based timeout for macOS/Linux
+# Runs command in a pseudo-terminal with proper stdin handling
+tmux_timeout() {
+  local timeout_seconds="$1"
+  shift
+
+  # Generate unique session name
+  local session_name="prp-task-$$-$(date +%s)"
+
+  # Properly quote arguments for tmux command
+  # This preserves quote structure through the tmux invocation
+  local cmd=""
+  for arg in "$@"; do
+    cmd="$cmd $(printf '%q' "$arg")"
+  done
+
+  # Cleanup handler
+  cleanup_session() {
+    tmux kill-session -t "$session_name" 2>/dev/null || true
+  }
+  trap cleanup_session EXIT INT TERM
+
+  # Create detached tmux session running the command
+  # Use remain-on-exit to capture exit status after completion
+  # Note: cmd already includes bash -c from caller, don't double-wrap
+  if ! tmux new-session -d -s "$session_name" -x 200 -y 50 "$cmd" 2>/dev/null; then
+    echo "Error: Failed to create tmux session" >&2
+    trap - EXIT
+    return 1
+  fi
+
+  # Enable remain-on-exit to preserve pane after command exits
+  tmux set-option -t "$session_name" remain-on-exit on 2>/dev/null
+
+  # Poll for completion or timeout
+  local start_time=$(date +%s)
+  local elapsed=0
+
+  while [[ $elapsed -lt $timeout_seconds ]]; do
+    sleep 1
+    elapsed=$(($(date +%s) - start_time))
+
+    # Check if command finished (pane is dead)
+    local pane_dead
+    pane_dead=$(tmux display-message -t "$session_name" -p '#{pane_dead}' 2>/dev/null) || {
+      # Session doesn't exist - unexpected termination
+      trap - EXIT
+      return 1
+    }
+
+    if [[ "$pane_dead" == "1" ]]; then
+      # Command completed - capture output
+      tmux capture-pane -t "$session_name" -p -S - -E - 2>/dev/null
+
+      # Get exit status
+      local exit_status
+      exit_status=$(tmux display-message -t "$session_name" -p '#{pane_dead_status}' 2>/dev/null)
+
+      # Cleanup
+      tmux kill-session -t "$session_name" 2>/dev/null
+      trap - EXIT
+
+      return "${exit_status:-0}"
+    fi
+  done
+
+  # Timeout reached
+  echo "Timeout: Command exceeded ${timeout_seconds}s limit" >&2
+  tmux capture-pane -t "$session_name" -p -S - -E - 2>/dev/null
+  tmux kill-session -t "$session_name" 2>/dev/null
+  trap - EXIT
+
+  return 124
+}
+
 if command -v timeout &> /dev/null; then
   TIMEOUT_CMD="timeout"
 elif command -v gtimeout &> /dev/null; then
   TIMEOUT_CMD="gtimeout"
+elif command -v tmux &> /dev/null; then
+  TIMEOUT_CMD="tmux_timeout"
 else
-  TIMEOUT_CMD="bash_timeout"
+  # This shouldn't happen if check_prerequisites passed
+  echo "Error: No timeout mechanism available" >&2
+  exit 1
 fi
-
-# Pure bash timeout function for macOS without coreutils
-bash_timeout() {
-  local timeout_seconds="$1"
-  shift
-
-  # Run command in background
-  "$@" &
-  local pid=$!
-
-  # Start a watchdog in background
-  (
-    sleep "$timeout_seconds"
-    kill -TERM "$pid" 2>/dev/null
-  ) &
-  local watchdog=$!
-
-  # Wait for command to finish
-  wait "$pid" 2>/dev/null
-  local exit_code=$?
-
-  # Kill watchdog if command finished before timeout
-  kill "$watchdog" 2>/dev/null
-  wait "$watchdog" 2>/dev/null
-
-  return $exit_code
-}
 
 # Default values
 MAX_RETRIES=3
@@ -60,6 +160,10 @@ SKIP_VALIDATION=false
 
 # Safety configuration
 BLOCKED_TOOLS="WebFetch,WebSearch,KillShell,Task,NotebookEdit"
+
+# Run prerequisite checks and cleanup orphaned sessions
+check_prerequisites
+cleanup_orphaned_sessions
 
 # Show help function
 show_help() {
@@ -349,17 +453,21 @@ EOF
       echo "Task $TASK_ID: SUCCESS (dry-run)"
     else
       # Build Claude command based on safety mode
+      # CRITICAL: Use --dangerously-skip-permissions to bypass all permission checks
+      # The -p flag already skips the workspace trust dialog
+      # Safety is enforced via --disallowedTools instead
       CLAUDE_PROMPT="Read .claude/current-task.md and execute the task described. When complete, simply exit."
 
       if [[ "$NO_SAFETY" == "true" ]]; then
-        # Standard mode with permission prompts (slower but maximum safety)
-        CLAUDE_CMD="claude -p"
+        # User explicitly disabled safety - use standard permissions
+        CLAUDE_FULL_CMD="claude -p '$CLAUDE_PROMPT'"
       else
-        # Safety mode: skip permissions but block dangerous tools and patterns
-        CLAUDE_CMD="claude -p --dangerously-skip-permissions --disallowedTools $BLOCKED_TOOLS"
+        # Default: skip permissions but block dangerous tools
+        CLAUDE_FULL_CMD="claude --dangerously-skip-permissions --disallowedTools $BLOCKED_TOOLS -p '$CLAUDE_PROMPT'"
       fi
 
-      if $TIMEOUT_CMD "$TIMEOUT" $CLAUDE_CMD "$CLAUDE_PROMPT" 2>&1; then
+      # Execute with timeout (works with both native timeout and tmux_timeout)
+      if $TIMEOUT_CMD "$TIMEOUT" bash -c "$CLAUDE_FULL_CMD" 2>&1; then
         SUCCESS=true
         SUCCEEDED=$((SUCCEEDED + 1))
         echo "Status: SUCCESS" >> "$PROGRESS_FILE"

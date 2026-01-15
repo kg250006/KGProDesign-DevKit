@@ -17,6 +17,15 @@ param(
 
     [int]$Timeout = 300,
 
+    [Alias("dry-run")]
+    [switch]$DryRun,
+
+    [Alias("no-safety")]
+    [switch]$NoSafety,
+
+    [Alias("skip-validation")]
+    [switch]$SkipValidation,
+
     [Alias("h")]
     [switch]$Help
 )
@@ -25,6 +34,37 @@ $ErrorActionPreference = "Stop"
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $PluginRoot = Split-Path -Parent $ScriptDir
 $TaskTemplate = Join-Path $PluginRoot "templates\current-task.md.template"
+
+# Safety configuration
+$BlockedTools = "WebFetch,WebSearch,KillShell,Task,NotebookEdit"
+
+# Check pre-requisites for isolated execution
+function Test-Prerequisites {
+    $missing = @()
+
+    # Node.js is required for task extraction
+    if (-not (Get-Command "node" -ErrorAction SilentlyContinue)) {
+        $missing += "node (required for PRP parsing)"
+    }
+
+    # Claude CLI must be installed
+    if (-not (Get-Command "claude" -ErrorAction SilentlyContinue)) {
+        $missing += "claude (Claude CLI must be installed)"
+    }
+
+    if ($missing.Count -gt 0) {
+        Write-Host "Error: Missing pre-requisites for isolated PRP execution:" -ForegroundColor Red
+        foreach ($item in $missing) {
+            Write-Host "  - $item" -ForegroundColor Red
+        }
+        Write-Host ""
+        Write-Host "Install missing dependencies and try again." -ForegroundColor Red
+        exit 1
+    }
+}
+
+# Run pre-requisite check
+Test-Prerequisites
 
 # Show help
 if ($Help -or [string]::IsNullOrWhiteSpace($PrpFile)) {
@@ -40,6 +80,9 @@ ARGUMENTS:
 OPTIONS:
   -MaxRetries N     Max retry attempts per task (default: 3)
   -Timeout M        Timeout in seconds per task (default: 300)
+  -DryRun           Test mode - echo commands instead of running Claude
+  -NoSafety         Disable safety mode (use standard permissions)
+  -SkipValidation   Skip acceptance criteria validation
   -Help, -h         Show this help message
 
 DESCRIPTION:
@@ -117,6 +160,9 @@ Write-Host "Total Tasks: $Total"
 Write-Host "Max Retries: $MaxRetries"
 Write-Host "Timeout: ${Timeout}s per task"
 Write-Host "Progress: $ProgressFile"
+if ($DryRun) {
+    Write-Host "Mode: DRY RUN (no Claude sessions)"
+}
 Write-Host "=========================================="
 Write-Host ""
 
@@ -196,33 +242,57 @@ $($Task.acceptance_criteria)
         Add-Content -Path $ProgressFile -Value "### Task $($Task.id) - Attempt $Attempt - $AttemptTimestamp"
 
         try {
-            # Spawn Claude with timeout using Start-Process
-            $pinfo = New-Object System.Diagnostics.ProcessStartInfo
-            $pinfo.FileName = "claude"
-            $pinfo.Arguments = "-p `"Read .claude/current-task.md and execute the task described. When complete, simply exit.`""
-            $pinfo.RedirectStandardOutput = $true
-            $pinfo.RedirectStandardError = $true
-            $pinfo.UseShellExecute = $false
-            $pinfo.CreateNoWindow = $true
-
-            $process = New-Object System.Diagnostics.Process
-            $process.StartInfo = $pinfo
-            $process.Start() | Out-Null
-
-            $completed = $process.WaitForExit($Timeout * 1000)
-
-            if (-not $completed) {
-                $process.Kill()
-                throw "Timeout after $Timeout seconds"
-            }
-
-            if ($process.ExitCode -eq 0) {
+            if ($DryRun) {
+                # Dry run mode - simulate success
+                Write-Host "[DRY RUN] Would execute: claude -p `"Read .claude/current-task.md and execute task $($Task.id)`""
+                Write-Host "[DRY RUN] Task file contents:"
+                Get-Content -Path $TaskFile -TotalCount 10 | ForEach-Object { Write-Host "  $_" }
+                Write-Host "  ..."
+                Start-Sleep -Milliseconds 500
                 $Success = $true
                 $Succeeded++
-                Add-Content -Path $ProgressFile -Value "Status: SUCCESS"
-                Write-Host "Task $($Task.id): SUCCESS" -ForegroundColor Green
+                Add-Content -Path $ProgressFile -Value "Status: SUCCESS (dry-run)"
+                Write-Host "Task $($Task.id): SUCCESS (dry-run)"
             } else {
-                throw "Exit code: $($process.ExitCode)"
+                # Spawn Claude with timeout using Start-Process
+                # CRITICAL: Use --dangerously-skip-permissions to prevent interactive prompts that cause hangs
+                # Safety is enforced via --disallowedTools instead
+                $pinfo = New-Object System.Diagnostics.ProcessStartInfo
+                $pinfo.FileName = "claude"
+
+                $ClaudePrompt = "Read .claude/current-task.md and execute the task described. When complete, simply exit."
+                if ($NoSafety) {
+                    # User explicitly disabled safety - use standard permissions
+                    $pinfo.Arguments = "-p `"$ClaudePrompt`""
+                } else {
+                    # Default: skip permissions but block dangerous tools
+                    $pinfo.Arguments = "--dangerously-skip-permissions --disallowedTools $BlockedTools -p `"$ClaudePrompt`""
+                }
+
+                $pinfo.RedirectStandardOutput = $true
+                $pinfo.RedirectStandardError = $true
+                $pinfo.UseShellExecute = $false
+                $pinfo.CreateNoWindow = $true
+
+                $process = New-Object System.Diagnostics.Process
+                $process.StartInfo = $pinfo
+                $process.Start() | Out-Null
+
+                $completed = $process.WaitForExit($Timeout * 1000)
+
+                if (-not $completed) {
+                    $process.Kill()
+                    throw "Timeout after $Timeout seconds"
+                }
+
+                if ($process.ExitCode -eq 0) {
+                    $Success = $true
+                    $Succeeded++
+                    Add-Content -Path $ProgressFile -Value "Status: SUCCESS"
+                    Write-Host "Task $($Task.id): SUCCESS" -ForegroundColor Green
+                } else {
+                    throw "Exit code: $($process.ExitCode)"
+                }
             }
         } catch {
             $Retries++
