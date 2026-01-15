@@ -1,0 +1,2009 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="urban-gray" data-mode="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KGProDesign Style Guide 2026</title>
+    
+    <!-- Google Fonts - Sora -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* ============================================ */
+        /* CSS CUSTOM PROPERTIES - THEME SYSTEM */
+        /* ============================================ */
+        
+        :root {
+            /* ---------------------------------------- */
+            /* URBAN GRAY PEARL - LIGHT MODE (Default) */
+            /* ---------------------------------------- */
+            --kgp-primary-50: #F8FAFC;
+            --kgp-primary-100: #F1F5F9;
+            --kgp-primary-200: #E2E8F0;
+            --kgp-primary-300: #CBD5E1;
+            --kgp-primary-400: #94A3B8;
+            --kgp-primary-500: #64748B;
+            --kgp-primary-600: #475569;
+            --kgp-primary-700: #334155;
+            --kgp-primary-800: #1E293B;
+            --kgp-primary-900: #0F172A;
+            
+            --kgp-accent: #3B82F6;
+            --kgp-accent-light: #DBEAFE;
+            --kgp-accent-dark: #1D4ED8;
+            --kgp-accent-hover: #2563EB;
+            
+            --kgp-bg-base: #FFFFFF;
+            --kgp-bg-surface: #FAFAFA;
+            --kgp-bg-elevated: #F4F4F5;
+            --kgp-bg-muted: #E4E4E7;
+            
+            --kgp-text-primary: #18181B;
+            --kgp-text-secondary: #52525B;
+            --kgp-text-muted: #A1A1AA;
+            --kgp-text-on-primary: #FFFFFF;
+            --kgp-text-on-accent: #FFFFFF;
+            
+            --kgp-border-light: #E5E7EB;
+            --kgp-border-medium: #D4D4D8;
+            --kgp-border-focus: #3B82F6;
+            
+            --kgp-success: #22C55E;
+            --kgp-success-light: #DCFCE7;
+            --kgp-warning: #F59E0B;
+            --kgp-warning-light: #FEF3C7;
+            --kgp-error: #EF4444;
+            --kgp-error-light: #FEE2E2;
+            --kgp-info: #3B82F6;
+            --kgp-info-light: #DBEAFE;
+            
+            --kgp-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --kgp-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --kgp-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --kgp-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            
+            /* Typography */
+            --kgp-font-family: 'Sora', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            --kgp-font-mono: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, monospace;
+            
+            --kgp-text-xs: 12px;
+            --kgp-text-sm: 14px;
+            --kgp-text-base: 16px;
+            --kgp-text-lg: 18px;
+            --kgp-text-xl: 20px;
+            --kgp-text-2xl: 24px;
+            --kgp-text-3xl: 30px;
+            --kgp-text-4xl: 36px;
+            
+            --kgp-font-light: 300;
+            --kgp-font-regular: 400;
+            --kgp-font-medium: 500;
+            --kgp-font-semibold: 600;
+            --kgp-font-bold: 700;
+            
+            --kgp-leading-tight: 1.25;
+            --kgp-leading-normal: 1.5;
+            --kgp-leading-relaxed: 1.75;
+            
+            /* Spacing */
+            --kgp-space-xs: 4px;
+            --kgp-space-sm: 8px;
+            --kgp-space-md: 12px;
+            --kgp-space-lg: 16px;
+            --kgp-space-xl: 24px;
+            --kgp-space-2xl: 32px;
+            --kgp-space-3xl: 48px;
+            --kgp-space-4xl: 64px;
+            
+            /* Border Radius */
+            --kgp-radius-sm: 4px;
+            --kgp-radius-md: 8px;
+            --kgp-radius-lg: 12px;
+            --kgp-radius-xl: 16px;
+            --kgp-radius-2xl: 24px;
+            --kgp-radius-full: 9999px;
+            
+            /* Component Sizes */
+            --kgp-button-height: 44px;
+            --kgp-input-height: 48px;
+            --kgp-icon-size: 24px;
+            --kgp-icon-size-lg: 36px;
+            --kgp-appbar-height: 56px;
+            --kgp-card-padding: 20px;
+            
+            /* Transitions */
+            --kgp-transition-fast: 150ms ease-in-out;
+            --kgp-transition-base: 250ms ease-in-out;
+            --kgp-transition-slow: 350ms ease-in-out;
+            
+            /* Z-Index */
+            --kgp-z-dropdown: 1000;
+            --kgp-z-sticky: 1020;
+            --kgp-z-fixed: 1030;
+            --kgp-z-modal-backdrop: 1040;
+            --kgp-z-modal: 1050;
+            --kgp-z-tooltip: 1070;
+        }
+        
+        /* ---------------------------------------- */
+        /* URBAN GRAY PEARL - DARK MODE */
+        /* ---------------------------------------- */
+        [data-theme="urban-gray"][data-mode="dark"] {
+            --kgp-primary-50: #FAFAFA;
+            --kgp-primary-100: #F4F4F5;
+            --kgp-primary-200: #E4E4E7;
+            --kgp-primary-300: #D4D4D8;
+            --kgp-primary-400: #A1A1AA;
+            --kgp-primary-500: #71717A;
+            --kgp-primary-600: #52525B;
+            --kgp-primary-700: #3F3F46;
+            --kgp-primary-800: #27272A;
+            --kgp-primary-900: #18181B;
+            
+            --kgp-accent: #60A5FA;
+            --kgp-accent-light: #1E3A5F;
+            --kgp-accent-dark: #93C5FD;
+            --kgp-accent-hover: #3B82F6;
+            
+            --kgp-bg-base: #09090B;
+            --kgp-bg-surface: #18181B;
+            --kgp-bg-elevated: #27272A;
+            --kgp-bg-muted: #3F3F46;
+            
+            --kgp-text-primary: #FAFAFA;
+            --kgp-text-secondary: #D4D4D8;
+            --kgp-text-muted: #71717A;
+            --kgp-text-on-primary: #09090B;
+            --kgp-text-on-accent: #09090B;
+            
+            --kgp-border-light: #27272A;
+            --kgp-border-medium: #3F3F46;
+            --kgp-border-focus: #60A5FA;
+            
+            --kgp-success: #4ADE80;
+            --kgp-success-light: #14532D;
+            --kgp-warning: #FBBF24;
+            --kgp-warning-light: #713F12;
+            --kgp-error: #F87171;
+            --kgp-error-light: #7F1D1D;
+            --kgp-info: #60A5FA;
+            --kgp-info-light: #1E3A8A;
+            
+            --kgp-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+            --kgp-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+            --kgp-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+            --kgp-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
+        }
+        
+        /* ---------------------------------------- */
+        /* STILL NIGHT PEARL - LIGHT MODE */
+        /* ---------------------------------------- */
+        [data-theme="still-night"][data-mode="light"] {
+            --kgp-primary-50: #EEF2FF;
+            --kgp-primary-100: #E0E7FF;
+            --kgp-primary-200: #C7D2FE;
+            --kgp-primary-300: #A5B4FC;
+            --kgp-primary-400: #818CF8;
+            --kgp-primary-500: #6366F1;
+            --kgp-primary-600: #4F46E5;
+            --kgp-primary-700: #4338CA;
+            --kgp-primary-800: #3730A3;
+            --kgp-primary-900: #312E81;
+            
+            --kgp-accent: #4F46E5;
+            --kgp-accent-light: #EEF2FF;
+            --kgp-accent-dark: #3730A3;
+            --kgp-accent-hover: #4338CA;
+            
+            --kgp-bg-base: #FFFFFF;
+            --kgp-bg-surface: #FAFAFF;
+            --kgp-bg-elevated: #EEF2FF;
+            --kgp-bg-muted: #E0E7FF;
+            
+            --kgp-text-primary: #1E1B4B;
+            --kgp-text-secondary: #4B5563;
+            --kgp-text-muted: #9CA3AF;
+            --kgp-text-on-primary: #FFFFFF;
+            --kgp-text-on-accent: #FFFFFF;
+            
+            --kgp-border-light: #E0E7FF;
+            --kgp-border-medium: #C7D2FE;
+            --kgp-border-focus: #4F46E5;
+            
+            --kgp-success: #22C55E;
+            --kgp-success-light: #DCFCE7;
+            --kgp-warning: #EAB308;
+            --kgp-warning-light: #FEF9C3;
+            --kgp-error: #EF4444;
+            --kgp-error-light: #FEE2E2;
+            --kgp-info: #0EA5E9;
+            --kgp-info-light: #E0F2FE;
+            
+            --kgp-shadow-sm: 0 1px 2px 0 rgba(79, 70, 229, 0.05);
+            --kgp-shadow-md: 0 4px 6px -1px rgba(79, 70, 229, 0.1), 0 2px 4px -1px rgba(79, 70, 229, 0.06);
+            --kgp-shadow-lg: 0 10px 15px -3px rgba(79, 70, 229, 0.1), 0 4px 6px -2px rgba(79, 70, 229, 0.05);
+            --kgp-shadow-xl: 0 20px 25px -5px rgba(79, 70, 229, 0.1), 0 10px 10px -5px rgba(79, 70, 229, 0.04);
+        }
+        
+        /* ---------------------------------------- */
+        /* STILL NIGHT PEARL - DARK MODE */
+        /* ---------------------------------------- */
+        [data-theme="still-night"][data-mode="dark"] {
+            --kgp-primary-50: #EEF2FF;
+            --kgp-primary-100: #E0E7FF;
+            --kgp-primary-200: #C7D2FE;
+            --kgp-primary-300: #A5B4FC;
+            --kgp-primary-400: #818CF8;
+            --kgp-primary-500: #6366F1;
+            --kgp-primary-600: #4F46E5;
+            --kgp-primary-700: #4338CA;
+            --kgp-primary-800: #3730A3;
+            --kgp-primary-900: #312E81;
+            
+            --kgp-accent: #818CF8;
+            --kgp-accent-light: #312E81;
+            --kgp-accent-dark: #A5B4FC;
+            --kgp-accent-hover: #6366F1;
+            
+            --kgp-bg-base: #0F0E1A;
+            --kgp-bg-surface: #1A1830;
+            --kgp-bg-elevated: #252347;
+            --kgp-bg-muted: #312E81;
+            
+            --kgp-text-primary: #EEF2FF;
+            --kgp-text-secondary: #C7D2FE;
+            --kgp-text-muted: #6366F1;
+            --kgp-text-on-primary: #0F0E1A;
+            --kgp-text-on-accent: #0F0E1A;
+            
+            --kgp-border-light: #3730A3;
+            --kgp-border-medium: #4338CA;
+            --kgp-border-focus: #818CF8;
+            
+            --kgp-success: #4ADE80;
+            --kgp-success-light: #14532D;
+            --kgp-warning: #FACC15;
+            --kgp-warning-light: #713F12;
+            --kgp-error: #F87171;
+            --kgp-error-light: #7F1D1D;
+            --kgp-info: #38BDF8;
+            --kgp-info-light: #0C4A6E;
+            
+            --kgp-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
+            --kgp-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.4);
+            --kgp-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.4);
+            --kgp-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.6), 0 10px 10px -5px rgba(0, 0, 0, 0.4);
+        }
+        
+        /* ============================================ */
+        /* BASE STYLES */
+        /* ============================================ */
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: var(--kgp-font-family);
+            background-color: var(--kgp-bg-base);
+            color: var(--kgp-text-primary);
+            line-height: var(--kgp-leading-normal);
+            transition: background-color var(--kgp-transition-base), color var(--kgp-transition-base);
+        }
+        
+        /* ============================================ */
+        /* STICKY HEADER / THEME SWITCHER */
+        /* ============================================ */
+        
+        .sticky-header {
+            position: sticky;
+            top: 0;
+            z-index: var(--kgp-z-sticky);
+            background: var(--kgp-bg-surface);
+            border-bottom: 1px solid var(--kgp-border-light);
+            padding: var(--kgp-space-lg) var(--kgp-space-xl);
+            backdrop-filter: blur(12px);
+            transition: all var(--kgp-transition-base);
+        }
+        
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: var(--kgp-space-lg);
+            flex-wrap: wrap;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: var(--kgp-space-md);
+        }
+        
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--kgp-accent), var(--kgp-accent-hover));
+            border-radius: var(--kgp-radius-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--kgp-text-on-accent);
+            font-weight: var(--kgp-font-bold);
+            font-size: var(--kgp-text-lg);
+        }
+        
+        .logo-text {
+            font-size: var(--kgp-text-lg);
+            font-weight: var(--kgp-font-bold);
+            color: var(--kgp-text-primary);
+        }
+        
+        .logo-text span {
+            color: var(--kgp-accent);
+        }
+        
+        .logo-badge {
+            font-size: 10px;
+            font-weight: var(--kgp-font-semibold);
+            color: var(--kgp-text-muted);
+            background: var(--kgp-bg-elevated);
+            padding: 4px 8px;
+            border-radius: var(--kgp-radius-sm);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: var(--kgp-space-md);
+        }
+        
+        .theme-switcher {
+            display: flex;
+            background: var(--kgp-bg-elevated);
+            border-radius: var(--kgp-radius-lg);
+            padding: 4px;
+            gap: 4px;
+        }
+        
+        .theme-btn {
+            padding: 10px 16px;
+            border: none;
+            background: transparent;
+            color: var(--kgp-text-secondary);
+            font-size: var(--kgp-text-sm);
+            font-weight: var(--kgp-font-medium);
+            border-radius: var(--kgp-radius-md);
+            cursor: pointer;
+            transition: all var(--kgp-transition-fast);
+            white-space: nowrap;
+        }
+        
+        .theme-btn:hover {
+            color: var(--kgp-text-primary);
+        }
+        
+        .theme-btn.active {
+            background: var(--kgp-bg-base);
+            color: var(--kgp-accent);
+            box-shadow: var(--kgp-shadow-sm);
+        }
+        
+        .mode-toggle {
+            display: flex;
+            align-items: center;
+            gap: var(--kgp-space-sm);
+            padding: 8px 12px;
+            background: var(--kgp-bg-elevated);
+            border-radius: var(--kgp-radius-lg);
+            cursor: pointer;
+            transition: all var(--kgp-transition-fast);
+        }
+        
+        .mode-toggle:hover {
+            background: var(--kgp-bg-muted);
+        }
+        
+        .mode-icon {
+            width: 20px;
+            height: 20px;
+            color: var(--kgp-accent);
+        }
+        
+        .mode-label {
+            font-size: var(--kgp-text-sm);
+            font-weight: var(--kgp-font-medium);
+            color: var(--kgp-text-secondary);
+        }
+        
+        /* ============================================ */
+        /* MAIN CONTENT */
+        /* ============================================ */
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: var(--kgp-space-3xl) var(--kgp-space-xl);
+        }
+        
+        .hero {
+            text-align: center;
+            margin-bottom: var(--kgp-space-4xl);
+            padding: var(--kgp-space-4xl) 0;
+            border-bottom: 1px solid var(--kgp-border-light);
+        }
+        
+        .hero h1 {
+            font-size: 48px;
+            font-weight: var(--kgp-font-bold);
+            margin-bottom: var(--kgp-space-lg);
+            background: linear-gradient(135deg, var(--kgp-text-primary), var(--kgp-accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .hero p {
+            font-size: var(--kgp-text-xl);
+            color: var(--kgp-text-secondary);
+            max-width: 700px;
+            margin: 0 auto var(--kgp-space-xl);
+        }
+        
+        .hero-badges {
+            display: flex;
+            justify-content: center;
+            gap: var(--kgp-space-md);
+            flex-wrap: wrap;
+        }
+        
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--kgp-space-sm);
+            padding: 8px 16px;
+            background: var(--kgp-bg-elevated);
+            border-radius: var(--kgp-radius-full);
+            font-size: var(--kgp-text-sm);
+            color: var(--kgp-text-secondary);
+        }
+        
+        .hero-badge-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--kgp-accent);
+        }
+        
+        /* ============================================ */
+        /* SECTIONS */
+        /* ============================================ */
+        
+        .section {
+            margin-bottom: var(--kgp-space-4xl);
+        }
+        
+        .section-header {
+            margin-bottom: var(--kgp-space-2xl);
+        }
+        
+        .section-title {
+            font-size: var(--kgp-text-2xl);
+            font-weight: var(--kgp-font-semibold);
+            color: var(--kgp-text-primary);
+            margin-bottom: var(--kgp-space-sm);
+            display: flex;
+            align-items: center;
+            gap: var(--kgp-space-md);
+        }
+        
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 28px;
+            background: var(--kgp-accent);
+            border-radius: 2px;
+        }
+        
+        .section-description {
+            color: var(--kgp-text-secondary);
+            font-size: var(--kgp-text-base);
+            margin-left: 20px;
+        }
+        
+        .subsection {
+            background: var(--kgp-bg-surface);
+            border: 1px solid var(--kgp-border-light);
+            border-radius: var(--kgp-radius-xl);
+            padding: var(--kgp-space-xl);
+            margin-bottom: var(--kgp-space-xl);
+            transition: all var(--kgp-transition-base);
+        }
+        
+        .subsection-title {
+            font-size: var(--kgp-text-lg);
+            font-weight: var(--kgp-font-semibold);
+            color: var(--kgp-text-primary);
+            margin-bottom: var(--kgp-space-lg);
+        }
+        
+        /* ============================================ */
+        /* COLOR PALETTE */
+        /* ============================================ */
+        
+        .color-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: var(--kgp-space-sm);
+        }
+        
+        .color-swatch {
+            aspect-ratio: 1;
+            border-radius: var(--kgp-radius-lg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--kgp-text-xs);
+            font-weight: var(--kgp-font-semibold);
+            cursor: pointer;
+            transition: transform var(--kgp-transition-fast);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .color-swatch:hover {
+            transform: scale(1.08);
+            z-index: 1;
+        }
+        
+        .color-swatch .shade {
+            font-size: 11px;
+        }
+        
+        .color-swatch .hex {
+            font-size: 9px;
+            font-family: var(--kgp-font-mono);
+            opacity: 0.8;
+            margin-top: 2px;
+        }
+        
+        .color-row {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: var(--kgp-space-sm);
+            margin-bottom: var(--kgp-space-sm);
+        }
+        
+        .color-row-full {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: var(--kgp-space-xs);
+        }
+        
+        .bg-swatches {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: var(--kgp-space-md);
+        }
+        
+        .bg-swatch {
+            padding: var(--kgp-space-xl);
+            border-radius: var(--kgp-radius-lg);
+            text-align: center;
+            border: 1px solid var(--kgp-border-light);
+        }
+        
+        .bg-swatch-label {
+            font-size: var(--kgp-text-sm);
+            font-weight: var(--kgp-font-medium);
+            margin-bottom: var(--kgp-space-xs);
+        }
+        
+        .bg-swatch-hex {
+            font-size: var(--kgp-text-xs);
+            font-family: var(--kgp-font-mono);
+            opacity: 0.7;
+        }
+        
+        .semantic-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: var(--kgp-space-md);
+        }
+        
+        .semantic-item {
+            display: flex;
+            flex-direction: column;
+            gap: var(--kgp-space-sm);
+        }
+        
+        .semantic-swatch {
+            height: 60px;
+            border-radius: var(--kgp-radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: var(--kgp-font-semibold);
+            font-size: var(--kgp-text-sm);
+        }
+        
+        .semantic-light {
+            height: 40px;
+            border-radius: var(--kgp-radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--kgp-text-xs);
+            font-weight: var(--kgp-font-medium);
+        }
+        
+        /* ============================================ */
+        /* TYPOGRAPHY */
+        /* ============================================ */
+        
+        .typography-samples {
+            display: flex;
+            flex-direction: column;
+            gap: var(--kgp-space-lg);
+        }
+        
+        .typography-item {
+            padding: var(--kgp-space-lg);
+            background: var(--kgp-bg-base);
+            border: 1px solid var(--kgp-border-light);
+            border-radius: var(--kgp-radius-md);
+        }
+        
+        .typography-label {
+            font-size: var(--kgp-text-xs);
+            font-family: var(--kgp-font-mono);
+            color: var(--kgp-accent);
+            margin-bottom: var(--kgp-space-sm);
+        }
+        
+        .typography-sample {
+            color: var(--kgp-text-primary);
+        }
+        
+        /* ============================================ */
+        /* BUTTONS */
+        /* ============================================ */
+        
+        .button-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--kgp-space-md);
+            align-items: center;
+        }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--kgp-space-sm);
+            padding: 0 var(--kgp-space-xl);
+            height: var(--kgp-button-height);
+            border-radius: var(--kgp-radius-md);
+            font-size: var(--kgp-text-base);
+            font-weight: var(--kgp-font-medium);
+            border: none;
+            cursor: pointer;
+            transition: all var(--kgp-transition-base);
+            text-decoration: none;
+        }
+        
+        .btn-primary {
+            background: var(--kgp-accent);
+            color: var(--kgp-text-on-accent);
+        }
+        
+        .btn-primary:hover {
+            background: var(--kgp-accent-hover);
+            transform: translateY(-2px);
+            box-shadow: var(--kgp-shadow-md);
+        }
+        
+        .btn-secondary {
+            background: transparent;
+            color: var(--kgp-accent);
+            border: 2px solid var(--kgp-accent);
+        }
+        
+        .btn-secondary:hover {
+            background: var(--kgp-accent);
+            color: var(--kgp-text-on-accent);
+        }
+        
+        .btn-ghost {
+            background: transparent;
+            color: var(--kgp-accent);
+        }
+        
+        .btn-ghost:hover {
+            background: var(--kgp-accent-light);
+        }
+        
+        .btn-danger {
+            background: var(--kgp-error);
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+        
+        .btn-success {
+            background: var(--kgp-success);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+        
+        .btn-sm {
+            height: 36px;
+            padding: 0 var(--kgp-space-lg);
+            font-size: var(--kgp-text-sm);
+        }
+        
+        .btn-lg {
+            height: 52px;
+            padding: 0 var(--kgp-space-2xl);
+            font-size: var(--kgp-text-lg);
+        }
+        
+        .btn-icon {
+            width: var(--kgp-button-height);
+            padding: 0;
+        }
+        
+        /* ============================================ */
+        /* FORM ELEMENTS */
+        /* ============================================ */
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: var(--kgp-space-xl);
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: var(--kgp-space-sm);
+        }
+        
+        .form-label {
+            font-size: var(--kgp-text-sm);
+            font-weight: var(--kgp-font-medium);
+            color: var(--kgp-text-primary);
+        }
+        
+        .form-input {
+            width: 100%;
+            height: var(--kgp-input-height);
+            padding: 0 var(--kgp-space-lg);
+            background: var(--kgp-bg-base);
+            border: 1.5px solid var(--kgp-border-medium);
+            border-radius: var(--kgp-radius-md);
+            font-size: var(--kgp-text-base);
+            color: var(--kgp-text-primary);
+            transition: all var(--kgp-transition-fast);
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: var(--kgp-accent);
+            box-shadow: 0 0 0 3px var(--kgp-accent-light);
+        }
+        
+        .form-input::placeholder {
+            color: var(--kgp-text-muted);
+        }
+        
+        .form-input-error {
+            border-color: var(--kgp-error);
+        }
+        
+        .form-input-error:focus {
+            box-shadow: 0 0 0 3px var(--kgp-error-light);
+        }
+        
+        .form-input-success {
+            border-color: var(--kgp-success);
+        }
+        
+        .form-textarea {
+            min-height: 120px;
+            padding: var(--kgp-space-md) var(--kgp-space-lg);
+            resize: vertical;
+        }
+        
+        .form-select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 20px;
+            padding-right: 44px;
+        }
+        
+        .form-hint {
+            font-size: var(--kgp-text-xs);
+            color: var(--kgp-text-muted);
+        }
+        
+        .form-error-text {
+            font-size: var(--kgp-text-xs);
+            color: var(--kgp-error);
+        }
+        
+        /* ============================================ */
+        /* CARDS */
+        /* ============================================ */
+        
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: var(--kgp-space-xl);
+        }
+        
+        .card {
+            background: var(--kgp-bg-surface);
+            border: 1px solid var(--kgp-border-light);
+            border-radius: var(--kgp-radius-xl);
+            padding: var(--kgp-card-padding);
+            transition: all var(--kgp-transition-base);
+        }
+        
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--kgp-shadow-lg);
+            border-color: var(--kgp-border-medium);
+        }
+        
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: var(--kgp-space-md);
+            margin-bottom: var(--kgp-space-lg);
+        }
+        
+        .card-icon {
+            width: 48px;
+            height: 48px;
+            background: var(--kgp-accent-light);
+            border-radius: var(--kgp-radius-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--kgp-accent);
+        }
+        
+        .card-title {
+            font-size: var(--kgp-text-xl);
+            font-weight: var(--kgp-font-semibold);
+            color: var(--kgp-text-primary);
+        }
+        
+        .card-content {
+            color: var(--kgp-text-secondary);
+            line-height: var(--kgp-leading-relaxed);
+            margin-bottom: var(--kgp-space-lg);
+        }
+        
+        .card-footer {
+            display: flex;
+            gap: var(--kgp-space-md);
+        }
+        
+        /* ============================================ */
+        /* SPACING */
+        /* ============================================ */
+        
+        .spacing-demo {
+            display: flex;
+            flex-direction: column;
+            gap: var(--kgp-space-md);
+        }
+        
+        .spacing-item {
+            display: flex;
+            align-items: center;
+            gap: var(--kgp-space-lg);
+        }
+        
+        .spacing-label {
+            font-size: var(--kgp-text-sm);
+            font-family: var(--kgp-font-mono);
+            color: var(--kgp-text-secondary);
+            min-width: 120px;
+        }
+        
+        .spacing-bar {
+            height: 24px;
+            background: linear-gradient(90deg, var(--kgp-accent), var(--kgp-accent-hover));
+            border-radius: var(--kgp-radius-sm);
+            opacity: 0.7;
+        }
+        
+        /* ============================================ */
+        /* BORDER RADIUS */
+        /* ============================================ */
+        
+        .radius-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--kgp-space-xl);
+            align-items: flex-end;
+        }
+        
+        .radius-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: var(--kgp-space-sm);
+        }
+        
+        .radius-box {
+            width: 80px;
+            height: 80px;
+            background: var(--kgp-accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--kgp-text-on-accent);
+            font-weight: var(--kgp-font-semibold);
+            font-size: var(--kgp-text-sm);
+        }
+        
+        .radius-label {
+            font-size: var(--kgp-text-xs);
+            font-family: var(--kgp-font-mono);
+            color: var(--kgp-text-muted);
+        }
+        
+        /* ============================================ */
+        /* SHADOWS */
+        /* ============================================ */
+        
+        .shadow-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--kgp-space-xl);
+        }
+        
+        .shadow-item {
+            background: var(--kgp-bg-surface);
+            padding: var(--kgp-space-xl);
+            border-radius: var(--kgp-radius-lg);
+            text-align: center;
+        }
+        
+        .shadow-item strong {
+            display: block;
+            margin-bottom: var(--kgp-space-sm);
+            color: var(--kgp-text-primary);
+        }
+        
+        .shadow-item code {
+            font-size: var(--kgp-text-xs);
+            color: var(--kgp-text-muted);
+        }
+        
+        /* ============================================ */
+        /* CODE BLOCKS */
+        /* ============================================ */
+        
+        .code-block {
+            background: var(--kgp-bg-base);
+            border: 1px solid var(--kgp-border-light);
+            border-radius: var(--kgp-radius-md);
+            padding: var(--kgp-space-lg);
+            font-family: var(--kgp-font-mono);
+            font-size: var(--kgp-text-sm);
+            color: var(--kgp-text-secondary);
+            overflow-x: auto;
+            line-height: 1.7;
+            white-space: pre;
+        }
+        
+        .code-block .comment {
+            color: var(--kgp-text-muted);
+        }
+        
+        .code-block .property {
+            color: var(--kgp-accent);
+        }
+        
+        .code-block .value {
+            color: var(--kgp-success);
+        }
+        
+        /* ============================================ */
+        /* AI REFERENCE */
+        /* ============================================ */
+        
+        .ai-reference {
+            background: var(--kgp-bg-elevated);
+            border-left: 4px solid var(--kgp-accent);
+            padding: var(--kgp-space-xl);
+            border-radius: var(--kgp-radius-md);
+        }
+        
+        .ai-reference-title {
+            font-weight: var(--kgp-font-semibold);
+            color: var(--kgp-accent);
+            margin-bottom: var(--kgp-space-md);
+            display: flex;
+            align-items: center;
+            gap: var(--kgp-space-sm);
+        }
+        
+        .ai-reference-content {
+            font-size: var(--kgp-text-sm);
+            line-height: var(--kgp-leading-relaxed);
+            color: var(--kgp-text-secondary);
+        }
+        
+        .ai-reference-content strong {
+            color: var(--kgp-text-primary);
+            display: block;
+            margin-top: var(--kgp-space-md);
+            margin-bottom: var(--kgp-space-xs);
+        }
+        
+        /* ============================================ */
+        /* ALERTS */
+        /* ============================================ */
+        
+        .alert-grid {
+            display: flex;
+            flex-direction: column;
+            gap: var(--kgp-space-md);
+        }
+        
+        .alert {
+            padding: var(--kgp-space-lg);
+            border-radius: var(--kgp-radius-md);
+            display: flex;
+            align-items: flex-start;
+            gap: var(--kgp-space-md);
+        }
+        
+        .alert-icon {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+        }
+        
+        .alert-content {
+            flex: 1;
+        }
+        
+        .alert-title {
+            font-weight: var(--kgp-font-semibold);
+            margin-bottom: var(--kgp-space-xs);
+        }
+        
+        .alert-message {
+            font-size: var(--kgp-text-sm);
+            opacity: 0.9;
+        }
+        
+        .alert-success {
+            background: var(--kgp-success-light);
+            color: var(--kgp-success);
+        }
+        
+        .alert-warning {
+            background: var(--kgp-warning-light);
+            color: var(--kgp-warning);
+        }
+        
+        .alert-error {
+            background: var(--kgp-error-light);
+            color: var(--kgp-error);
+        }
+        
+        .alert-info {
+            background: var(--kgp-info-light);
+            color: var(--kgp-info);
+        }
+        
+        /* ============================================ */
+        /* BADGES */
+        /* ============================================ */
+        
+        .badge-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--kgp-space-md);
+            align-items: center;
+        }
+        
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 12px;
+            border-radius: var(--kgp-radius-full);
+            font-size: var(--kgp-text-xs);
+            font-weight: var(--kgp-font-semibold);
+        }
+        
+        .badge-primary {
+            background: var(--kgp-accent-light);
+            color: var(--kgp-accent);
+        }
+        
+        .badge-success {
+            background: var(--kgp-success-light);
+            color: var(--kgp-success);
+        }
+        
+        .badge-warning {
+            background: var(--kgp-warning-light);
+            color: var(--kgp-warning);
+        }
+        
+        .badge-error {
+            background: var(--kgp-error-light);
+            color: var(--kgp-error);
+        }
+        
+        .badge-neutral {
+            background: var(--kgp-bg-muted);
+            color: var(--kgp-text-secondary);
+        }
+        
+        /* ============================================ */
+        /* FOOTER */
+        /* ============================================ */
+        
+        footer {
+            text-align: center;
+            padding: var(--kgp-space-3xl) 0;
+            border-top: 1px solid var(--kgp-border-light);
+            margin-top: var(--kgp-space-4xl);
+        }
+        
+        footer p {
+            color: var(--kgp-text-muted);
+            font-size: var(--kgp-text-sm);
+        }
+        
+        footer p:first-child {
+            font-weight: var(--kgp-font-medium);
+            color: var(--kgp-text-secondary);
+            margin-bottom: var(--kgp-space-sm);
+        }
+        
+        /* ============================================ */
+        /* RESPONSIVE */
+        /* ============================================ */
+        
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .controls {
+                width: 100%;
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .theme-switcher {
+                width: 100%;
+            }
+            
+            .theme-btn {
+                flex: 1;
+                text-align: center;
+            }
+            
+            .hero h1 {
+                font-size: 32px;
+            }
+            
+            .color-row-full {
+                grid-template-columns: repeat(5, 1fr);
+            }
+            
+            .bg-swatches,
+            .semantic-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .radius-grid {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sticky Header with Theme Controls -->
+    <header class="sticky-header">
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon">K</div>
+                <div class="logo-text">KG<span>Pro</span>Design</div>
+                <div class="logo-badge">2026</div>
+            </div>
+            
+            <div class="controls">
+                <div class="theme-switcher">
+                    <button class="theme-btn active" data-theme="urban-gray" onclick="setTheme('urban-gray')">
+                        Urban Gray Pearl
+                    </button>
+                    <button class="theme-btn" data-theme="still-night" onclick="setTheme('still-night')">
+                        Still Night Pearl
+                    </button>
+                </div>
+                
+                <div class="mode-toggle" onclick="toggleMode()">
+                    <svg class="mode-icon sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="5"/>
+                        <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+                    </svg>
+                    <svg class="mode-icon moon-icon" style="display:none;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                    </svg>
+                    <span class="mode-label">Light Mode</span>
+                </div>
+            </div>
+        </div>
+    </header>
+    
+    <main class="container">
+        <!-- Hero Section -->
+        <section class="hero">
+            <h1>KGProDesign Style Guide</h1>
+            <p>A comprehensive design system for building consistent, beautiful applications across all Goldson Solutions brands. Version 2026.</p>
+            <div class="hero-badges">
+                <div class="hero-badge">
+                    <div class="hero-badge-dot"></div>
+                    Sora Font
+                </div>
+                <div class="hero-badge">
+                    <div class="hero-badge-dot"></div>
+                    2 Color Themes
+                </div>
+                <div class="hero-badge">
+                    <div class="hero-badge-dot"></div>
+                    Light & Dark Modes
+                </div>
+                <div class="hero-badge">
+                    <div class="hero-badge-dot"></div>
+                    --kgp-* Variables
+                </div>
+            </div>
+        </section>
+        
+        <!-- Color System -->
+        <section class="section">
+            <div class="section-header">
+                <h2 class="section-title">Color System</h2>
+                <p class="section-description">Complete color palette with semantic variations for both themes.</p>
+            </div>
+            
+            <div class="subsection">
+                <h3 class="subsection-title">Primary Color Scale</h3>
+                <div class="color-row-full">
+                    <div class="color-swatch" style="background: var(--kgp-primary-50); color: var(--kgp-primary-900);">
+                        <span class="shade">50</span>
+                    </div>
+                    <div class="color-swatch" style="background: var(--kgp-primary-100); color: var(--kgp-primary-900);">
+                        <span class="shade">100</span>
+                    </div>
+                    <div class="color-swatch" style="background: var(--kgp-primary-200); color: var(--kgp-primary-900);">
+                        <span class="shade">200</span>
+                    </div>
+                    <div class="color-swatch" style="background: var(--kgp-primary-300); color: var(--kgp-primary-900);">
+                        <span class="shade">300</span>
+                    </div>
+                    <div class="color-swatch" style="background: var(--kgp-primary-400); color: white;">
+                        <span class="shade">400</span>
+                    </div>
+                    <div class="color-swatch" style="background: var(--kgp-primary-500); color: white;">
+                        <span class="shade">500</span>
+                    </div>
+                    <div class="color-swatch" style="background: var(--kgp-primary-600); color: white;">
+                        <span class="shade">600</span>
+                    </div>
+                    <div class="color-swatch" style="background: var(--kgp-primary-700); color: white;">
+                        <span class="shade">700</span>
+                    </div>
+                    <div class="color-swatch" style="background: var(--kgp-primary-800); color: white;">
+                        <span class="shade">800</span>
+                    </div>
+                    <div class="color-swatch" style="background: var(--kgp-primary-900); color: white;">
+                        <span class="shade">900</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="subsection">
+                <h3 class="subsection-title">Accent Colors</h3>
+                <div class="color-row" style="max-width: 500px;">
+                    <div class="color-swatch" style="background: var(--kgp-accent-light); color: var(--kgp-accent);">
+                        <span class="shade">Light</span>
+                    </div>
+                    <div class="color-swatch" style="background: var(--kgp-accent); color: var(--kgp-text-on-accent);">
+                        <span class="shade">Base</span>
+                    </div>
+                    <div class="color-swatch" style="background: var(--kgp-accent-hover); color: var(--kgp-text-on-accent);">
+                        <span class="shade">Hover</span>
+                    </div>
+                    <div class="color-swatch" style="background: var(--kgp-accent-dark); color: white;">
+                        <span class="shade">Dark</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="subsection">
+                <h3 class="subsection-title">Background Colors</h3>
+                <div class="bg-swatches">
+                    <div class="bg-swatch" style="background: var(--kgp-bg-base); color: var(--kgp-text-primary);">
+                        <div class="bg-swatch-label">Base</div>
+                        <div class="bg-swatch-hex">--kgp-bg-base</div>
+                    </div>
+                    <div class="bg-swatch" style="background: var(--kgp-bg-surface); color: var(--kgp-text-primary);">
+                        <div class="bg-swatch-label">Surface</div>
+                        <div class="bg-swatch-hex">--kgp-bg-surface</div>
+                    </div>
+                    <div class="bg-swatch" style="background: var(--kgp-bg-elevated); color: var(--kgp-text-primary);">
+                        <div class="bg-swatch-label">Elevated</div>
+                        <div class="bg-swatch-hex">--kgp-bg-elevated</div>
+                    </div>
+                    <div class="bg-swatch" style="background: var(--kgp-bg-muted); color: var(--kgp-text-primary);">
+                        <div class="bg-swatch-label">Muted</div>
+                        <div class="bg-swatch-hex">--kgp-bg-muted</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="subsection">
+                <h3 class="subsection-title">Text Colors</h3>
+                <div class="typography-samples" style="max-width: 500px;">
+                    <div class="typography-item">
+                        <div class="typography-label">--kgp-text-primary</div>
+                        <div class="typography-sample" style="color: var(--kgp-text-primary); font-weight: 600;">Primary text for headings and important content</div>
+                    </div>
+                    <div class="typography-item">
+                        <div class="typography-label">--kgp-text-secondary</div>
+                        <div class="typography-sample" style="color: var(--kgp-text-secondary);">Secondary text for body content and descriptions</div>
+                    </div>
+                    <div class="typography-item">
+                        <div class="typography-label">--kgp-text-muted</div>
+                        <div class="typography-sample" style="color: var(--kgp-text-muted);">Muted text for captions and hints</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="subsection">
+                <h3 class="subsection-title">Semantic Colors</h3>
+                <div class="semantic-grid">
+                    <div class="semantic-item">
+                        <div class="semantic-swatch" style="background: var(--kgp-success);">Success</div>
+                        <div class="semantic-light" style="background: var(--kgp-success-light); color: var(--kgp-success);">Light</div>
+                    </div>
+                    <div class="semantic-item">
+                        <div class="semantic-swatch" style="background: var(--kgp-warning);">Warning</div>
+                        <div class="semantic-light" style="background: var(--kgp-warning-light); color: var(--kgp-warning);">Light</div>
+                    </div>
+                    <div class="semantic-item">
+                        <div class="semantic-swatch" style="background: var(--kgp-error);">Error</div>
+                        <div class="semantic-light" style="background: var(--kgp-error-light); color: var(--kgp-error);">Light</div>
+                    </div>
+                    <div class="semantic-item">
+                        <div class="semantic-swatch" style="background: var(--kgp-info);">Info</div>
+                        <div class="semantic-light" style="background: var(--kgp-info-light); color: var(--kgp-info);">Light</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Typography -->
+        <section class="section">
+            <div class="section-header">
+                <h2 class="section-title">Typography</h2>
+                <p class="section-description">Sora font family with scales and weights for consistent text hierarchy.</p>
+            </div>
+            
+            <div class="subsection">
+                <h3 class="subsection-title">Font Family: Sora</h3>
+                <p style="color: var(--kgp-text-secondary); margin-bottom: var(--kgp-space-lg); font-size: var(--kgp-text-sm);">
+                    Sora is a modern geometric sans-serif with balanced proportions. Fresh, approachable, and highly readable across all sizes.
+                    <br><code style="background: var(--kgp-bg-elevated); padding: 2px 8px; border-radius: 4px; font-size: 12px;">--kgp-font-family: 'Sora', sans-serif</code>
+                </p>
+            </div>
+            
+            <div class="subsection">
+                <h3 class="subsection-title">Type Scale</h3>
+                <div class="typography-samples">
+                    <div class="typography-item">
+                        <div class="typography-label">--kgp-text-4xl (36px) / Bold</div>
+                        <div class="typography-sample" style="font-size: var(--kgp-text-4xl); font-weight: var(--kgp-font-bold);">
+                            Page Heading
+                        </div>
+                    </div>
+                    <div class="typography-item">
+                        <div class="typography-label">--kgp-text-3xl (30px) / Semibold</div>
+                        <div class="typography-sample" style="font-size: var(--kgp-text-3xl); font-weight: var(--kgp-font-semibold);">
+                            Section Title
+                        </div>
+                    </div>
+                    <div class="typography-item">
+                        <div class="typography-label">--kgp-text-2xl (24px) / Semibold</div>
+                        <div class="typography-sample" style="font-size: var(--kgp-text-2xl); font-weight: var(--kgp-font-semibold);">
+                            Subsection Header
+                        </div>
+                    </div>
+                    <div class="typography-item">
+                        <div class="typography-label">--kgp-text-xl (20px) / Medium</div>
+                        <div class="typography-sample" style="font-size: var(--kgp-text-xl); font-weight: var(--kgp-font-medium);">
+                            Card Title
+                        </div>
+                    </div>
+                    <div class="typography-item">
+                        <div class="typography-label">--kgp-text-lg (18px) / Regular</div>
+                        <div class="typography-sample" style="font-size: var(--kgp-text-lg); font-weight: var(--kgp-font-regular);">
+                            Large body text for emphasis
+                        </div>
+                    </div>
+                    <div class="typography-item">
+                        <div class="typography-label">--kgp-text-base (16px) / Regular</div>
+                        <div class="typography-sample" style="font-size: var(--kgp-text-base); font-weight: var(--kgp-font-regular);">
+                            Standard body text for paragraphs and content throughout the application.
+                        </div>
+                    </div>
+                    <div class="typography-item">
+                        <div class="typography-label">--kgp-text-sm (14px) / Regular</div>
+                        <div class="typography-sample" style="font-size: var(--kgp-text-sm); font-weight: var(--kgp-font-regular);">
+                            Small text for labels and secondary information
+                        </div>
+                    </div>
+                    <div class="typography-item">
+                        <div class="typography-label">--kgp-text-xs (12px) / Regular</div>
+                        <div class="typography-sample" style="font-size: var(--kgp-text-xs); font-weight: var(--kgp-font-regular);">
+                            Extra small text for captions, hints, and metadata
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Buttons -->
+        <section class="section">
+            <div class="section-header">
+                <h2 class="section-title">Buttons</h2>
+                <p class="section-description">Interactive button styles for actions and navigation.</p>
+            </div>
+            
+            <div class="subsection">
+                <h3 class="subsection-title">Button Variants</h3>
+                <div class="button-grid">
+                    <button class="btn btn-primary">Primary</button>
+                    <button class="btn btn-secondary">Secondary</button>
+                    <button class="btn btn-ghost">Ghost</button>
+                    <button class="btn btn-danger">Danger</button>
+                    <button class="btn btn-success">Success</button>
+                </div>
+            </div>
+            
+            <div class="subsection">
+                <h3 class="subsection-title">Button Sizes</h3>
+                <div class="button-grid">
+                    <button class="btn btn-primary btn-sm">Small</button>
+                    <button class="btn btn-primary">Default</button>
+                    <button class="btn btn-primary btn-lg">Large</button>
+                </div>
+            </div>
+            
+            <div class="subsection">
+                <h3 class="subsection-title">Button States</h3>
+                <div class="button-grid">
+                    <button class="btn btn-primary">Normal</button>
+                    <button class="btn btn-primary" disabled style="opacity: 0.5; cursor: not-allowed;">Disabled</button>
+                    <button class="btn btn-secondary">Outlined</button>
+                    <button class="btn btn-icon btn-primary">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 5v14M5 12h14"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Form Elements -->
+        <section class="section">
+            <div class="section-header">
+                <h2 class="section-title">Form Elements</h2>
+                <p class="section-description">Input components for data collection and user interaction.</p>
+            </div>
+            
+            <div class="subsection">
+                <h3 class="subsection-title">Input Fields</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Default Input</label>
+                        <input type="text" class="form-input" placeholder="Enter text...">
+                        <span class="form-hint">Helper text goes here</span>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Error State</label>
+                        <input type="text" class="form-input form-input-error" value="Invalid input">
+                        <span class="form-error-text">This field has an error</span>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Success State</label>
+                        <input type="text" class="form-input form-input-success" value="Valid input">
+                        <span class="form-hint" style="color: var(--kgp-success);">Looking good!</span>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Select Dropdown</label>
+                        <select class="form-input form-select">
+                            <option>Choose an option</option>
+                            <option>Option 1</option>
+                            <option>Option 2</option>
+                            <option>Option 3</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="subsection">
+                <h3 class="subsection-title">Textarea</h3>
+                <div class="form-group" style="max-width: 500px;">
+                    <label class="form-label">Message</label>
+                    <textarea class="form-input form-textarea" placeholder="Enter your message..."></textarea>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Cards -->
+        <section class="section">
+            <div class="section-header">
+                <h2 class="section-title">Cards</h2>
+                <p class="section-description">Container components for grouping related content.</p>
+            </div>
+            
+            <div class="subsection">
+                <div class="card-grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                                </svg>
+                            </div>
+                            <div class="card-title">Feature Card</div>
+                        </div>
+                        <div class="card-content">
+                            Cards are versatile containers that group related content and actions. They support hover states and elevation changes.
+                        </div>
+                        <div class="card-footer">
+                            <button class="btn btn-primary btn-sm">Learn More</button>
+                            <button class="btn btn-ghost btn-sm">Dismiss</button>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                    <path d="M3 9h18M9 21V9"/>
+                                </svg>
+                            </div>
+                            <div class="card-title">Dashboard Widget</div>
+                        </div>
+                        <div class="card-content">
+                            Use cards to create dashboard widgets, feature highlights, or content summaries. They adapt to both light and dark modes seamlessly.
+                        </div>
+                        <div class="card-footer">
+                            <button class="btn btn-secondary btn-sm">View Details</button>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                                    <polyline points="22 4 12 14.01 9 11.01"/>
+                                </svg>
+                            </div>
+                            <div class="card-title">Status Card</div>
+                        </div>
+                        <div class="card-content">
+                            Cards can display status information, progress updates, or completion states with appropriate semantic colors and badges.
+                        </div>
+                        <div class="card-footer">
+                            <span class="badge badge-success">Completed</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Alerts & Badges -->
+        <section class="section">
+            <div class="section-header">
+                <h2 class="section-title">Alerts & Badges</h2>
+                <p class="section-description">Feedback components for status and notifications.</p>
+            </div>
+            
+            <div class="subsection">
+                <h3 class="subsection-title">Alert Messages</h3>
+                <div class="alert-grid">
+                    <div class="alert alert-success">
+                        <svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                            <polyline points="22 4 12 14.01 9 11.01"/>
+                        </svg>
+                        <div class="alert-content">
+                            <div class="alert-title">Success!</div>
+                            <div class="alert-message">Your changes have been saved successfully.</div>
+                        </div>
+                    </div>
+                    <div class="alert alert-warning">
+                        <svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                            <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                        <div class="alert-content">
+                            <div class="alert-title">Warning</div>
+                            <div class="alert-message">Please review your input before proceeding.</div>
+                        </div>
+                    </div>
+                    <div class="alert alert-error">
+                        <svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+                        </svg>
+                        <div class="alert-content">
+                            <div class="alert-title">Error</div>
+                            <div class="alert-message">Something went wrong. Please try again.</div>
+                        </div>
+                    </div>
+                    <div class="alert alert-info">
+                        <svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+                        </svg>
+                        <div class="alert-content">
+                            <div class="alert-title">Info</div>
+                            <div class="alert-message">Here's some helpful information for you.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="subsection">
+                <h3 class="subsection-title">Badges</h3>
+                <div class="badge-row">
+                    <span class="badge badge-primary">Primary</span>
+                    <span class="badge badge-success">Success</span>
+                    <span class="badge badge-warning">Warning</span>
+                    <span class="badge badge-error">Error</span>
+                    <span class="badge badge-neutral">Neutral</span>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Spacing -->
+        <section class="section">
+            <div class="section-header">
+                <h2 class="section-title">Spacing</h2>
+                <p class="section-description">Consistent spacing scale for margins and padding.</p>
+            </div>
+            
+            <div class="subsection">
+                <div class="spacing-demo">
+                    <div class="spacing-item">
+                        <span class="spacing-label">xs (4px)</span>
+                        <div class="spacing-bar" style="width: var(--kgp-space-xs);"></div>
+                    </div>
+                    <div class="spacing-item">
+                        <span class="spacing-label">sm (8px)</span>
+                        <div class="spacing-bar" style="width: var(--kgp-space-sm);"></div>
+                    </div>
+                    <div class="spacing-item">
+                        <span class="spacing-label">md (12px)</span>
+                        <div class="spacing-bar" style="width: var(--kgp-space-md);"></div>
+                    </div>
+                    <div class="spacing-item">
+                        <span class="spacing-label">lg (16px)</span>
+                        <div class="spacing-bar" style="width: var(--kgp-space-lg);"></div>
+                    </div>
+                    <div class="spacing-item">
+                        <span class="spacing-label">xl (24px)</span>
+                        <div class="spacing-bar" style="width: var(--kgp-space-xl);"></div>
+                    </div>
+                    <div class="spacing-item">
+                        <span class="spacing-label">2xl (32px)</span>
+                        <div class="spacing-bar" style="width: var(--kgp-space-2xl);"></div>
+                    </div>
+                    <div class="spacing-item">
+                        <span class="spacing-label">3xl (48px)</span>
+                        <div class="spacing-bar" style="width: var(--kgp-space-3xl);"></div>
+                    </div>
+                    <div class="spacing-item">
+                        <span class="spacing-label">4xl (64px)</span>
+                        <div class="spacing-bar" style="width: var(--kgp-space-4xl);"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Border Radius -->
+        <section class="section">
+            <div class="section-header">
+                <h2 class="section-title">Border Radius</h2>
+                <p class="section-description">Rounded corner values for consistent component shapes.</p>
+            </div>
+            
+            <div class="subsection">
+                <div class="radius-grid">
+                    <div class="radius-item">
+                        <div class="radius-box" style="border-radius: var(--kgp-radius-sm);">sm</div>
+                        <span class="radius-label">4px</span>
+                    </div>
+                    <div class="radius-item">
+                        <div class="radius-box" style="border-radius: var(--kgp-radius-md);">md</div>
+                        <span class="radius-label">8px</span>
+                    </div>
+                    <div class="radius-item">
+                        <div class="radius-box" style="border-radius: var(--kgp-radius-lg);">lg</div>
+                        <span class="radius-label">12px</span>
+                    </div>
+                    <div class="radius-item">
+                        <div class="radius-box" style="border-radius: var(--kgp-radius-xl);">xl</div>
+                        <span class="radius-label">16px</span>
+                    </div>
+                    <div class="radius-item">
+                        <div class="radius-box" style="border-radius: var(--kgp-radius-2xl);">2xl</div>
+                        <span class="radius-label">24px</span>
+                    </div>
+                    <div class="radius-item">
+                        <div class="radius-box" style="border-radius: var(--kgp-radius-full);">full</div>
+                        <span class="radius-label">9999px</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Shadows -->
+        <section class="section">
+            <div class="section-header">
+                <h2 class="section-title">Shadow System</h2>
+                <p class="section-description">Elevation shadows for depth and hierarchy.</p>
+            </div>
+            
+            <div class="subsection">
+                <div class="shadow-grid">
+                    <div class="shadow-item" style="box-shadow: var(--kgp-shadow-sm);">
+                        <strong>Small</strong>
+                        <code>--kgp-shadow-sm</code>
+                    </div>
+                    <div class="shadow-item" style="box-shadow: var(--kgp-shadow-md);">
+                        <strong>Medium</strong>
+                        <code>--kgp-shadow-md</code>
+                    </div>
+                    <div class="shadow-item" style="box-shadow: var(--kgp-shadow-lg);">
+                        <strong>Large</strong>
+                        <code>--kgp-shadow-lg</code>
+                    </div>
+                    <div class="shadow-item" style="box-shadow: var(--kgp-shadow-xl);">
+                        <strong>Extra Large</strong>
+                        <code>--kgp-shadow-xl</code>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Code Examples -->
+        <section class="section">
+            <div class="section-header">
+                <h2 class="section-title">Implementation</h2>
+                <p class="section-description">Code examples for using the design system.</p>
+            </div>
+            
+            <div class="subsection">
+                <h3 class="subsection-title">CSS Variables Usage</h3>
+                <div class="code-block"><span class="comment">/* Import Sora from Google Fonts */</span>
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap');
+
+<span class="comment">/* Component Example */</span>
+.kgp-card {
+    <span class="property">font-family</span>: <span class="value">var(--kgp-font-family)</span>; <span class="comment">/* Sora */</span>
+    <span class="property">background</span>: <span class="value">var(--kgp-bg-surface)</span>;
+    <span class="property">border</span>: <span class="value">1px solid var(--kgp-border-light)</span>;
+    <span class="property">border-radius</span>: <span class="value">var(--kgp-radius-xl)</span>;
+    <span class="property">padding</span>: <span class="value">var(--kgp-card-padding)</span>;
+    <span class="property">box-shadow</span>: <span class="value">var(--kgp-shadow-sm)</span>;
+    <span class="property">transition</span>: <span class="value">all var(--kgp-transition-base)</span>;
+}
+
+.kgp-card:hover {
+    <span class="property">transform</span>: <span class="value">translateY(-4px)</span>;
+    <span class="property">box-shadow</span>: <span class="value">var(--kgp-shadow-lg)</span>;
+}
+
+.kgp-btn-primary {
+    <span class="property">background</span>: <span class="value">var(--kgp-accent)</span>;
+    <span class="property">color</span>: <span class="value">var(--kgp-text-on-accent)</span>;
+    <span class="property">height</span>: <span class="value">var(--kgp-button-height)</span>;
+    <span class="property">border-radius</span>: <span class="value">var(--kgp-radius-md)</span>;
+    <span class="property">font-weight</span>: <span class="value">var(--kgp-font-medium)</span>;
+}</div>
+            </div>
+            
+            <div class="subsection">
+                <h3 class="subsection-title">Flutter Theme Mapping</h3>
+                <div class="code-block"><span class="comment">// KGP Design System - Flutter Constants</span>
+<span class="comment">// Add to pubspec.yaml: google_fonts: ^6.1.0</span>
+
+import 'package:google_fonts/google_fonts.dart';
+
+class KGPTypography {
+  static TextStyle <span class="property">heading</span> = <span class="value">GoogleFonts.sora(
+    fontWeight: FontWeight.w700,
+    fontSize: 36,
+  )</span>;
+  
+  static TextStyle <span class="property">body</span> = <span class="value">GoogleFonts.sora(
+    fontWeight: FontWeight.w400,
+    fontSize: 16,
+  )</span>;
+}
+
+class KGPColors {
+  <span class="comment">// Urban Gray Pearl - Light Mode</span>
+  static const <span class="property">accent</span> = <span class="value">Color(0xFF3B82F6)</span>;
+  static const <span class="property">bgBase</span> = <span class="value">Color(0xFFFFFFFF)</span>;
+  static const <span class="property">bgSurface</span> = <span class="value">Color(0xFFFAFAFA)</span>;
+  static const <span class="property">textPrimary</span> = <span class="value">Color(0xFF18181B)</span>;
+  static const <span class="property">textSecondary</span> = <span class="value">Color(0xFF52525B)</span>;
+  
+  <span class="comment">// Still Night Pearl - Light Mode</span>
+  static const <span class="property">accentNight</span> = <span class="value">Color(0xFF4F46E5)</span>;
+  static const <span class="property">textPrimaryNight</span> = <span class="value">Color(0xFF1E1B4B)</span>;
+}
+
+class KGPSizes {
+  static const double <span class="property">buttonHeight</span> = <span class="value">44</span>;
+  static const double <span class="property">inputHeight</span> = <span class="value">48</span>;
+  static const double <span class="property">iconSize</span> = <span class="value">24</span>;
+  static const double <span class="property">radiusMd</span> = <span class="value">8</span>;
+  static const double <span class="property">radiusLg</span> = <span class="value">12</span>;
+}</div>
+            </div>
+        </section>
+        
+        <!-- AI Reference -->
+        <section class="section">
+            <div class="section-header">
+                <h2 class="section-title">AI Agent Reference</h2>
+                <p class="section-description">Quick reference for AI-assisted development.</p>
+            </div>
+            
+            <div class="ai-reference" data-ai-context="true">
+                <div class="ai-reference-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2a10 10 0 1 0 10 10H12V2z"/>
+                        <path d="M12 2a10 10 0 0 1 10 10"/>
+                        <circle cx="12" cy="12" r="6"/>
+                    </svg>
+                    KGProDesign 2026 Quick Reference
+                </div>
+                <div class="ai-reference-content">
+                    <strong>Available Themes:</strong>
+                    • Urban Gray Pearl (Primary: Slate grays, Accent: Blue #3B82F6)<br>
+                    • Still Night Pearl (Primary: Indigo, Accent: Indigo #4F46E5)
+                    
+                    <strong>Naming Convention:</strong>
+                    All CSS variables use --kgp-* prefix
+                    
+                    <strong>Component Standards:</strong>
+                    • Button Height: 44px (--kgp-button-height)<br>
+                    • Input Height: 48px (--kgp-input-height)<br>
+                    • Default Border Radius: 8px (--kgp-radius-md)<br>
+                    • Card Padding: 20px (--kgp-card-padding)<br>
+                    • Icon Size: 24px (--kgp-icon-size)
+                    
+                    <strong>Typography:</strong>
+                    • Font: Sora (Google Fonts) with system fallbacks (--kgp-font-family)<br>
+                    • Mono: SF Mono, Monaco, Consolas (--kgp-font-mono)<br>
+                    • Base size: 16px<br>
+                    • Scale: xs(12), sm(14), base(16), lg(18), xl(20), 2xl(24), 3xl(30), 4xl(36)
+                    
+                    <strong>Transitions:</strong>
+                    • Fast: 150ms (--kgp-transition-fast)<br>
+                    • Base: 250ms (--kgp-transition-base)<br>
+                    • Slow: 350ms (--kgp-transition-slow)
+                    
+                    <strong>Theme Switching:</strong>
+                    Set data-theme="urban-gray" or data-theme="still-night" on html element.
+                    Set data-mode="light" or data-mode="dark" for mode switching.
+                </div>
+            </div>
+        </section>
+    </main>
+    
+    <footer>
+        <p>KGProDesign Style Guide v2026</p>
+        <p>© Goldson Solutions LLC — KG ProDesign</p>
+    </footer>
+    
+    <script>
+        // Theme and Mode Management
+        function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            
+            // Update button states
+            document.querySelectorAll('.theme-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.theme === theme);
+            });
+            
+            // Save preference
+            localStorage.setItem('kgp-theme', theme);
+        }
+        
+        function toggleMode() {
+            const html = document.documentElement;
+            const currentMode = html.getAttribute('data-mode');
+            const newMode = currentMode === 'light' ? 'dark' : 'light';
+            
+            html.setAttribute('data-mode', newMode);
+            
+            // Update toggle UI
+            const sunIcon = document.querySelector('.sun-icon');
+            const moonIcon = document.querySelector('.moon-icon');
+            const modeLabel = document.querySelector('.mode-label');
+            
+            if (newMode === 'dark') {
+                sunIcon.style.display = 'none';
+                moonIcon.style.display = 'block';
+                modeLabel.textContent = 'Dark Mode';
+            } else {
+                sunIcon.style.display = 'block';
+                moonIcon.style.display = 'none';
+                modeLabel.textContent = 'Light Mode';
+            }
+            
+            // Save preference
+            localStorage.setItem('kgp-mode', newMode);
+        }
+        
+        // Load saved preferences on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('kgp-theme') || 'urban-gray';
+            const savedMode = localStorage.getItem('kgp-mode') || 'light';
+            
+            setTheme(savedTheme);
+            
+            if (savedMode === 'dark') {
+                document.documentElement.setAttribute('data-mode', 'dark');
+                document.querySelector('.sun-icon').style.display = 'none';
+                document.querySelector('.moon-icon').style.display = 'block';
+                document.querySelector('.mode-label').textContent = 'Dark Mode';
+            }
+        });
+    </script>
+</body>
+</html>

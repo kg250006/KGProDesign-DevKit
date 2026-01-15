@@ -1,0 +1,87 @@
+# Current Task: {{TASK_ID}}
+
+You are executing a single task from a PRP. Focus ONLY on this task.
+
+## Task Description
+{{TASK_DESC}}
+
+## Assigned Agent
+{{TASK_AGENT}}
+
+## Files to Modify
+{{TASK_FILES}}
+
+## Implementation Guide
+```
+{{TASK_PSEUDO}}
+```
+
+## Acceptance Criteria
+{{TASK_CRITERIA}}
+
+---
+
+## Agent Delegation Strategy
+
+**IMPORTANT:** You have access to specialized agents with domain expertise. Consider delegating this task to the most appropriate agent using the Task tool.
+
+### Agent Selection Guide
+
+Analyze your task and delegate to the specialist whose expertise matches:
+
+| Agent | Delegate When Task Involves |
+|-------|----------------------------|
+| **frontend-engineer** | UI components, responsive design, accessibility (WCAG), state management, CSS/styling, React/Vue/Svelte, browser APIs |
+| **backend-engineer** | APIs (REST/GraphQL), authentication/authorization, business logic, server-side code, Node.js/Python/Java services |
+| **data-engineer** | Database schemas, migrations, SQL/NoSQL queries, data modeling, indexes, query optimization |
+| **qa-engineer** | Writing tests, security review, code review, test strategies, bug investigation |
+| **devops-engineer** | CI/CD pipelines, Docker, infrastructure, deployment, monitoring, GitHub Actions |
+| **document-specialist** | README files, API docs, technical guides, PRDs, architecture documentation |
+
+### How to Delegate
+
+Use the Task tool with the appropriate `subagent_type`:
+
+```
+Task tool:
+  subagent_type: "KGP:frontend-engineer"  (or backend-engineer, data-engineer, etc.)
+  prompt: "Execute this task: [copy the task description and acceptance criteria]"
+  description: "Implement [brief description]"
+```
+
+### Decision Framework
+
+1. **Match the domain:** If the task is clearly frontend (UI, components, styling), delegate to frontend-engineer
+2. **Match the assigned agent:** If `{{TASK_AGENT}}` is specified above, use that agent
+3. **When uncertain:** Consider which agent's core competencies best match the task requirements
+4. **Complex tasks:** The specialist agent has access to skills like `debug-like-expert` and `ui-visual-testing` that can help
+
+---
+
+## Available Skills
+
+Specialists have access to these skills when needed:
+
+- **debug-like-expert**: Methodical debugging with hypothesis testing (use for complex bugs)
+- **ui-visual-testing**: Puppeteer-based visual validation and DOM inspection
+- **deployment-expert**: Deploy to Netlify, Azure VM, FTP, or GitHub production branches
+- **software-architect**: Create PRPs/PRDs and technical specifications
+- **create-plans**: Hierarchical project planning
+
+---
+
+## Execution Instructions
+
+1. **Assess the task domain** - Determine which specialist is best suited
+2. **Delegate via Task tool** - Hand off to the appropriate agent with full context
+3. **Or execute directly** - If simple enough, complete the task yourself
+4. **Validate the work** - Ensure acceptance criteria are met
+5. **Exit when done** - The orchestrator handles the next task
+
+## CRITICAL CONSTRAINTS
+
+- DO NOT read the full PRP file
+- DO NOT ask about other tasks
+- DO NOT try to optimize by combining tasks
+- Focus ONLY on this single task
+- PREFER delegation to specialists over doing everything yourself

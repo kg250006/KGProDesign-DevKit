@@ -23,6 +23,8 @@ param(
 
 $ErrorActionPreference = "Stop"
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$PluginRoot = Split-Path -Parent $ScriptDir
+$TaskTemplate = Join-Path $PluginRoot "templates\current-task.md.template"
 
 # Show help
 if ($Help -or [string]::IsNullOrWhiteSpace($PrpFile)) {
@@ -134,8 +136,23 @@ for ($i = 0; $i -lt $Total; $i++) {
     Write-Host "Description: $($Task.description)"
     Write-Host "=========================================="
 
-    # Write task file
-    @"
+    # Write task file using template or fallback
+    if (Test-Path $TaskTemplate) {
+        # Render template with variable substitution
+        $TemplateContent = Get-Content -Path $TaskTemplate -Raw
+        $TaskContent = $TemplateContent `
+            -replace '{{TASK_ID}}', $Task.id `
+            -replace '{{TASK_DESC}}', $Task.description `
+            -replace '{{TASK_FILES}}', $Task.files `
+            -replace '{{TASK_PSEUDO}}', $Task.pseudocode `
+            -replace '{{TASK_CRITERIA}}', $Task.acceptance_criteria `
+            -replace '{{TASK_AGENT}}', $Task.agent `
+            -replace '{{PRP_NAME}}', $PrpName `
+            -replace '{{PRP_FILE}}', $PrpFile
+        $TaskContent | Set-Content -Path $TaskFile -NoNewline
+    } else {
+        # Fallback: inline template
+        @"
 # Current Task: $($Task.id)
 
 You are executing a single task from a PRP. Focus ONLY on this task.
@@ -165,6 +182,7 @@ $($Task.acceptance_criteria)
 - DO NOT try to optimize by combining tasks
 - Focus ONLY on this single task
 "@ | Set-Content -Path $TaskFile
+    }
 
     # Retry loop
     $Retries = 0
@@ -225,6 +243,12 @@ $($Task.acceptance_criteria)
     }
 
     Add-Content -Path $ProgressFile -Value ""
+
+    # Cleanup: Clear current task file between tasks
+    if (Test-Path $TaskFile) {
+        Remove-Item -Path $TaskFile -Force
+    }
+
     Start-Sleep -Seconds 1
 }
 
@@ -247,6 +271,12 @@ $CompletedTimestamp = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss
 - Succeeded: $Succeeded / $Total
 - Failed: $Failed
 "@ | Add-Content -Path $ProgressFile
+
+# Final cleanup: Remove task file if it exists
+if (Test-Path $TaskFile) {
+    Remove-Item -Path $TaskFile -Force
+    Write-Host "Cleaned up: $TaskFile"
+}
 
 # Exit code
 if ($Failed -gt 0) {

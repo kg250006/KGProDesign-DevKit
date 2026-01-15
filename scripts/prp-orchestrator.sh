@@ -10,6 +10,10 @@ set -euo pipefail
 
 # Get script directory for relative paths
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PLUGIN_ROOT="$(dirname "$SCRIPT_DIR")"
+
+# Task template file
+TASK_TEMPLATE="$PLUGIN_ROOT/templates/current-task.md.template"
 
 # macOS compatibility: use gtimeout if available, otherwise use bash fallback
 if command -v timeout &> /dev/null; then
@@ -51,6 +55,11 @@ bash_timeout() {
 MAX_RETRIES=3
 TIMEOUT=300  # 5 minutes per task
 DRY_RUN=false
+NO_SAFETY=false
+SKIP_VALIDATION=false
+
+# Safety configuration
+BLOCKED_TOOLS="WebFetch,WebSearch,KillShell,Task,NotebookEdit"
 
 # Show help function
 show_help() {
@@ -64,10 +73,12 @@ ARGUMENTS:
   prp-file.md    Path to PRP file with XML task structure
 
 OPTIONS:
-  --max-retries N   Max retry attempts per task (default: 3)
-  --timeout M       Timeout in seconds per task (default: 300)
-  --dry-run         Test mode - echo commands instead of running Claude
-  --help, -h        Show this help message
+  --max-retries N     Max retry attempts per task (default: 3)
+  --timeout M         Timeout in seconds per task (default: 300)
+  --dry-run           Test mode - echo commands instead of running Claude
+  --no-safety         Disable safety mode (use standard permissions)
+  --skip-validation   Skip acceptance criteria validation
+  --help, -h          Show this help message
 
 DESCRIPTION:
   Executes each PRP task in a completely separate Claude session.
@@ -76,9 +87,24 @@ DESCRIPTION:
   This enforces hard session isolation at the process level.
   Claude cannot "optimize" by combining tasks.
 
+SAFETY MODEL:
+  By default, tasks run with --dangerously-skip-permissions for speed,
+  but with layered safety:
+
+  Layer 1: Tool Blocking
+    Blocked tools: WebFetch, WebSearch, KillShell, Task, NotebookEdit
+    Claude cannot access the web or spawn subagents
+
+  Layer 2: Command Blocking (PreToolUse hook)
+    Blocked patterns: rm -rf /, sudo, kill (non-dev), force push main
+    See hooks/prp-safety-hook.sh for full list
+
+  Use --no-safety to revert to standard permission prompts (slower)
+
 EXAMPLE:
   ./prp-orchestrator.sh PRPs/my-feature.md
-  ./prp-orchestrator.sh PRPs/my-feature.md --max-retries 5 --timeout 600
+  ./prp-orchestrator.sh PRPs/my-feature.md --no-safety
+  ./prp-orchestrator.sh PRPs/complex.md --timeout 600 --skip-validation
 
 OUTPUT:
   Progress logged to: .claude/prp-progress.md
@@ -101,6 +127,14 @@ while [[ $# -gt 0 ]]; do
       ;;
     --dry-run)
       DRY_RUN=true
+      shift
+      ;;
+    --no-safety)
+      NO_SAFETY=true
+      shift
+      ;;
+    --skip-validation)
+      SKIP_VALIDATION=true
       shift
       ;;
     --help|-h)
@@ -216,7 +250,48 @@ for i in $(seq 0 $((TOTAL - 1))); do
   echo "=========================================="
 
   # Write ONLY this task to file (Claude sees nothing else)
-  cat > "$TASK_FILE" <<EOF
+  # Use template file if it exists, otherwise use inline fallback
+  if [[ -f "$TASK_TEMPLATE" ]]; then
+    # Render template using Node.js for proper multi-line handling
+    # Export variables so node can access them via process.env
+    export TASK_ID TASK_DESC TASK_FILES TASK_PSEUDO TASK_CRITERIA TASK_AGENT PRP_NAME PRP_FILE
+    export TASK_FILE_PATH="$TASK_FILE"
+    export TEMPLATE_PATH="$TASK_TEMPLATE"
+
+    node -e '
+      const fs = require("fs");
+      const template = fs.readFileSync(process.env.TEMPLATE_PATH, "utf8");
+      const vars = {
+        TASK_ID: process.env.TASK_ID || "",
+        TASK_DESC: process.env.TASK_DESC || "",
+        TASK_FILES: process.env.TASK_FILES || "",
+        TASK_PSEUDO: process.env.TASK_PSEUDO || "",
+        TASK_CRITERIA: process.env.TASK_CRITERIA || "",
+        TASK_AGENT: process.env.TASK_AGENT || "",
+        PRP_NAME: process.env.PRP_NAME || "",
+        PRP_FILE: process.env.PRP_FILE || ""
+      };
+      let output = template;
+      for (const [key, value] of Object.entries(vars)) {
+        output = output.split("{{" + key + "}}").join(value);
+      }
+      fs.writeFileSync(process.env.TASK_FILE_PATH, output);
+    ' 2>/dev/null
+
+    # Fallback to inline if node fails
+    if [[ ! -f "$TASK_FILE" ]] || [[ ! -s "$TASK_FILE" ]]; then
+      echo "Warning: Template rendering failed, using inline fallback" >&2
+      USE_FALLBACK=true
+    else
+      USE_FALLBACK=false
+    fi
+  else
+    USE_FALLBACK=true
+  fi
+
+  if [[ "$USE_FALLBACK" == "true" ]]; then
+    # Fallback: inline template if file not found
+    cat > "$TASK_FILE" <<EOF
 # Current Task: $TASK_ID
 
 You are executing a single task from a PRP. Focus ONLY on this task.
@@ -246,6 +321,7 @@ $TASK_CRITERIA
 - DO NOT try to optimize by combining tasks
 - Focus ONLY on this single task
 EOF
+  fi
 
   # Retry loop
   RETRIES=0
@@ -271,20 +347,33 @@ EOF
       SUCCEEDED=$((SUCCEEDED + 1))
       echo "Status: SUCCESS (dry-run)" >> "$PROGRESS_FILE"
       echo "Task $TASK_ID: SUCCESS (dry-run)"
-    elif $TIMEOUT_CMD "$TIMEOUT" claude -p "Read .claude/current-task.md and execute the task described. When complete, simply exit." 2>&1; then
-      SUCCESS=true
-      SUCCEEDED=$((SUCCEEDED + 1))
-      echo "Status: SUCCESS" >> "$PROGRESS_FILE"
-      echo "Task $TASK_ID: SUCCESS"
     else
-      EXIT_CODE=$?
-      RETRIES=$((RETRIES + 1))
-      echo "Status: FAILED (exit code $EXIT_CODE)" >> "$PROGRESS_FILE"
-      echo "Task $TASK_ID: FAILED (attempt $ATTEMPT)"
+      # Build Claude command based on safety mode
+      CLAUDE_PROMPT="Read .claude/current-task.md and execute the task described. When complete, simply exit."
 
-      if [[ $RETRIES -lt $MAX_RETRIES ]]; then
-        echo "Retrying in 2 seconds..."
-        sleep 2
+      if [[ "$NO_SAFETY" == "true" ]]; then
+        # Standard mode with permission prompts (slower but maximum safety)
+        CLAUDE_CMD="claude -p"
+      else
+        # Safety mode: skip permissions but block dangerous tools and patterns
+        CLAUDE_CMD="claude -p --dangerously-skip-permissions --disallowedTools $BLOCKED_TOOLS"
+      fi
+
+      if $TIMEOUT_CMD "$TIMEOUT" $CLAUDE_CMD "$CLAUDE_PROMPT" 2>&1; then
+        SUCCESS=true
+        SUCCEEDED=$((SUCCEEDED + 1))
+        echo "Status: SUCCESS" >> "$PROGRESS_FILE"
+        echo "Task $TASK_ID: SUCCESS"
+      else
+        EXIT_CODE=$?
+        RETRIES=$((RETRIES + 1))
+        echo "Status: FAILED (exit code $EXIT_CODE)" >> "$PROGRESS_FILE"
+        echo "Task $TASK_ID: FAILED (attempt $ATTEMPT)"
+
+        if [[ $RETRIES -lt $MAX_RETRIES ]]; then
+          echo "Retrying in 2 seconds..."
+          sleep 2
+        fi
       fi
     fi
   done
@@ -297,6 +386,11 @@ EOF
   fi
 
   echo "" >> "$PROGRESS_FILE"
+
+  # Cleanup: Clear current task file between tasks
+  if [[ -f "$TASK_FILE" ]]; then
+    rm -f "$TASK_FILE"
+  fi
 
   # Brief pause between tasks
   sleep 1
@@ -320,6 +414,12 @@ cat >> "$PROGRESS_FILE" <<EOF
 - Succeeded: $SUCCEEDED / $TOTAL
 - Failed: $FAILED
 EOF
+
+# Final cleanup: Remove task file if it exists
+if [[ -f "$TASK_FILE" ]]; then
+  rm -f "$TASK_FILE"
+  echo "Cleaned up: $TASK_FILE"
+fi
 
 # Exit with appropriate code
 if [[ $FAILED -gt 0 ]]; then

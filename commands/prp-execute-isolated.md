@@ -1,6 +1,6 @@
 ---
 description: "[KGP] Execute PRP with hard session isolation - each task in fresh context"
-argument-hint: "<prp-file.md> [--max-retries N] [--timeout M]"
+argument-hint: "<prp-file.md> [--max-retries N] [--timeout M] [--no-safety] [--skip-validation]"
 allowed-tools: [Bash, Read]
 ---
 
@@ -90,6 +90,79 @@ The orchestrator controls everything from this point - spawning fresh Claude ses
 
 </process>
 
+<safety_model>
+## Safety Model
+
+The isolated executor uses `--dangerously-skip-permissions` for speed,
+but implements layered safety controls:
+
+### Layer 1: Tool Blocking (CLI Level)
+These tools are completely blocked via `--disallowedTools`:
+- `WebFetch` - No web access (prevents data exfiltration)
+- `WebSearch` - No web searches
+- `KillShell` - Cannot kill background processes
+- `Task` - Cannot spawn subagents
+- `NotebookEdit` - No Jupyter notebook access
+
+### Layer 2: Command Blocking (Hook Level)
+A PreToolUse hook (`hooks/prp-safety-hook.sh`) blocks dangerous Bash patterns:
+
+**Direct Destructive Commands:**
+- `rm -rf /` or system paths - Destructive deletion
+- `sudo` commands - Privilege escalation
+- `kill` (except node/npm processes) - Process termination
+- `git push --force main` - Destructive git operations
+- `mkfs`, `fdisk`, `dd` - Disk manipulation
+
+**Network/Exfiltration:**
+- `curl/wget` to untrusted URLs - Data exfiltration
+- `ssh` commands - Lateral movement
+- `nc`/`netcat` - Network tools
+
+**Bypass Prevention (echo/printf/redirection):**
+- `echo/printf > /etc/*` - Write to system files
+- `echo >> ~/.bashrc` - Modify shell configs
+- `| bash` or `| sh` - Pipe to shell interpreter
+- `base64 -d | bash` - Obfuscated execution
+- `tee /etc/*` - Alternative file write
+- `eval` command - Arbitrary code execution
+- `source /tmp/*` - Execute untrusted scripts
+
+**Persistence/Scheduling:**
+- `crontab` manipulation
+- `at`/`batch` scheduling
+- `nohup` background execution
+- Creating executables in `/tmp`
+
+**Directory Containment:**
+- `cd /etc`, `cd ~`, `cd $HOME` - Escape to system dirs
+- `pushd /root` - Stack-based escape
+- `(cd /etc && ...)` - Subshell escape
+- `cat /etc/passwd` - Read system files
+- `cat ~/.ssh/*`, `~/.aws/*` - Read secrets
+- `../../../../etc/passwd` - Path traversal
+- `cp ... /tmp/` - Exfiltrate to temp
+- `cp ~/.ssh/id_rsa ...` - Steal credentials
+- `ln -s /etc/passwd` - Symlink escape
+- `find / -name ...` - System-wide search
+- `tar -C /etc` - Extract to system
+
+**Misc:**
+- `chmod 777` - Overly permissive
+- `awk/sed -i` on system files
+
+### Layer 3: Validation (Post-Task)
+After each task, acceptance criteria can be validated (unless `--skip-validation` is used).
+
+### Disabling Safety
+Use `--no-safety` to revert to standard permission prompts:
+```bash
+/$PLUGIN_NAME:prp-execute-isolated PRPs/my-feature.md --no-safety
+```
+
+This is slower but provides maximum safety through interactive approval.
+</safety_model>
+
 <comparison>
 ## Comparison: prp-execute vs prp-execute-isolated
 
@@ -119,7 +192,7 @@ The orchestrator controls everything from this point - spawning fresh Claude ses
 ## Example Usage
 
 ```bash
-# Basic usage - execute a PRP with isolation
+# Basic usage - execute a PRP with isolation (safety mode enabled by default)
 /$PLUGIN_NAME:prp-execute-isolated PRPs/my-feature.md
 
 # With retry configuration for flaky tasks
@@ -128,8 +201,14 @@ The orchestrator controls everything from this point - spawning fresh Claude ses
 # With longer timeout for complex tasks
 /$PLUGIN_NAME:prp-execute-isolated PRPs/big-refactor.md --timeout 600
 
-# Both options
-/$PLUGIN_NAME:prp-execute-isolated PRPs/mega-feature.md --max-retries 5 --timeout 600
+# Disable safety mode (use standard permission prompts - slower)
+/$PLUGIN_NAME:prp-execute-isolated PRPs/untrusted-prp.md --no-safety
+
+# Skip validation step after each task
+/$PLUGIN_NAME:prp-execute-isolated PRPs/quick-feature.md --skip-validation
+
+# All options
+/$PLUGIN_NAME:prp-execute-isolated PRPs/mega-feature.md --max-retries 5 --timeout 600 --no-safety
 ```
 </example>
 
