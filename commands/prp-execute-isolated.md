@@ -138,7 +138,7 @@ Use the Bash tool to launch the orchestrator script:
 
 ```bash
 # Get plugin root directory
-PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/KGProDesign-DevKit}"
+PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/KGP/KGP/$LATEST_PLUGIN_VERSION}"
 
 # Launch orchestrator
 bash "$PLUGIN_ROOT/scripts/prp-orchestrator.sh" $ARGUMENTS

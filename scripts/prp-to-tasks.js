@@ -1,11 +1,16 @@
 #!/usr/bin/env node
 /**
- * prp-to-tasks.js - Extract tasks from PRP XML structure
+ * prp-to-tasks.js - Extract tasks from PRP XML or Markdown structure
  *
  * Usage: node prp-to-tasks.js <prp-file.md>
  * Output: JSON array of task objects to stdout
  *
  * PATTERN: Follows hooks/stop-hook.js for Node.js script conventions
+ *
+ * Supports three formats:
+ * Format A (XML attributes): <task id="1.1" agent="backend-engineer" effort="M" value="H">
+ * Format B (XML nested):     <task id="1.1"><metadata><agent>backend-engineer</agent>...</metadata>
+ * Format C (Markdown):       ## Task 1.1: Title \n ### Description \n ...
  */
 
 const fs = require('fs');
@@ -29,46 +34,100 @@ if (!fs.existsSync(prpFile)) {
 // Read PRP content
 const content = fs.readFileSync(prpFile, 'utf8');
 
-// Extract tasks using regex
-// PATTERN: Match <task id="N.N" ...>...</task> blocks
-// Handle various attribute orders and multiline content
-const taskRegex = /<task\s+id="([^"]+)"[^>]*agent="([^"]+)"[^>]*>([\s\S]*?)<\/task>/g;
-
 const tasks = [];
+
+// ============================================================================
+// FORMAT A & B: Extract XML tasks
+// ============================================================================
+const taskRegex = /<task\s+id="([^"]+)"[^>]*>([\s\S]*?)<\/task>/g;
 let match;
 
 while ((match = taskRegex.exec(content)) !== null) {
   const taskId = match[1];
-  const agent = match[2];
-  const taskContent = match[3];
+  const taskContent = match[2];
+  const fullTaskTag = match[0];
+
+  // Extract agent - try attribute first, then nested metadata
+  let agent = '';
+  const agentAttrMatch = fullTaskTag.match(/<task[^>]*agent="([^"]+)"/);
+  if (agentAttrMatch) {
+    agent = agentAttrMatch[1];
+  } else {
+    // Try nested <metadata><agent> format
+    const agentNestedMatch = taskContent.match(/<metadata>[\s\S]*?<agent>([^<]+)<\/agent>/);
+    if (agentNestedMatch) {
+      agent = agentNestedMatch[1].trim();
+    }
+  }
+
+  // Extract effort - try attribute first, then nested metadata
+  let effort = 'M';
+  const effortAttrMatch = fullTaskTag.match(/effort="([^"]+)"/);
+  if (effortAttrMatch) {
+    effort = effortAttrMatch[1];
+  } else {
+    const effortNestedMatch = taskContent.match(/<effort>([^<]+)<\/effort>/);
+    if (effortNestedMatch) {
+      effort = effortNestedMatch[1].trim();
+    }
+  }
+
+  // Extract value - try attribute first, then nested metadata
+  let value = 'M';
+  const valueAttrMatch = fullTaskTag.match(/value="([^"]+)"/);
+  if (valueAttrMatch) {
+    value = valueAttrMatch[1];
+  } else {
+    const valueNestedMatch = taskContent.match(/<value>([^<]+)<\/value>/);
+    if (valueNestedMatch) {
+      value = valueNestedMatch[1].trim();
+    }
+  }
 
   // Extract description from <description> tag
   const descMatch = taskContent.match(/<description>([\s\S]*?)<\/description>/);
   const description = descMatch ? descMatch[1].trim() : '';
 
-  // Extract acceptance criteria
+  // Extract acceptance criteria - handle both formats
   const criteriaMatch = taskContent.match(/<acceptance-criteria>([\s\S]*?)<\/acceptance-criteria>/);
   let criteria = '';
   if (criteriaMatch) {
-    // Extract individual criterion elements
-    const criterionRegex = /<criterion>([^<]+)<\/criterion>/g;
+    const criterionRegex = /<criterion[^>]*>([^<]*(?:<[^/][^<]*)*)<\/criterion>/g;
     const criteriaList = [];
     let critMatch;
     while ((critMatch = criterionRegex.exec(criteriaMatch[1])) !== null) {
-      criteriaList.push('- ' + critMatch[1].trim());
+      const critText = critMatch[1].trim();
+      if (critText) {
+        criteriaList.push('- ' + critText);
+      }
+    }
+    // Also try to extract test attributes for validation
+    const testRegex = /<criterion[^>]*test="([^"]+)"[^>]*>/g;
+    let testMatch;
+    while ((testMatch = testRegex.exec(criteriaMatch[1])) !== null) {
+      criteriaList.push('- [TEST] ' + testMatch[1]);
     }
     criteria = criteriaList.join('\n');
   }
 
-  // Extract files
+  // Extract files - handle both formats
   const filesMatch = taskContent.match(/<files>([\s\S]*?)<\/files>/);
   let files = '';
   if (filesMatch) {
-    const fileRegex = /<file\s+action="([^"]+)">([^<]+)<\/file>/g;
     const fileList = [];
-    let fileMatch;
-    while ((fileMatch = fileRegex.exec(filesMatch[1])) !== null) {
-      fileList.push(`- [${fileMatch[1]}] ${fileMatch[2].trim()}`);
+    // Try Format B first (path as attribute)
+    const fileRegexB = /<file\s+action="([^"]+)"\s+path="([^"]+)"[^>]*>/g;
+    let fileMatchB;
+    while ((fileMatchB = fileRegexB.exec(filesMatch[1])) !== null) {
+      fileList.push(`- [${fileMatchB[1]}] ${fileMatchB[2].trim()}`);
+    }
+    // If no matches, try Format A (path as content)
+    if (fileList.length === 0) {
+      const fileRegexA = /<file\s+action="([^"]+)"[^>]*>([^<]+)<\/file>/g;
+      let fileMatchA;
+      while ((fileMatchA = fileRegexA.exec(filesMatch[1])) !== null) {
+        fileList.push(`- [${fileMatchA[1]}] ${fileMatchA[2].trim()}`);
+      }
     }
     files = fileList.join('\n');
   }
@@ -77,23 +136,225 @@ while ((match = taskRegex.exec(content)) !== null) {
   const pseudoMatch = taskContent.match(/<pseudocode>([\s\S]*?)<\/pseudocode>/);
   const pseudocode = pseudoMatch ? pseudoMatch[1].trim() : '';
 
-  // Extract effort and value if present
-  const effortMatch = match[0].match(/effort="([^"]+)"/);
-  const valueMatch = match[0].match(/value="([^"]+)"/);
+  // Extract dependencies if present
+  const depsMatch = taskContent.match(/<dependencies>([^<]+)<\/dependencies>/);
+  const dependencies = depsMatch ? depsMatch[1].trim() : '';
 
-  tasks.push({
-    id: taskId,
-    agent: agent,
-    description: description,
-    acceptance_criteria: criteria,
-    files: files,
-    pseudocode: pseudocode,
-    effort: effortMatch ? effortMatch[1] : 'M',
-    value: valueMatch ? valueMatch[1] : 'M'
-  });
+  // Only add task if we found meaningful content
+  if (taskId && (description || agent)) {
+    tasks.push({
+      id: taskId,
+      agent: agent,
+      description: description,
+      acceptance_criteria: criteria,
+      files: files,
+      pseudocode: pseudocode,
+      effort: effort,
+      value: value,
+      dependencies: dependencies
+    });
+  }
 }
 
-// CRITICAL: Also extract validation commands
+// ============================================================================
+// FORMAT C: Extract Markdown tasks (if no XML tasks found)
+// ============================================================================
+if (tasks.length === 0) {
+  // Pattern: ## Task X.X: Title or ### Task X.X: Title
+  const mdTaskRegex = /^#{2,3}\s+Task\s+(\d+(?:\.\d+)?):?\s*(.*)$/gm;
+  const mdMatches = [...content.matchAll(mdTaskRegex)];
+
+  for (let i = 0; i < mdMatches.length; i++) {
+    const mdMatch = mdMatches[i];
+    const taskId = mdMatch[1];
+    const taskTitle = mdMatch[2].trim();
+    const startIdx = mdMatch.index + mdMatch[0].length;
+
+    // Find the end of this task section (next ## Task or end of file)
+    let endIdx = content.length;
+    if (i + 1 < mdMatches.length) {
+      endIdx = mdMatches[i + 1].index;
+    } else {
+      // Check for other ## headers that would end the task
+      const nextHeader = content.slice(startIdx).match(/\n## [^T]/);
+      if (nextHeader) {
+        endIdx = startIdx + nextHeader.index;
+      }
+    }
+
+    const taskContent = content.slice(startIdx, endIdx);
+
+    // Extract description from ### Description section
+    let description = taskTitle;
+    const descSection = taskContent.match(/###\s*Description\s*\n([\s\S]*?)(?=\n###|\n## |$)/i);
+    if (descSection) {
+      description = descSection[1].trim();
+    }
+
+    // Extract files from ### Files section or markdown table
+    let files = '';
+    const filesSection = taskContent.match(/###\s*Files[^\n]*\n([\s\S]*?)(?=\n###|\n## |$)/i);
+    if (filesSection) {
+      // Look for markdown table rows: | `path` | description |
+      const tableRows = filesSection[1].matchAll(/\|\s*`?([^`|\n]+)`?\s*\|/g);
+      const fileList = [];
+      for (const row of tableRows) {
+        const filePath = row[1].trim();
+        if (filePath && !filePath.match(/^-+$/) && !filePath.match(/^File$/i)) {
+          fileList.push(`- [create] ${filePath}`);
+        }
+      }
+      files = fileList.join('\n');
+    }
+
+    // Extract implementation/pseudocode from ### Implementation section
+    let pseudocode = '';
+    const implSection = taskContent.match(/###\s*Implementation\s*\n([\s\S]*?)(?=\n## |$)/i);
+    if (implSection) {
+      // Extract code blocks
+      const codeBlocks = implSection[1].matchAll(/```[\w]*\n([\s\S]*?)```/g);
+      const codes = [];
+      for (const block of codeBlocks) {
+        codes.push(block[1].trim());
+      }
+      pseudocode = codes.join('\n\n');
+    }
+
+    // Extract acceptance criteria from ### Acceptance or ### Validation section
+    let criteria = '';
+    const acSection = taskContent.match(/###\s*(?:Acceptance|Validation|Success)[^\n]*\n([\s\S]*?)(?=\n###|\n## |$)/i);
+    if (acSection) {
+      // Look for bullet points or numbered lists
+      const bullets = acSection[1].matchAll(/^[\s]*[-*\d.]+\s+(.+)$/gm);
+      const criteriaList = [];
+      for (const bullet of bullets) {
+        criteriaList.push('- ' + bullet[1].trim());
+      }
+      criteria = criteriaList.join('\n');
+    }
+
+    // Try to determine agent from PRP metadata or default
+    let agent = '';
+    const prpAgentMatch = content.match(/<agent>([^<]+)<\/agent>/);
+    if (prpAgentMatch) {
+      agent = prpAgentMatch[1].trim();
+    } else {
+      // Default based on task content keywords
+      if (taskContent.match(/test|spec|coverage/i)) {
+        agent = 'KGP:qa-engineer';
+      } else if (taskContent.match(/database|model|schema|migration/i)) {
+        agent = 'KGP:data-engineer';
+      } else if (taskContent.match(/docker|deploy|infrastructure|ci|cd/i)) {
+        agent = 'KGP:devops-engineer';
+      } else if (taskContent.match(/api|endpoint|service|backend/i)) {
+        agent = 'KGP:backend-engineer';
+      } else if (taskContent.match(/ui|frontend|component|react/i)) {
+        agent = 'KGP:frontend-engineer';
+      } else {
+        agent = 'KGP:backend-engineer'; // Default
+      }
+    }
+
+    tasks.push({
+      id: taskId,
+      agent: agent,
+      description: description,
+      acceptance_criteria: criteria,
+      files: files,
+      pseudocode: pseudocode.slice(0, 5000), // Limit pseudocode size
+      effort: 'M',
+      value: 'H',
+      dependencies: ''
+    });
+  }
+}
+
+// ============================================================================
+// FORMAT D: Single-task PRP (has goal/implementation but no discrete tasks)
+// ============================================================================
+if (tasks.length === 0) {
+  // Check if this is a single-task PRP by looking for task reference in metadata
+  const taskRefMatch = content.match(/<tasks>([^<]+)<\/tasks>/);
+  const goalMatch2 = content.match(/<goal>([\s\S]*?)<\/goal>/);
+
+  if (taskRefMatch && goalMatch2) {
+    const taskId = taskRefMatch[1].trim();
+    const goalText = goalMatch2[1].trim();
+
+    // Extract files from <files-to-create> or ### File: sections
+    let files = '';
+    const filesToCreate = content.match(/<files-to-create>([\s\S]*?)<\/files-to-create>/);
+    if (filesToCreate) {
+      const fileList = [];
+      const fileRegex = /<file>([^<]+)<\/file>/g;
+      let fileMatch;
+      while ((fileMatch = fileRegex.exec(filesToCreate[1])) !== null) {
+        fileList.push(`- [create] ${fileMatch[1].trim()}`);
+      }
+      files = fileList.join('\n');
+    }
+
+    // If no XML files, look for ### File: headers
+    if (!files) {
+      const fileHeaders = content.matchAll(/###\s+File:\s*(.+)$/gm);
+      const fileList = [];
+      for (const fh of fileHeaders) {
+        fileList.push(`- [create] ${fh[1].trim()}`);
+      }
+      files = fileList.join('\n');
+    }
+
+    // Extract acceptance criteria from ## Acceptance Criteria section
+    let criteria = '';
+    const acSection = content.match(/##\s*Acceptance Criteria\s*\n([\s\S]*?)(?=\n## |$)/i);
+    if (acSection) {
+      const bullets = acSection[1].matchAll(/^[\s]*[-*]+\s+(.+)$/gm);
+      const criteriaList = [];
+      for (const bullet of bullets) {
+        criteriaList.push('- ' + bullet[1].trim());
+      }
+      criteria = criteriaList.join('\n');
+    }
+
+    // Extract implementation code blocks as pseudocode
+    let pseudocode = '';
+    const implSection = content.match(/##\s*Implementation\s*\n([\s\S]*?)(?=\n## Acceptance|$)/i);
+    if (implSection) {
+      const codeBlocks = implSection[1].matchAll(/```[\w]*\n([\s\S]*?)```/g);
+      const codes = [];
+      for (const block of codeBlocks) {
+        if (codes.length < 3) { // Limit to first 3 code blocks
+          codes.push(block[1].trim().slice(0, 2000));
+        }
+      }
+      pseudocode = codes.join('\n\n...\n\n');
+    }
+
+    // Determine agent
+    let agent = 'KGP:backend-engineer';
+    if (content.match(/test|spec|coverage/i)) {
+      agent = 'KGP:qa-engineer';
+    } else if (content.match(/docker|deploy|infrastructure/i)) {
+      agent = 'KGP:devops-engineer';
+    }
+
+    tasks.push({
+      id: taskId,
+      agent: agent,
+      description: goalText,
+      acceptance_criteria: criteria,
+      files: files,
+      pseudocode: pseudocode.slice(0, 5000),
+      effort: 'L', // Single-task PRPs are usually larger
+      value: 'H',
+      dependencies: ''
+    });
+  }
+}
+
+// ============================================================================
+// Extract validation commands
+// ============================================================================
 const validationRegex = /<level[^>]*>\s*<command>([\s\S]*?)<\/command>/g;
 const validationCommands = [];
 let valMatch;
