@@ -8,9 +8,25 @@
 
 set -euo pipefail
 
-# Get script directory for relative paths
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Get script directory for relative paths (works in both bash and zsh)
+# Try BASH_SOURCE first (bash), fall back to ${(%):-%x} (zsh), then $0
+if [[ -n "${BASH_SOURCE[0]:-}" ]]; then
+  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+elif [[ -n "${(%):-%x:-}" ]] 2>/dev/null; then
+  SCRIPT_DIR="$(cd "$(dirname "${(%):-%x}")" && pwd)"
+else
+  # Fallback: use $0 but resolve it properly
+  SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+fi
 PLUGIN_ROOT="$(dirname "$SCRIPT_DIR")"
+
+# Validate we found the right directory by checking for expected files
+if [[ ! -f "$SCRIPT_DIR/prp-to-tasks.js" ]]; then
+  echo "Error: Cannot find prp-to-tasks.js in $SCRIPT_DIR" >&2
+  echo "SCRIPT_DIR detection may have failed." >&2
+  echo "Try running with: bash /path/to/prp-orchestrator.sh ..." >&2
+  exit 1
+fi
 
 # Task template file
 TASK_TEMPLATE="$PLUGIN_ROOT/templates/current-task.md.template"
