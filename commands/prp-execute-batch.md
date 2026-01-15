@@ -194,7 +194,7 @@ The batch progress file shows:
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                    Claude Code Session                       │
-│  /KGP:prp-execute-batch → Launch batch runner           │
+│  /KGP:prp-execute-batch → Launch batch runner                │
 └──────────────────────────┬──────────────────────────────────┘
                            │
 ┌──────────────────────────▼──────────────────────────────────┐
@@ -207,8 +207,12 @@ The batch progress file shows:
           │                │                │
           ▼                ▼                ▼
 ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐
-│   PRP 1         │ │   PRP 2         │ │   PRP 3         │
-│   (tmux/proc)   │ │   (tmux/proc)   │ │   (tmux/proc)   │
+│   PRP 1 (tmux)  │ │   PRP 2 (tmux)  │ │   PRP 3 (tmux)  │
+│   ↓             │ │   ↓             │ │   ↓             │
+│   claude -p     │ │   claude -p     │ │   claude -p     │
+│   "/KGP:prp-    │ │   "/KGP:prp-    │ │   "/KGP:prp-    │
+│   execute-      │ │   execute-      │ │   execute-      │
+│   isolated"     │ │   isolated"     │ │   isolated"     │
 │   ↓             │ │   ↓             │ │   ↓             │
 │   orchestrator  │ │   orchestrator  │ │   orchestrator  │
 │   ↓             │ │   ↓             │ │   ↓             │
@@ -217,9 +221,17 @@ The batch progress file shows:
      (wait)              (wait)              (done)
 ```
 
+**Key Design Decision:**
+Each PRP is executed via `claude -p "/KGP:prp-execute-isolated <prp>"` rather than
+calling prp-orchestrator.sh directly. This ensures:
+- Consistent execution path for all PRPs
+- Same command whether run manually or in batch
+- Full skill/command context is loaded for each PRP
+
 **Unix (tmux-based):**
 - Each PRP runs in a detached tmux session
-- Batch runner polls for session completion
+- Inside session: `claude -p "/KGP:prp-execute-isolated <prp>"`
+- Batch runner waits for session completion via tmux wait-for
 - Captures output and exit status
 - Cleans up session before next PRP
 

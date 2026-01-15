@@ -1,10 +1,10 @@
 #!/bin/bash
-# PRP Batch Runner - Execute multiple PRPs sequentially with tmux isolation
+# PRP Batch Runner - Execute multiple PRPs sequentially via /KGP:prp-execute-isolated
 # Usage: ./prp-batch-runner.sh <prp1.md> <prp2.md> ... [OPTIONS]
 #    OR: ./prp-batch-runner.sh --batch-file PRPs/batch.txt [OPTIONS]
 #
-# Each PRP runs in its own tmux session, waits for completion, then proceeds to next.
-# This ensures complete isolation between PRPs and prevents Claude context issues.
+# Each PRP runs via the /KGP:prp-execute-isolated command in its own tmux session.
+# This ensures complete isolation between PRPs and consistent execution path.
 
 set -euo pipefail
 
@@ -50,18 +50,19 @@ OPTIONS:
   --help, -h            Show this help message
 
 DESCRIPTION:
-  Executes multiple PRPs sequentially, each in its own tmux session.
+  Executes multiple PRPs sequentially, each via /KGP:prp-execute-isolated.
 
   The workflow is:
   1. Parse list of PRPs from arguments or batch file
   2. For each PRP:
-     a. Spawn tmux session running prp-orchestrator.sh
-     b. Poll until tmux session completes
+     a. Spawn tmux session running: claude -p "/KGP:prp-execute-isolated <prp>"
+     b. Wait until tmux session completes
      c. Capture exit status and log results
      d. Brief pause, then proceed to next PRP
   3. Aggregate results and generate summary
 
-  This ensures complete isolation between PRPs - no context bleed.
+  This ensures complete isolation between PRPs AND consistent execution path
+  through the /KGP:prp-execute-isolated command.
 
 BATCH FILE FORMAT:
   # Comments start with #
@@ -82,6 +83,13 @@ EXAMPLE:
 OUTPUT:
   Batch progress: .claude/prp-batch-progress.md
   Individual PRP logs: .claude/prp-progress.md (overwritten per PRP)
+
+ARCHITECTURE:
+  prp-batch-runner.sh
+    └─► For each PRP:
+         └─► tmux session: claude -p "/KGP:prp-execute-isolated <prp>"
+              └─► prp-orchestrator.sh (launched by command)
+                   └─► Fresh Claude session per task
 
 EOF
 }
@@ -235,16 +243,16 @@ echo ""
 BATCH_SUCCEEDED=0
 BATCH_FAILED=0
 
-# Build orchestrator options
-ORCH_OPTS="--max-retries $MAX_RETRIES --timeout $TIMEOUT"
+# Build options string for prp-execute-isolated command
+ISOLATED_OPTS="--max-retries $MAX_RETRIES --timeout $TIMEOUT"
 if [[ "$DRY_RUN" == "true" ]]; then
-  ORCH_OPTS="$ORCH_OPTS --dry-run"
+  ISOLATED_OPTS="$ISOLATED_OPTS --dry-run"
 fi
 if [[ "$NO_SAFETY" == "true" ]]; then
-  ORCH_OPTS="$ORCH_OPTS --no-safety"
+  ISOLATED_OPTS="$ISOLATED_OPTS --no-safety"
 fi
 if [[ "$SKIP_VALIDATION" == "true" ]]; then
-  ORCH_OPTS="$ORCH_OPTS --skip-validation"
+  ISOLATED_OPTS="$ISOLATED_OPTS --skip-validation"
 fi
 
 # Main batch loop
@@ -271,13 +279,17 @@ for i in "${!PRP_FILES[@]}"; do
 
   # Build the command to run in tmux
   # Using tmux wait-for pattern: command signals completion, main script blocks until signal
-  ORCHESTRATOR="$SCRIPT_DIR/prp-orchestrator.sh"
   WAIT_SIGNAL="prp-done-$$-$PRP_NUM"
 
-  # Command runs orchestrator, saves exit code, then signals completion
-  TMUX_CMD="$ORCHESTRATOR $PRP_FILE $ORCH_OPTS; echo \$? > $EXIT_STATUS_FILE; tmux wait-for -S $WAIT_SIGNAL"
+  # Build the claude command to invoke /KGP:prp-execute-isolated
+  # This ensures each PRP goes through the same command path for consistency
+  CLAUDE_CMD="claude -p \"/KGP:prp-execute-isolated $PRP_FILE $ISOLATED_OPTS\""
+
+  # Command runs claude with the isolated executor command, saves exit code, then signals completion
+  TMUX_CMD="$CLAUDE_CMD; echo \$? > $EXIT_STATUS_FILE; tmux wait-for -S $WAIT_SIGNAL"
 
   echo "Starting tmux session: $SESSION_NAME"
+  echo "Command: /KGP:prp-execute-isolated $PRP_FILE"
 
   # Cleanup function for this session
   cleanup_session() {
