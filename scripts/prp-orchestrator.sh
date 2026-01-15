@@ -15,31 +15,102 @@ PLUGIN_ROOT="$(dirname "$SCRIPT_DIR")"
 # Task template file
 TASK_TEMPLATE="$PLUGIN_ROOT/templates/current-task.md.template"
 
+# Detect package manager for auto-installation
+detect_package_manager() {
+  if command -v brew &> /dev/null; then
+    echo "brew"
+  elif command -v apt-get &> /dev/null; then
+    echo "apt"
+  elif command -v yum &> /dev/null; then
+    echo "yum"
+  elif command -v dnf &> /dev/null; then
+    echo "dnf"
+  elif command -v pacman &> /dev/null; then
+    echo "pacman"
+  elif command -v apk &> /dev/null; then
+    echo "apk"
+  else
+    echo "unknown"
+  fi
+}
+
+# Prompt user to install a package
+prompt_install() {
+  local package="$1"
+  local pkg_manager
+  pkg_manager=$(detect_package_manager)
+
+  echo ""
+  echo "$package is required but not installed." >&2
+
+  # Determine install command
+  local install_cmd=""
+  case "$pkg_manager" in
+    brew)   install_cmd="brew install $package" ;;
+    apt)    install_cmd="sudo apt-get install -y $package" ;;
+    yum)    install_cmd="sudo yum install -y $package" ;;
+    dnf)    install_cmd="sudo dnf install -y $package" ;;
+    pacman) install_cmd="sudo pacman -S --noconfirm $package" ;;
+    apk)    install_cmd="sudo apk add $package" ;;
+    *)
+      echo "Could not detect package manager. Please install $package manually." >&2
+      return 1
+      ;;
+  esac
+
+  # Prompt user
+  echo -n "Install it now with '$install_cmd'? [y/N] " >&2
+  read -r response
+
+  if [[ "$response" =~ ^[Yy]$ ]]; then
+    echo "Installing $package..." >&2
+    if eval "$install_cmd"; then
+      echo "$package installed successfully." >&2
+      return 0
+    else
+      echo "Failed to install $package." >&2
+      return 1
+    fi
+  else
+    echo "Skipping installation of $package." >&2
+    return 1
+  fi
+}
+
 # Check pre-requisites for isolated execution
 check_prerequisites() {
   local missing=()
+  local can_continue=true
 
   # Node.js is required for task extraction
   if ! command -v node &> /dev/null; then
     missing+=("node (required for PRP parsing)")
+    can_continue=false
   fi
 
   # Claude CLI must be installed
   if ! command -v claude &> /dev/null; then
     missing+=("claude (Claude CLI must be installed)")
+    can_continue=false
   fi
 
   # tmux is required on macOS/Linux when no native timeout command
   if [[ "$(uname)" != "MINGW"* ]] && [[ "$(uname)" != "CYGWIN"* ]]; then
     if ! command -v timeout &> /dev/null && ! command -v gtimeout &> /dev/null; then
       if ! command -v tmux &> /dev/null; then
-        missing+=("tmux (required for task timeout on macOS/Linux)")
-        missing+=("  Install with: brew install tmux")
+        # Try to install tmux with user consent
+        if prompt_install "tmux"; then
+          echo "" >&2
+        else
+          missing+=("tmux (required for task timeout on macOS/Linux)")
+          can_continue=false
+        fi
       fi
     fi
   fi
 
   if [[ ${#missing[@]} -gt 0 ]]; then
+    echo "" >&2
     echo "Error: Missing pre-requisites for isolated PRP execution:" >&2
     for item in "${missing[@]}"; do
       echo "  - $item" >&2
