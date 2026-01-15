@@ -32,6 +32,65 @@ Use `/$PLUGIN_NAME:prp-execute` (original) when:
 
 <process>
 
+## Step 0: Detect PRP Chaining Attempts (CRITICAL - DO THIS FIRST)
+
+Before doing anything else, check if the user is attempting to chain multiple PRPs.
+
+**Detection patterns to check in $ARGUMENTS:**
+- Comma-separated paths: `prp1.md, prp2.md` or `prp1.md,prp2.md`
+- Multiple `.md` files: `prp1.md prp2.md prp3.md`
+- Chaining operators: `&&`, `||`, `;`, `|`
+- Multiple `PRPs/` or `prp` references in path arguments
+
+**If ANY chaining pattern is detected:**
+
+1. **Parse the actual PRP paths** from $ARGUMENTS (split by commas, spaces, or operators)
+2. **Construct ready-to-run commands** using those exact paths
+3. **Output the following (with actual paths substituted):**
+
+```
+## ⛔ PRP Chaining Detected
+
+You're trying to execute multiple PRPs in a single command. This won't work from within Claude because `prp-execute-isolated` takes over the terminal with fresh sessions per task.
+
+### Run this in your regular terminal (outside Claude):
+```
+
+**Then construct and display these options using the ACTUAL PRP paths extracted from $ARGUMENTS:**
+
+**Option 1: Sequential chaining with &&**
+Build the command by joining each PRP path with `&& \`:
+```
+claude -p "/$PLUGIN_NAME:prp-execute-isolated [ACTUAL_PATH_1]" && \
+claude -p "/$PLUGIN_NAME:prp-execute-isolated [ACTUAL_PATH_2]" && \
+claude -p "/$PLUGIN_NAME:prp-execute-isolated [ACTUAL_PATH_3]"
+```
+
+**Option 2: Simple loop**
+Build the for loop with all actual paths:
+```
+for prp in [ACTUAL_PATH_1] [ACTUAL_PATH_2] [ACTUAL_PATH_3]; do
+  claude -p "/$PLUGIN_NAME:prp-execute-isolated $prp" || exit 1
+done
+```
+
+**Option 3: One-liner (if only 2 PRPs)**
+If exactly 2 PRPs detected, also show:
+```
+claude -p "/$PLUGIN_NAME:prp-execute-isolated [ACTUAL_PATH_1]" && claude -p "/$PLUGIN_NAME:prp-execute-isolated [ACTUAL_PATH_2]"
+```
+
+**Then output:**
+```
+### Why can't Claude chain these?
+
+The isolated executor spawns **fresh Claude sessions** for each task. Running from inside Claude creates nested session conflicts. The `-p` flag runs the prompt and exits cleanly, making it chainable from your shell.
+
+**Copy one of the commands above and run it in your terminal (outside this Claude session).**
+```
+
+**Then STOP. Do not proceed to Step 1.**
+
 ## Step 1: Validate PRP File
 
 Parse the path from $ARGUMENTS (first argument before any flags).
