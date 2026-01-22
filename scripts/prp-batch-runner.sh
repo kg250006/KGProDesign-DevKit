@@ -195,6 +195,18 @@ check_prerequisites() {
   fi
 }
 
+# Map exit codes to human-readable status messages (for PRP-level reporting)
+get_status_message() {
+  local exit_code="$1"
+
+  case "$exit_code" in
+    0)   echo "SUCCESS" ;;
+    124) echo "TIMED OUT" ;;
+    1)   echo "FAILED (task failures)" ;;
+    *)   echo "FAILED (exit code $exit_code)" ;;
+  esac
+}
+
 check_prerequisites
 
 # Create .claude directory
@@ -344,9 +356,9 @@ for i in "${!PRP_FILES[@]}"; do
     echo "- Status: SUCCESS" >> "$BATCH_PROGRESS"
     BATCH_SUCCEEDED=$((BATCH_SUCCEEDED + 1))
   else
-    echo -e "${RED}PRP $PRP_NUM: FAILED (exit code: $EXIT_CODE)${NC}"
+    echo -e "${RED}PRP $PRP_NUM: $(get_status_message $EXIT_CODE)${NC}"
     echo "- Completed: $END_TIME" >> "$BATCH_PROGRESS"
-    echo "- Status: FAILED (exit code: $EXIT_CODE)" >> "$BATCH_PROGRESS"
+    echo "- Status: $(get_status_message $EXIT_CODE)" >> "$BATCH_PROGRESS"
     BATCH_FAILED=$((BATCH_FAILED + 1))
   fi
 

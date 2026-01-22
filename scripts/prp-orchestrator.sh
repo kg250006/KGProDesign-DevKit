@@ -238,6 +238,24 @@ else
   exit 1
 fi
 
+# Map exit codes to human-readable status messages
+get_status_message() {
+  local exit_code="$1"
+  local timeout_seconds="${2:-$TIMEOUT}"
+
+  case "$exit_code" in
+    0)   echo "SUCCESS" ;;
+    124) echo "TIMED OUT (after ${timeout_seconds}s)" ;;
+    125) echo "TIMEOUT COMMAND FAILED" ;;
+    126) echo "COMMAND NOT EXECUTABLE" ;;
+    127) echo "COMMAND NOT FOUND" ;;
+    130) echo "INTERRUPTED (Ctrl+C)" ;;
+    137) echo "KILLED (SIGKILL)" ;;
+    143) echo "TERMINATED (SIGTERM)" ;;
+    *)   echo "FAILED (exit code $exit_code)" ;;
+  esac
+}
+
 # Default values
 MAX_RETRIES=3
 TIMEOUT=300  # 5 minutes per task
@@ -433,6 +451,12 @@ for i in $(seq 0 $((TOTAL - 1))); do
     TASK_PSEUDO=""
   fi
 
+  # Create truncated task title for progress log readability
+  TASK_TITLE=$(echo "$TASK_DESC" | head -c 80 | tr '\n' ' ')
+  if [[ ${#TASK_DESC} -gt 80 ]]; then
+    TASK_TITLE="${TASK_TITLE}..."
+  fi
+
   echo ""
   echo "=========================================="
   echo "TASK $TASK_NUM / $TOTAL: $TASK_ID"
@@ -523,7 +547,7 @@ EOF
     echo "Attempt $ATTEMPT of $MAX_RETRIES..."
 
     # Log attempt start
-    echo "### Task $TASK_ID - Attempt $ATTEMPT - $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$PROGRESS_FILE"
+    echo "### Task $TASK_ID: $TASK_TITLE - Attempt $ATTEMPT - $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$PROGRESS_FILE"
 
     # Spawn fresh Claude session for THIS task only
     # Using -p for print mode (non-interactive)
@@ -562,8 +586,8 @@ EOF
       else
         EXIT_CODE=$?
         RETRIES=$((RETRIES + 1))
-        echo "Status: FAILED (exit code $EXIT_CODE)" >> "$PROGRESS_FILE"
-        echo "Task $TASK_ID: FAILED (attempt $ATTEMPT)"
+        echo "Status: $(get_status_message $EXIT_CODE $TIMEOUT)" >> "$PROGRESS_FILE"
+        echo "Task $TASK_ID: $(get_status_message $EXIT_CODE $TIMEOUT) (attempt $ATTEMPT)"
 
         if [[ $RETRIES -lt $MAX_RETRIES ]]; then
           echo "Retrying in 2 seconds..."
