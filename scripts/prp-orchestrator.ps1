@@ -193,11 +193,23 @@ for ($i = 0; $i -lt $Total; $i++) {
     $TaskNum = $i + 1
     $Task = $TasksData.tasks[$i]
 
+    # Determine effective timeout for this task
+    # Extended timeout (600s) for test/build tasks, otherwise use command-line default
+    $TaskTimeoutHint = if ($Task.timeout) { $Task.timeout } else { "default" }
+    if ($TaskTimeoutHint -eq "extended") {
+        $EffectiveTimeout = 600
+    } else {
+        $EffectiveTimeout = $Timeout
+    }
+
     Write-Host ""
     Write-Host "=========================================="
     Write-Host "TASK $TaskNum / $Total : $($Task.id)"
     Write-Host "Agent: $($Task.agent)"
     Write-Host "Description: $($Task.description)"
+    if ($TaskTimeoutHint -eq "extended") {
+        Write-Host "Note: Using extended timeout (600s) for this task" -ForegroundColor Cyan
+    }
     Write-Host "=========================================="
 
     # Write task file using template or fallback
@@ -297,11 +309,12 @@ $($Task.acceptance_criteria)
                 $process.StartInfo = $pinfo
                 $process.Start() | Out-Null
 
-                $completed = $process.WaitForExit($Timeout * 1000)
+                # Use EffectiveTimeout which may be extended for test/build tasks
+                $completed = $process.WaitForExit($EffectiveTimeout * 1000)
 
                 if (-not $completed) {
                     $process.Kill()
-                    throw "Timeout after $Timeout seconds"
+                    throw "Timeout after $EffectiveTimeout seconds"
                 }
 
                 if ($process.ExitCode -eq 0) {

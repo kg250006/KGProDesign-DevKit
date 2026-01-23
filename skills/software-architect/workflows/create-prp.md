@@ -108,6 +108,31 @@ export class FeatureService {
 - Pseudocode should reference actual patterns from the codebase
 - Acceptance criteria must be verifiable (not "works correctly")
 - Specify what the task expects and produces for handoff
+
+**Test Task Special Rules:**
+- Any task running tests MUST have `timeout="extended"` attribute
+- If project has 50+ test files, split test execution into multiple tasks by module/directory
+- Never create a single task that says "run all tests" for large codebases
+- E2E and integration tests should always be separate tasks from unit tests
+
+Example test task breakdown:
+```xml
+<!-- Bad: Single monolithic test task -->
+<task id="4.1" agent="qa-engineer" effort="XL" value="H">
+  <description>Run all frontend tests</description>
+</task>
+
+<!-- Good: Split by test type/module -->
+<task id="4.1" agent="qa-engineer" effort="M" value="H" timeout="extended">
+  <description>Run unit tests for components (src/components/__tests__)</description>
+</task>
+<task id="4.2" agent="qa-engineer" effort="M" value="H" timeout="extended">
+  <description>Run unit tests for hooks and utilities (src/hooks/__tests__, src/utils/__tests__)</description>
+</task>
+<task id="4.3" agent="qa-engineer" effort="L" value="H" timeout="extended">
+  <description>Run E2E tests (e2e/)</description>
+</task>
+```
 </step_4_create_tasks>
 
 <step_5_assign_agents>

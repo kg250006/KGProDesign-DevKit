@@ -84,6 +84,18 @@ while ((match = taskRegex.exec(content)) !== null) {
     }
   }
 
+  // Extract timeout hint - try attribute first, then nested metadata
+  let timeout = 'default';
+  const timeoutAttrMatch = fullTaskTag.match(/timeout="([^"]+)"/);
+  if (timeoutAttrMatch) {
+    timeout = timeoutAttrMatch[1];
+  } else {
+    const timeoutNestedMatch = taskContent.match(/<timeout>([^<]+)<\/timeout>/);
+    if (timeoutNestedMatch) {
+      timeout = timeoutNestedMatch[1].trim();
+    }
+  }
+
   // Extract description from <description> tag
   const descMatch = taskContent.match(/<description>([\s\S]*?)<\/description>/);
   const description = descMatch ? descMatch[1].trim() : '';
@@ -142,6 +154,22 @@ while ((match = taskRegex.exec(content)) !== null) {
 
   // Only add task if we found meaningful content
   if (taskId && (description || agent)) {
+    // Auto-detect extended timeout for test tasks if not explicitly set
+    if (timeout === 'default') {
+      const descLower = description.toLowerCase();
+      const testKeywords = [
+        'run test', 'execute test', 'test suite',
+        'npm test', 'pytest', 'jest', 'vitest', 'playwright', 'cypress',
+        'e2e', 'end-to-end', 'integration test',
+        'npm run build', 'cargo build', 'gradle build',
+        'database migration', 'seed database',
+        'full validation', 'run all test'
+      ];
+      if (testKeywords.some(kw => descLower.includes(kw))) {
+        timeout = 'extended';
+      }
+    }
+
     tasks.push({
       id: taskId,
       agent: agent,
@@ -151,6 +179,7 @@ while ((match = taskRegex.exec(content)) !== null) {
       pseudocode: pseudocode,
       effort: effort,
       value: value,
+      timeout: timeout,
       dependencies: dependencies
     });
   }
@@ -255,6 +284,20 @@ if (tasks.length === 0) {
       }
     }
 
+    // Auto-detect extended timeout for test tasks
+    let timeout = 'default';
+    const descLower = description.toLowerCase();
+    const testKeywords = [
+      'run test', 'execute test', 'test suite',
+      'npm test', 'pytest', 'jest', 'vitest', 'playwright', 'cypress',
+      'e2e', 'end-to-end', 'integration test',
+      'npm run build', 'cargo build', 'gradle build',
+      'database migration', 'seed database'
+    ];
+    if (testKeywords.some(kw => descLower.includes(kw))) {
+      timeout = 'extended';
+    }
+
     tasks.push({
       id: taskId,
       agent: agent,
@@ -264,6 +307,7 @@ if (tasks.length === 0) {
       pseudocode: pseudocode.slice(0, 5000), // Limit pseudocode size
       effort: 'M',
       value: 'H',
+      timeout: timeout,
       dependencies: ''
     });
   }
@@ -338,6 +382,20 @@ if (tasks.length === 0) {
       agent = 'KGP:devops-engineer';
     }
 
+    // Auto-detect extended timeout for test tasks
+    let timeout = 'default';
+    const goalLower = goalText.toLowerCase();
+    const testKeywords = [
+      'run test', 'execute test', 'test suite',
+      'npm test', 'pytest', 'jest', 'vitest', 'playwright', 'cypress',
+      'e2e', 'end-to-end', 'integration test',
+      'npm run build', 'cargo build', 'gradle build',
+      'database migration', 'seed database'
+    ];
+    if (testKeywords.some(kw => goalLower.includes(kw))) {
+      timeout = 'extended';
+    }
+
     tasks.push({
       id: taskId,
       agent: agent,
@@ -347,6 +405,7 @@ if (tasks.length === 0) {
       pseudocode: pseudocode.slice(0, 5000),
       effort: 'L', // Single-task PRPs are usually larger
       value: 'H',
+      timeout: timeout,
       dependencies: ''
     });
   }

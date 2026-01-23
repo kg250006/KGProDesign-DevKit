@@ -68,6 +68,12 @@ Consistent effort estimation for PRP tasks using t-shirt sizing and complexity f
 - What decisions need to be made?
 - What could go wrong?
 
+**CRITICAL RULE:** L tasks are a RED FLAG. Before accepting an L task, ask:
+1. Can this be split into 2-3 Medium tasks?
+2. Is there a simpler approach that would reduce complexity?
+
+Only keep L size if splitting genuinely makes the work harder (e.g., tight coupling requires single-session context).
+
 ### Extra Large (XL) - Over 1 hour
 
 **Characteristics:**
@@ -88,7 +94,14 @@ Consistent effort estimation for PRP tasks using t-shirt sizing and complexity f
 - Are requirements fully understood?
 - Is stakeholder alignment needed?
 
-**Rule:** If it's XL, consider splitting into multiple tasks.
+**CRITICAL RULE:** XL tasks are NOT ALLOWED in PRPs. You MUST split them.
+
+If a task seems XL, either:
+1. Split into multiple L or M tasks
+2. Split into a separate PRP (sub-PRP)
+3. Re-scope to reduce complexity
+
+Extended timeouts are a LAST RESORT, not a solution for poor task decomposition.
 
 </sizing_definitions>
 
@@ -247,3 +260,69 @@ Task A depends on Task B → estimate A conservatively.
 "I can do this in 10 minutes" → can anyone maintain it?
 
 </anti_patterns>
+
+<test_task_guidance>
+
+## Test Task Special Handling
+
+Test execution tasks require special consideration because they:
+- Run external processes (test runners) with variable duration
+- Often time out at default 300s timeout
+- Scale with codebase size (more tests = longer runtime)
+
+### Rule: Always Use Extended Timeout for Test Tasks
+
+Any task that runs tests should have `timeout="extended"`:
+
+```xml
+<task id="4.1" agent="qa-engineer" effort="L" value="H" timeout="extended">
+  <description>Run full frontend test suite</description>
+  ...
+</task>
+```
+
+### Rule: Break Down Large Test Suites
+
+If a project has 50+ test files, split into multiple tasks:
+
+**Bad (single task that will timeout):**
+```xml
+<task id="4.1" agent="qa-engineer" effort="XL" value="H">
+  <description>Run all tests for the application</description>
+</task>
+```
+
+**Good (split by domain/directory):**
+```xml
+<task id="4.1" agent="qa-engineer" effort="M" value="H" timeout="extended">
+  <description>Run authentication module tests (src/auth/__tests__)</description>
+</task>
+<task id="4.2" agent="qa-engineer" effort="M" value="H" timeout="extended">
+  <description>Run user management tests (src/users/__tests__)</description>
+</task>
+<task id="4.3" agent="qa-engineer" effort="M" value="H" timeout="extended">
+  <description>Run API endpoint tests (src/api/__tests__)</description>
+</task>
+```
+
+### Test Task Splitting Guidelines
+
+| Test Count | Strategy | Tasks |
+|------------|----------|-------|
+| < 20 tests | Single task | 1 task with extended timeout |
+| 20-50 tests | Split by type | Unit tests, Integration tests |
+| 50-100 tests | Split by module | Auth, Users, API, etc. |
+| 100+ tests | Split by directory | Each major directory gets a task |
+
+### Keywords That Indicate Extended Timeout Needed
+
+When a task description contains these keywords, it needs `timeout="extended"`:
+
+- "run tests", "execute tests", "test suite"
+- "npm test", "pytest", "jest", "vitest", "playwright", "cypress"
+- "E2E", "end-to-end", "integration test"
+- "npm run build", "cargo build", "gradle build"
+- "database migration", "seed database"
+- "full validation", "complete test run"
+
+</test_task_guidance>

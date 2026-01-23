@@ -441,14 +441,25 @@ for i in $(seq 0 $((TOTAL - 1))); do
     TASK_CRITERIA=$(echo "$TASKS_JSON" | jq -r ".tasks[$i].acceptance_criteria")
     TASK_FILES=$(echo "$TASKS_JSON" | jq -r ".tasks[$i].files")
     TASK_PSEUDO=$(echo "$TASKS_JSON" | jq -r ".tasks[$i].pseudocode")
+    TASK_TIMEOUT_HINT=$(echo "$TASKS_JSON" | jq -r ".tasks[$i].timeout // \"default\"")
   else
     # Node.js fallback
     TASK_ID=$(echo "$TASKS_JSON" | node -e "const d=JSON.parse(require('fs').readFileSync(0,'utf8'));console.log(d.tasks[$i].id)")
     TASK_AGENT=$(echo "$TASKS_JSON" | node -e "const d=JSON.parse(require('fs').readFileSync(0,'utf8'));console.log(d.tasks[$i].agent)")
     TASK_DESC=$(echo "$TASKS_JSON" | node -e "const d=JSON.parse(require('fs').readFileSync(0,'utf8'));console.log(d.tasks[$i].description)")
+    TASK_TIMEOUT_HINT=$(echo "$TASKS_JSON" | node -e "const d=JSON.parse(require('fs').readFileSync(0,'utf8'));console.log(d.tasks[$i].timeout||'default')")
     TASK_CRITERIA=""
     TASK_FILES=""
     TASK_PSEUDO=""
+  fi
+
+  # Determine effective timeout for this task
+  # Extended timeout (600s) for test/build tasks, otherwise use command-line default
+  if [[ "$TASK_TIMEOUT_HINT" == "extended" ]]; then
+    EFFECTIVE_TIMEOUT=600
+    echo "Note: Using extended timeout (600s) for this task"
+  else
+    EFFECTIVE_TIMEOUT=$TIMEOUT
   fi
 
   # Create truncated task title for progress log readability
@@ -578,7 +589,8 @@ EOF
       fi
 
       # Execute with timeout (works with both native timeout and tmux_timeout)
-      if $TIMEOUT_CMD "$TIMEOUT" bash -c "$CLAUDE_FULL_CMD" 2>&1; then
+      # Uses EFFECTIVE_TIMEOUT which may be extended for test/build tasks
+      if $TIMEOUT_CMD "$EFFECTIVE_TIMEOUT" bash -c "$CLAUDE_FULL_CMD" 2>&1; then
         SUCCESS=true
         SUCCEEDED=$((SUCCEEDED + 1))
         echo "Status: SUCCESS" >> "$PROGRESS_FILE"
@@ -586,8 +598,8 @@ EOF
       else
         EXIT_CODE=$?
         RETRIES=$((RETRIES + 1))
-        echo "Status: $(get_status_message $EXIT_CODE $TIMEOUT)" >> "$PROGRESS_FILE"
-        echo "Task $TASK_ID: $(get_status_message $EXIT_CODE $TIMEOUT) (attempt $ATTEMPT)"
+        echo "Status: $(get_status_message $EXIT_CODE $EFFECTIVE_TIMEOUT)" >> "$PROGRESS_FILE"
+        echo "Task $TASK_ID: $(get_status_message $EXIT_CODE $EFFECTIVE_TIMEOUT) (attempt $ATTEMPT)"
 
         if [[ $RETRIES -lt $MAX_RETRIES ]]; then
           echo "Retrying in 2 seconds..."

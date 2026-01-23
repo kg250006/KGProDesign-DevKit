@@ -355,11 +355,15 @@ for i in "${!PRP_FILES[@]}"; do
     echo "- Completed: $END_TIME" >> "$BATCH_PROGRESS"
     echo "- Status: SUCCESS" >> "$BATCH_PROGRESS"
     BATCH_SUCCEEDED=$((BATCH_SUCCEEDED + 1))
+    # Update checkbox to mark as complete
+    sed -i.bak "s|^- \[ \] $PRP_FILE\$|- [x] $PRP_FILE|" "$BATCH_PROGRESS" && rm -f "${BATCH_PROGRESS}.bak"
   else
     echo -e "${RED}PRP $PRP_NUM: $(get_status_message $EXIT_CODE)${NC}"
     echo "- Completed: $END_TIME" >> "$BATCH_PROGRESS"
     echo "- Status: $(get_status_message $EXIT_CODE)" >> "$BATCH_PROGRESS"
     BATCH_FAILED=$((BATCH_FAILED + 1))
+    # Update checkbox to mark as failed
+    sed -i.bak "s|^- \[ \] $PRP_FILE\$|- [~] $PRP_FILE (FAILED)|" "$BATCH_PROGRESS" && rm -f "${BATCH_PROGRESS}.bak"
   fi
 
   echo "" >> "$BATCH_PROGRESS"

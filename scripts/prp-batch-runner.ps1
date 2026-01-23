@@ -264,11 +264,19 @@ OUTPUT:
                 Add-Content -Path $BatchProgress -Value "- Completed: $EndTime"
                 Add-Content -Path $BatchProgress -Value "- Status: SUCCESS"
                 $BatchSucceeded++
+                # Update checkbox to mark as complete
+                $content = Get-Content -Path $BatchProgress -Raw
+                $content = $content -replace [regex]::Escape("- [ ] $PrpFile"), "- [x] $PrpFile"
+                Set-Content -Path $BatchProgress -Value $content -NoNewline
             } else {
                 Write-Host "PRP $PrpNum`: FAILED (exit code: $ExitCode)" -ForegroundColor Red
                 Add-Content -Path $BatchProgress -Value "- Completed: $EndTime"
                 Add-Content -Path $BatchProgress -Value "- Status: FAILED (exit code: $ExitCode)"
                 $BatchFailed++
+                # Update checkbox to mark as failed
+                $content = Get-Content -Path $BatchProgress -Raw
+                $content = $content -replace [regex]::Escape("- [ ] $PrpFile"), "- [~] $PrpFile (FAILED)"
+                Set-Content -Path $BatchProgress -Value $content -NoNewline
             }
         }
         catch {
@@ -277,6 +285,10 @@ OUTPUT:
             Add-Content -Path $BatchProgress -Value "- Completed: $EndTime"
             Add-Content -Path $BatchProgress -Value "- Status: ERROR ($_)"
             $BatchFailed++
+            # Update checkbox to mark as failed
+            $content = Get-Content -Path $BatchProgress -Raw
+            $content = $content -replace [regex]::Escape("- [ ] $PrpFile"), "- [~] $PrpFile (ERROR)"
+            Set-Content -Path $BatchProgress -Value $content -NoNewline
         }
 
         Add-Content -Path $BatchProgress -Value ""

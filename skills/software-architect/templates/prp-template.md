@@ -56,7 +56,7 @@ Use this template structure when generating PRPs. Copy and fill in all sections.
     <description>[What this phase accomplishes]</description>
 
     <tasks>
-      <task id="1.1" agent="[agent-type]" effort="[S|M|L|XL]" value="[H|M|L]">
+      <task id="1.1" agent="[agent-type]" effort="[S|M|L|XL]" value="[H|M|L]" timeout="[default|extended]">
         <description>[Clear, actionable description of what to do]</description>
 
         <files>
@@ -166,3 +166,17 @@ Use this template structure when generating PRPs. Copy and fill in all sections.
 | H | Core functionality, blocking, user-facing |
 | M | Important, not blocking, enhances experience |
 | L | Nice to have, polish, optimization |
+
+## Timeout Reference
+
+| Timeout | When to Use |
+|---------|-------------|
+| default | Standard tasks (300s) |
+| extended | Test execution, E2E tests, builds, large codebases (600s) |
+
+**Tasks that should use `timeout="extended"`:**
+- Running test suites (`npm test`, `pytest`, `jest`)
+- E2E/integration tests (`playwright`, `cypress`)
+- Build commands (`npm run build`, `cargo build`)
+- Database migrations with large datasets
+- Any task running multiple test files
