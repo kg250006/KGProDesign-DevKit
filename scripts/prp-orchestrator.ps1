@@ -200,12 +200,24 @@ for ($i = 0; $i -lt $Total; $i++) {
     $Task = $TasksData.tasks[$i]
 
     # Determine effective timeout for this task
-    # Extended timeout (600s) for test/build tasks, otherwise use command-line default
+    # Supports: numeric value (e.g., "900"), "extended" (600s), or default
     $TaskTimeoutHint = if ($Task.timeout) { $Task.timeout } else { "default" }
-    if ($TaskTimeoutHint -eq "extended") {
+    if ($TaskTimeoutHint -match '^\d+$') {
+        # Numeric timeout specified in PRP
+        $EffectiveTimeout = [int]$TaskTimeoutHint
+    } elseif ($TaskTimeoutHint -eq "extended") {
         $EffectiveTimeout = 600
     } else {
         $EffectiveTimeout = $Timeout
+    }
+
+    # Determine effective iterations for this task
+    # Supports: numeric value (e.g., "3"), or default to global Iterations
+    $TaskIterationsHint = if ($Task.iterations) { $Task.iterations } else { "default" }
+    if ($TaskIterationsHint -match '^\d+$') {
+        $EffectiveIterations = [int]$TaskIterationsHint
+    } else {
+        $EffectiveIterations = $Iterations
     }
 
     Write-Host ""
@@ -213,8 +225,13 @@ for ($i = 0; $i -lt $Total; $i++) {
     Write-Host "TASK $TaskNum / $Total : $($Task.id)"
     Write-Host "Agent: $($Task.agent)"
     Write-Host "Description: $($Task.description)"
-    if ($TaskTimeoutHint -eq "extended") {
+    if ($TaskTimeoutHint -match '^\d+$') {
+        Write-Host "Note: Using task-specified timeout (${EffectiveTimeout}s)" -ForegroundColor Cyan
+    } elseif ($TaskTimeoutHint -eq "extended") {
         Write-Host "Note: Using extended timeout (600s) for this task" -ForegroundColor Cyan
+    }
+    if ($TaskIterationsHint -match '^\d+$') {
+        Write-Host "Note: Using task-specified iterations ($EffectiveIterations)" -ForegroundColor Cyan
     }
     Write-Host "=========================================="
 
@@ -277,10 +294,10 @@ $($Task.acceptance_criteria)
     $TaskFullyComplete = $false
 
     # Outer loop: Success iterations (Ralph Loop philosophy)
-    # Each task must complete $Iterations successful runs before moving on
-    while ($IterationsCompleted -lt $Iterations -and -not $TaskFullyComplete) {
+    # Each task must complete $EffectiveIterations successful runs before moving on
+    while ($IterationsCompleted -lt $EffectiveIterations -and -not $TaskFullyComplete) {
         $CurrentIteration = $IterationsCompleted + 1
-        Write-Host "Iteration $CurrentIteration of $Iterations..."
+        Write-Host "Iteration $CurrentIteration of $EffectiveIterations..."
 
         # Log iteration start
         Add-Content -Path $ProgressFile -Value "### Task $($Task.id): $TaskTitle"
@@ -378,17 +395,17 @@ $($Task.acceptance_criteria)
         }
 
         # Brief pause between iterations (if more iterations needed)
-        if ($IterationsCompleted -lt $Iterations -and $IterationSuccess) {
+        if ($IterationsCompleted -lt $EffectiveIterations -and $IterationSuccess) {
             Write-Host "  Pausing before next iteration..."
             Start-Sleep -Seconds 1
         }
     }
 
     # Only count as succeeded if ALL iterations completed
-    if ($IterationsCompleted -eq $Iterations) {
+    if ($IterationsCompleted -eq $EffectiveIterations) {
         $Succeeded++
-        Write-Host "Task $($Task.id): FULLY COMPLETE ($Iterations iterations)" -ForegroundColor Green
-        Add-Content -Path $ProgressFile -Value "Task Status: FULLY COMPLETE ($Iterations/$Iterations iterations)"
+        Write-Host "Task $($Task.id): FULLY COMPLETE ($EffectiveIterations iterations)" -ForegroundColor Green
+        Add-Content -Path $ProgressFile -Value "Task Status: FULLY COMPLETE ($EffectiveIterations/$EffectiveIterations iterations)"
     }
 
     Add-Content -Path $ProgressFile -Value ""

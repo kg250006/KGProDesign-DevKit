@@ -96,6 +96,18 @@ while ((match = taskRegex.exec(content)) !== null) {
     }
   }
 
+  // Extract iterations hint - try attribute first, then nested metadata
+  let iterations = 'default';
+  const iterationsAttrMatch = fullTaskTag.match(/iterations="([^"]+)"/);
+  if (iterationsAttrMatch) {
+    iterations = iterationsAttrMatch[1];
+  } else {
+    const iterationsNestedMatch = taskContent.match(/<iterations>([^<]+)<\/iterations>/);
+    if (iterationsNestedMatch) {
+      iterations = iterationsNestedMatch[1].trim();
+    }
+  }
+
   // Extract description from <description> tag
   const descMatch = taskContent.match(/<description>([\s\S]*?)<\/description>/);
   const description = descMatch ? descMatch[1].trim() : '';
@@ -163,7 +175,11 @@ while ((match = taskRegex.exec(content)) !== null) {
         'e2e', 'end-to-end', 'integration test',
         'npm run build', 'cargo build', 'gradle build',
         'database migration', 'seed database',
-        'full validation', 'run all test'
+        'full validation', 'run all test',
+        // E2E and verification keywords
+        'verify all pass', 'run all tests', 'spec.ts', 'spec.js',
+        'test coverage', 'verify tests', 'execute tests', 'all tests pass',
+        'verification', 'run the tests', 'execute the tests'
       ];
       if (testKeywords.some(kw => descLower.includes(kw))) {
         timeout = 'extended';
@@ -180,6 +196,7 @@ while ((match = taskRegex.exec(content)) !== null) {
       effort: effort,
       value: value,
       timeout: timeout,
+      iterations: iterations,
       dependencies: dependencies
     });
   }
@@ -292,7 +309,11 @@ if (tasks.length === 0) {
       'npm test', 'pytest', 'jest', 'vitest', 'playwright', 'cypress',
       'e2e', 'end-to-end', 'integration test',
       'npm run build', 'cargo build', 'gradle build',
-      'database migration', 'seed database'
+      'database migration', 'seed database',
+      // E2E and verification keywords
+      'verify all pass', 'run all tests', 'spec.ts', 'spec.js',
+      'test coverage', 'verify tests', 'execute tests', 'all tests pass',
+      'verification', 'run the tests', 'execute the tests'
     ];
     if (testKeywords.some(kw => descLower.includes(kw))) {
       timeout = 'extended';
@@ -308,6 +329,7 @@ if (tasks.length === 0) {
       effort: 'M',
       value: 'H',
       timeout: timeout,
+      iterations: 'default',
       dependencies: ''
     });
   }
@@ -390,7 +412,11 @@ if (tasks.length === 0) {
       'npm test', 'pytest', 'jest', 'vitest', 'playwright', 'cypress',
       'e2e', 'end-to-end', 'integration test',
       'npm run build', 'cargo build', 'gradle build',
-      'database migration', 'seed database'
+      'database migration', 'seed database',
+      // E2E and verification keywords
+      'verify all pass', 'run all tests', 'spec.ts', 'spec.js',
+      'test coverage', 'verify tests', 'execute tests', 'all tests pass',
+      'verification', 'run the tests', 'execute the tests'
     ];
     if (testKeywords.some(kw => goalLower.includes(kw))) {
       timeout = 'extended';
@@ -406,6 +432,7 @@ if (tasks.length === 0) {
       effort: 'L', // Single-task PRPs are usually larger
       value: 'H',
       timeout: timeout,
+      iterations: 'default',
       dependencies: ''
     });
   }

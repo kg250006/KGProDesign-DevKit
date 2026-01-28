@@ -451,20 +451,26 @@ for i in $(seq 0 $((TOTAL - 1))); do
     TASK_FILES=$(echo "$TASKS_JSON" | jq -r ".tasks[$i].files")
     TASK_PSEUDO=$(echo "$TASKS_JSON" | jq -r ".tasks[$i].pseudocode")
     TASK_TIMEOUT_HINT=$(echo "$TASKS_JSON" | jq -r ".tasks[$i].timeout // \"default\"")
+    TASK_ITERATIONS=$(echo "$TASKS_JSON" | jq -r ".tasks[$i].iterations // \"default\"")
   else
     # Node.js fallback
     TASK_ID=$(echo "$TASKS_JSON" | node -e "const d=JSON.parse(require('fs').readFileSync(0,'utf8'));console.log(d.tasks[$i].id)")
     TASK_AGENT=$(echo "$TASKS_JSON" | node -e "const d=JSON.parse(require('fs').readFileSync(0,'utf8'));console.log(d.tasks[$i].agent)")
     TASK_DESC=$(echo "$TASKS_JSON" | node -e "const d=JSON.parse(require('fs').readFileSync(0,'utf8'));console.log(d.tasks[$i].description)")
     TASK_TIMEOUT_HINT=$(echo "$TASKS_JSON" | node -e "const d=JSON.parse(require('fs').readFileSync(0,'utf8'));console.log(d.tasks[$i].timeout||'default')")
+    TASK_ITERATIONS=$(echo "$TASKS_JSON" | node -e "const d=JSON.parse(require('fs').readFileSync(0,'utf8'));console.log(d.tasks[$i].iterations||'default')")
     TASK_CRITERIA=""
     TASK_FILES=""
     TASK_PSEUDO=""
   fi
 
   # Determine effective timeout for this task
-  # Extended timeout (600s) for test/build tasks, otherwise use command-line default
-  if [[ "$TASK_TIMEOUT_HINT" == "extended" ]]; then
+  # Supports: numeric value (e.g., "900"), "extended" (600s), or default
+  if [[ "$TASK_TIMEOUT_HINT" =~ ^[0-9]+$ ]]; then
+    # Numeric timeout specified in PRP
+    EFFECTIVE_TIMEOUT=$TASK_TIMEOUT_HINT
+    echo "Note: Using task-specified timeout (${EFFECTIVE_TIMEOUT}s)"
+  elif [[ "$TASK_TIMEOUT_HINT" == "extended" ]]; then
     EFFECTIVE_TIMEOUT=600
     echo "Note: Using extended timeout (600s) for this task"
   else
@@ -484,49 +490,63 @@ for i in $(seq 0 $((TOTAL - 1))); do
   echo "Description: $TASK_DESC"
   echo "=========================================="
 
-  # Write ONLY this task to file (Claude sees nothing else)
-  # Use template file if it exists, otherwise use inline fallback
-  if [[ -f "$TASK_TEMPLATE" ]]; then
-    # Render template using Node.js for proper multi-line handling
-    # Export variables so node can access them via process.env
-    export TASK_ID TASK_DESC TASK_FILES TASK_PSEUDO TASK_CRITERIA TASK_AGENT PRP_NAME PRP_FILE
-    export TASK_FILE_PATH="$TASK_FILE"
-    export TEMPLATE_PATH="$TASK_TEMPLATE"
+  # Track iterations for this task
+  ITERATIONS_COMPLETED=0
+  TASK_FULLY_COMPLETE=false
 
-    node -e '
-      const fs = require("fs");
-      const template = fs.readFileSync(process.env.TEMPLATE_PATH, "utf8");
-      const vars = {
-        TASK_ID: process.env.TASK_ID || "",
-        TASK_DESC: process.env.TASK_DESC || "",
-        TASK_FILES: process.env.TASK_FILES || "",
-        TASK_PSEUDO: process.env.TASK_PSEUDO || "",
-        TASK_CRITERIA: process.env.TASK_CRITERIA || "",
-        TASK_AGENT: process.env.TASK_AGENT || "",
-        PRP_NAME: process.env.PRP_NAME || "",
-        PRP_FILE: process.env.PRP_FILE || ""
-      };
-      let output = template;
-      for (const [key, value] of Object.entries(vars)) {
-        output = output.split("{{" + key + "}}").join(value);
-      }
-      fs.writeFileSync(process.env.TASK_FILE_PATH, output);
-    ' 2>/dev/null
-
-    # Fallback to inline if node fails
-    if [[ ! -f "$TASK_FILE" ]] || [[ ! -s "$TASK_FILE" ]]; then
-      echo "Warning: Template rendering failed, using inline fallback" >&2
-      USE_FALLBACK=true
-    else
-      USE_FALLBACK=false
-    fi
+  # Determine effective iterations for this task
+  # Supports: numeric value (e.g., "3"), or default to global MIN_ITERATIONS
+  if [[ "$TASK_ITERATIONS" =~ ^[0-9]+$ ]]; then
+    EFFECTIVE_ITERATIONS=$TASK_ITERATIONS
+    echo "Note: Using task-specified iterations ($EFFECTIVE_ITERATIONS)"
   else
-    USE_FALLBACK=true
+    EFFECTIVE_ITERATIONS=$MIN_ITERATIONS
   fi
 
-  if [[ "$USE_FALLBACK" == "true" ]]; then
-    # Fallback: inline template if file not found
-    cat > "$TASK_FILE" <<EOF
+  # Outer loop: Success iterations (Ralph Loop philosophy)
+  # Each task must complete EFFECTIVE_ITERATIONS successful runs before moving on
+  while [[ $ITERATIONS_COMPLETED -lt $EFFECTIVE_ITERATIONS ]] && [[ "$TASK_FULLY_COMPLETE" == "false" ]]; do
+    CURRENT_ITERATION=$((ITERATIONS_COMPLETED + 1))
+    echo "Iteration $CURRENT_ITERATION of $EFFECTIVE_ITERATIONS..."
+
+    # Re-render template with iteration context for this iteration
+    if [[ -f "$TASK_TEMPLATE" ]]; then
+      export TASK_ID TASK_DESC TASK_FILES TASK_PSEUDO TASK_CRITERIA TASK_AGENT PRP_NAME PRP_FILE
+      export TASK_FILE_PATH="$TASK_FILE"
+      export TEMPLATE_PATH="$TASK_TEMPLATE"
+
+      node -e '
+        const fs = require("fs");
+        const template = fs.readFileSync(process.env.TEMPLATE_PATH, "utf8");
+        const vars = {
+          TASK_ID: process.env.TASK_ID || "",
+          TASK_DESC: process.env.TASK_DESC || "",
+          TASK_FILES: process.env.TASK_FILES || "",
+          TASK_PSEUDO: process.env.TASK_PSEUDO || "",
+          TASK_CRITERIA: process.env.TASK_CRITERIA || "",
+          TASK_AGENT: process.env.TASK_AGENT || "",
+          PRP_NAME: process.env.PRP_NAME || "",
+          PRP_FILE: process.env.PRP_FILE || ""
+        };
+        let output = template;
+        for (const [key, value] of Object.entries(vars)) {
+          output = output.split("{{" + key + "}}").join(value);
+        }
+        fs.writeFileSync(process.env.TASK_FILE_PATH, output);
+      ' 2>/dev/null
+
+      if [[ ! -f "$TASK_FILE" ]] || [[ ! -s "$TASK_FILE" ]]; then
+        echo "Warning: Template rendering failed, using inline fallback" >&2
+        USE_ITERATION_FALLBACK=true
+      else
+        USE_ITERATION_FALLBACK=false
+      fi
+    else
+      USE_ITERATION_FALLBACK=true
+    fi
+
+    if [[ "$USE_ITERATION_FALLBACK" == "true" ]]; then
+      cat > "$TASK_FILE" <<EOF
 # Current Task: $TASK_ID
 
 You are executing a single task from a PRP. Focus ONLY on this task.
@@ -556,17 +576,7 @@ $TASK_CRITERIA
 - DO NOT try to optimize by combining tasks
 - Focus ONLY on this single task
 EOF
-  fi
-
-  # Track iterations for this task
-  ITERATIONS_COMPLETED=0
-  TASK_FULLY_COMPLETE=false
-
-  # Outer loop: Success iterations (Ralph Loop philosophy)
-  # Each task must complete MIN_ITERATIONS successful runs before moving on
-  while [[ $ITERATIONS_COMPLETED -lt $MIN_ITERATIONS ]] && [[ "$TASK_FULLY_COMPLETE" == "false" ]]; do
-    CURRENT_ITERATION=$((ITERATIONS_COMPLETED + 1))
-    echo "Iteration $CURRENT_ITERATION of $MIN_ITERATIONS..."
+    fi
 
     # Log iteration start
     echo "### Task $TASK_ID: $TASK_TITLE" >> "$PROGRESS_FILE"
@@ -613,23 +623,32 @@ EOF
           CLAUDE_FULL_CMD="claude --dangerously-skip-permissions --disallowedTools $BLOCKED_TOOLS -p '$CLAUDE_PROMPT'"
         fi
 
-        # Execute with timeout (works with both native timeout and tmux_timeout)
+        # Execute with timeout and capture output
         # Uses EFFECTIVE_TIMEOUT which may be extended for test/build tasks
-        if $TIMEOUT_CMD "$EFFECTIVE_TIMEOUT" bash -c "$CLAUDE_FULL_CMD" 2>&1; then
+        CLAUDE_OUTPUT=$($TIMEOUT_CMD "$EFFECTIVE_TIMEOUT" bash -c "$CLAUDE_FULL_CMD" 2>&1)
+        EXIT_CODE=$?
+
+        if [[ $EXIT_CODE -eq 0 ]]; then
           ITERATION_SUCCESS=true
           ITERATIONS_COMPLETED=$((ITERATIONS_COMPLETED + 1))
           TOTAL_ITERATIONS=$((TOTAL_ITERATIONS + 1))
           echo "  Status: SUCCESS (iteration $CURRENT_ITERATION)" >> "$PROGRESS_FILE"
           echo "  Iteration $CURRENT_ITERATION: SUCCESS"
         else
-          EXIT_CODE=$?
           RETRIES=$((RETRIES + 1))
           echo "  Status: $(get_status_message $EXIT_CODE $EFFECTIVE_TIMEOUT)" >> "$PROGRESS_FILE"
           echo "  Iteration $CURRENT_ITERATION, attempt $ATTEMPT: $(get_status_message $EXIT_CODE $EFFECTIVE_TIMEOUT)"
 
+          # Capture error output for debugging
+          echo "  ### Error Output (last 50 lines)" >> "$PROGRESS_FILE"
+          echo '  ```' >> "$PROGRESS_FILE"
+          echo "$CLAUDE_OUTPUT" | tail -50 | sed 's/^/  /' >> "$PROGRESS_FILE"
+          echo '  ```' >> "$PROGRESS_FILE"
+
           if [[ $RETRIES -lt $MAX_RETRIES ]]; then
-            echo "  Retrying in 2 seconds..."
-            sleep 2
+            BACKOFF=$((2 ** RETRIES))
+            echo "  Retrying in ${BACKOFF} seconds..."
+            sleep $BACKOFF
           fi
         fi
       fi
@@ -644,17 +663,17 @@ EOF
     fi
 
     # Brief pause between iterations (if more iterations needed)
-    if [[ $ITERATIONS_COMPLETED -lt $MIN_ITERATIONS ]] && [[ "$ITERATION_SUCCESS" == "true" ]]; then
+    if [[ $ITERATIONS_COMPLETED -lt $EFFECTIVE_ITERATIONS ]] && [[ "$ITERATION_SUCCESS" == "true" ]]; then
       echo "  Pausing before next iteration..."
       sleep 1
     fi
   done
 
   # Only count as succeeded if ALL iterations completed
-  if [[ $ITERATIONS_COMPLETED -eq $MIN_ITERATIONS ]]; then
+  if [[ $ITERATIONS_COMPLETED -eq $EFFECTIVE_ITERATIONS ]]; then
     SUCCEEDED=$((SUCCEEDED + 1))
-    echo "Task $TASK_ID: FULLY COMPLETE ($MIN_ITERATIONS iterations)"
-    echo "Task Status: FULLY COMPLETE ($MIN_ITERATIONS/$MIN_ITERATIONS iterations)" >> "$PROGRESS_FILE"
+    echo "Task $TASK_ID: FULLY COMPLETE ($EFFECTIVE_ITERATIONS iterations)"
+    echo "Task Status: FULLY COMPLETE ($EFFECTIVE_ITERATIONS/$EFFECTIVE_ITERATIONS iterations)" >> "$PROGRESS_FILE"
   fi
 
   echo "" >> "$PROGRESS_FILE"
