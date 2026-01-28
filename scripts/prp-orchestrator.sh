@@ -259,6 +259,7 @@ get_status_message() {
 # Default values
 MAX_RETRIES=3
 TIMEOUT=300  # 5 minutes per task
+MIN_ITERATIONS=2  # Minimum successful iterations per task (Ralph Loop philosophy)
 DRY_RUN=false
 NO_SAFETY=false
 SKIP_VALIDATION=false
@@ -284,6 +285,7 @@ ARGUMENTS:
 OPTIONS:
   --max-retries N     Max retry attempts per task (default: 3)
   --timeout M         Timeout in seconds per task (default: 300)
+  --iterations N      Min successful iterations per task (default: 2)
   --dry-run           Test mode - echo commands instead of running Claude
   --no-safety         Disable safety mode (use standard permissions)
   --skip-validation   Skip acceptance criteria validation
@@ -332,6 +334,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --timeout)
       TIMEOUT="$2"
+      shift 2
+      ;;
+    --iterations)
+      MIN_ITERATIONS="$2"
       shift 2
       ;;
     --dry-run)
@@ -403,6 +409,7 @@ cat > "$PROGRESS_FILE" <<EOF
 - Total Tasks: $TOTAL
 - Max Retries: $MAX_RETRIES
 - Timeout: ${TIMEOUT}s
+- Min Iterations: $MIN_ITERATIONS
 
 ## Task Log
 
@@ -418,6 +425,7 @@ echo "PRP Name: $PRP_NAME"
 echo "Total Tasks: $TOTAL"
 echo "Max Retries: $MAX_RETRIES"
 echo "Timeout: ${TIMEOUT}s per task"
+echo "Iterations: $MIN_ITERATIONS (per task)"
 echo "Progress: $PROGRESS_FILE"
 if [[ "$DRY_RUN" == "true" ]]; then
   echo "Mode: DRY RUN (no Claude sessions)"
@@ -428,6 +436,7 @@ echo ""
 # Track stats
 SUCCEEDED=0
 FAILED=0
+TOTAL_ITERATIONS=0
 
 # Main loop - iterate through tasks
 for i in $(seq 0 $((TOTAL - 1))); do
@@ -549,71 +558,103 @@ $TASK_CRITERIA
 EOF
   fi
 
-  # Retry loop
-  RETRIES=0
-  SUCCESS=false
+  # Track iterations for this task
+  ITERATIONS_COMPLETED=0
+  TASK_FULLY_COMPLETE=false
 
-  while [[ $RETRIES -lt $MAX_RETRIES ]] && [[ "$SUCCESS" == "false" ]]; do
-    ATTEMPT=$((RETRIES + 1))
-    echo "Attempt $ATTEMPT of $MAX_RETRIES..."
+  # Outer loop: Success iterations (Ralph Loop philosophy)
+  # Each task must complete MIN_ITERATIONS successful runs before moving on
+  while [[ $ITERATIONS_COMPLETED -lt $MIN_ITERATIONS ]] && [[ "$TASK_FULLY_COMPLETE" == "false" ]]; do
+    CURRENT_ITERATION=$((ITERATIONS_COMPLETED + 1))
+    echo "Iteration $CURRENT_ITERATION of $MIN_ITERATIONS..."
 
-    # Log attempt start
-    echo "### Task $TASK_ID: $TASK_TITLE - Attempt $ATTEMPT - $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$PROGRESS_FILE"
+    # Log iteration start
+    echo "### Task $TASK_ID: $TASK_TITLE" >> "$PROGRESS_FILE"
+    echo "#### Iteration $CURRENT_ITERATION - $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$PROGRESS_FILE"
 
-    # Spawn fresh Claude session for THIS task only
-    # Using -p for print mode (non-interactive)
-    if [[ "$DRY_RUN" == "true" ]]; then
-      # Dry run mode - simulate success
-      echo "[DRY RUN] Would execute: claude -p \"Read .claude/current-task.md and execute task $TASK_ID\""
-      echo "[DRY RUN] Task file contents:"
-      head -10 "$TASK_FILE" | sed 's/^/  /'
-      echo "  ..."
-      sleep 0.5  # Brief pause to simulate work
-      SUCCESS=true
-      SUCCEEDED=$((SUCCEEDED + 1))
-      echo "Status: SUCCESS (dry-run)" >> "$PROGRESS_FILE"
-      echo "Task $TASK_ID: SUCCESS (dry-run)"
-    else
-      # Build Claude command based on safety mode
-      # CRITICAL: Use --dangerously-skip-permissions to bypass all permission checks
-      # The -p flag already skips the workspace trust dialog
-      # Safety is enforced via --disallowedTools instead
-      CLAUDE_PROMPT="Read .claude/current-task.md and execute the task described. When complete, simply exit."
+    # Reset retry counter for this iteration (fresh start)
+    RETRIES=0
+    ITERATION_SUCCESS=false
 
-      if [[ "$NO_SAFETY" == "true" ]]; then
-        # User explicitly disabled safety - use standard permissions
-        CLAUDE_FULL_CMD="claude -p '$CLAUDE_PROMPT'"
+    # Inner loop: Retry on failure (existing logic)
+    while [[ $RETRIES -lt $MAX_RETRIES ]] && [[ "$ITERATION_SUCCESS" == "false" ]]; do
+      ATTEMPT=$((RETRIES + 1))
+      echo "  Attempt $ATTEMPT of $MAX_RETRIES..."
+
+      # Log attempt start
+      echo "  Attempt $ATTEMPT - $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$PROGRESS_FILE"
+
+      # Spawn fresh Claude session for THIS task only
+      # Using -p for print mode (non-interactive)
+      if [[ "$DRY_RUN" == "true" ]]; then
+        # Dry run mode - simulate success
+        echo "[DRY RUN] Would execute: claude -p \"Read .claude/current-task.md and execute task $TASK_ID\""
+        echo "[DRY RUN] Task file contents:"
+        head -10 "$TASK_FILE" | sed 's/^/    /'
+        echo "    ..."
+        sleep 0.5  # Brief pause to simulate work
+        ITERATION_SUCCESS=true
+        ITERATIONS_COMPLETED=$((ITERATIONS_COMPLETED + 1))
+        TOTAL_ITERATIONS=$((TOTAL_ITERATIONS + 1))
+        echo "  Status: SUCCESS (dry-run, iteration $CURRENT_ITERATION)" >> "$PROGRESS_FILE"
+        echo "  Iteration $CURRENT_ITERATION: SUCCESS (dry-run)"
       else
-        # Default: skip permissions but block dangerous tools
-        CLAUDE_FULL_CMD="claude --dangerously-skip-permissions --disallowedTools $BLOCKED_TOOLS -p '$CLAUDE_PROMPT'"
-      fi
+        # Build Claude command based on safety mode
+        # CRITICAL: Use --dangerously-skip-permissions to bypass all permission checks
+        # The -p flag already skips the workspace trust dialog
+        # Safety is enforced via --disallowedTools instead
+        CLAUDE_PROMPT="Read .claude/current-task.md and execute the task described. When complete, simply exit."
 
-      # Execute with timeout (works with both native timeout and tmux_timeout)
-      # Uses EFFECTIVE_TIMEOUT which may be extended for test/build tasks
-      if $TIMEOUT_CMD "$EFFECTIVE_TIMEOUT" bash -c "$CLAUDE_FULL_CMD" 2>&1; then
-        SUCCESS=true
-        SUCCEEDED=$((SUCCEEDED + 1))
-        echo "Status: SUCCESS" >> "$PROGRESS_FILE"
-        echo "Task $TASK_ID: SUCCESS"
-      else
-        EXIT_CODE=$?
-        RETRIES=$((RETRIES + 1))
-        echo "Status: $(get_status_message $EXIT_CODE $EFFECTIVE_TIMEOUT)" >> "$PROGRESS_FILE"
-        echo "Task $TASK_ID: $(get_status_message $EXIT_CODE $EFFECTIVE_TIMEOUT) (attempt $ATTEMPT)"
+        if [[ "$NO_SAFETY" == "true" ]]; then
+          # User explicitly disabled safety - use standard permissions
+          CLAUDE_FULL_CMD="claude -p '$CLAUDE_PROMPT'"
+        else
+          # Default: skip permissions but block dangerous tools
+          CLAUDE_FULL_CMD="claude --dangerously-skip-permissions --disallowedTools $BLOCKED_TOOLS -p '$CLAUDE_PROMPT'"
+        fi
 
-        if [[ $RETRIES -lt $MAX_RETRIES ]]; then
-          echo "Retrying in 2 seconds..."
-          sleep 2
+        # Execute with timeout (works with both native timeout and tmux_timeout)
+        # Uses EFFECTIVE_TIMEOUT which may be extended for test/build tasks
+        if $TIMEOUT_CMD "$EFFECTIVE_TIMEOUT" bash -c "$CLAUDE_FULL_CMD" 2>&1; then
+          ITERATION_SUCCESS=true
+          ITERATIONS_COMPLETED=$((ITERATIONS_COMPLETED + 1))
+          TOTAL_ITERATIONS=$((TOTAL_ITERATIONS + 1))
+          echo "  Status: SUCCESS (iteration $CURRENT_ITERATION)" >> "$PROGRESS_FILE"
+          echo "  Iteration $CURRENT_ITERATION: SUCCESS"
+        else
+          EXIT_CODE=$?
+          RETRIES=$((RETRIES + 1))
+          echo "  Status: $(get_status_message $EXIT_CODE $EFFECTIVE_TIMEOUT)" >> "$PROGRESS_FILE"
+          echo "  Iteration $CURRENT_ITERATION, attempt $ATTEMPT: $(get_status_message $EXIT_CODE $EFFECTIVE_TIMEOUT)"
+
+          if [[ $RETRIES -lt $MAX_RETRIES ]]; then
+            echo "  Retrying in 2 seconds..."
+            sleep 2
+          fi
         fi
       fi
+    done
+
+    # If this iteration exhausted retries without success, mark task as failed
+    if [[ "$ITERATION_SUCCESS" == "false" ]]; then
+      echo "  Iteration $CURRENT_ITERATION: FAILED after $MAX_RETRIES attempts" >> "$PROGRESS_FILE"
+      echo "  Iteration $CURRENT_ITERATION: FAILED after $MAX_RETRIES attempts"
+      TASK_FULLY_COMPLETE=true  # Exit iteration loop
+      FAILED=$((FAILED + 1))
+    fi
+
+    # Brief pause between iterations (if more iterations needed)
+    if [[ $ITERATIONS_COMPLETED -lt $MIN_ITERATIONS ]] && [[ "$ITERATION_SUCCESS" == "true" ]]; then
+      echo "  Pausing before next iteration..."
+      sleep 1
     fi
   done
 
-  # Handle final failure
-  if [[ "$SUCCESS" == "false" ]]; then
-    FAILED=$((FAILED + 1))
-    echo "Status: FAILED PERMANENTLY after $MAX_RETRIES attempts" >> "$PROGRESS_FILE"
-    echo "Task $TASK_ID: FAILED permanently - continuing to next task"
+  # Only count as succeeded if ALL iterations completed
+  if [[ $ITERATIONS_COMPLETED -eq $MIN_ITERATIONS ]]; then
+    SUCCEEDED=$((SUCCEEDED + 1))
+    echo "Task $TASK_ID: FULLY COMPLETE ($MIN_ITERATIONS iterations)"
+    echo "Task Status: FULLY COMPLETE ($MIN_ITERATIONS/$MIN_ITERATIONS iterations)" >> "$PROGRESS_FILE"
   fi
 
   echo "" >> "$PROGRESS_FILE"
@@ -632,9 +673,11 @@ echo ""
 echo "=========================================="
 echo "  EXECUTION COMPLETE"
 echo "=========================================="
-echo "Total: $TOTAL"
-echo "Succeeded: $SUCCEEDED"
+echo "Total Tasks: $TOTAL"
+echo "Succeeded (all iterations): $SUCCEEDED"
 echo "Failed: $FAILED"
+echo "Total Iterations Run: $TOTAL_ITERATIONS"
+echo "Target Iterations/Task: $MIN_ITERATIONS"
 echo "=========================================="
 
 # Append summary to progress file
@@ -642,8 +685,10 @@ cat >> "$PROGRESS_FILE" <<EOF
 
 ## Summary
 - Completed: $(date -u +%Y-%m-%dT%H:%M:%SZ)
-- Succeeded: $SUCCEEDED / $TOTAL
-- Failed: $FAILED
+- Tasks Succeeded: $SUCCEEDED / $TOTAL
+- Tasks Failed: $FAILED
+- Total Iterations: $TOTAL_ITERATIONS
+- Target Iterations/Task: $MIN_ITERATIONS
 EOF
 
 # Final cleanup: Remove task file if it exists

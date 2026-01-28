@@ -17,6 +17,8 @@ param(
 
     [int]$Timeout = 300,
 
+    [int]$Iterations = 2,
+
     [Alias("dry-run")]
     [switch]$DryRun,
 
@@ -98,6 +100,7 @@ ARGUMENTS:
 OPTIONS:
   -MaxRetries N     Max retry attempts per task (default: 3)
   -Timeout M        Timeout in seconds per task (default: 300)
+  -Iterations N     Min successful iterations per task (default: 2)
   -DryRun           Test mode - echo commands instead of running Claude
   -NoSafety         Disable safety mode (use standard permissions)
   -SkipValidation   Skip acceptance criteria validation
@@ -162,6 +165,7 @@ $Timestamp = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
 - Total Tasks: $Total
 - Max Retries: $MaxRetries
 - Timeout: ${Timeout}s
+- Min Iterations: $Iterations
 
 ## Task Log
 
@@ -177,6 +181,7 @@ Write-Host "PRP Name: $PrpName"
 Write-Host "Total Tasks: $Total"
 Write-Host "Max Retries: $MaxRetries"
 Write-Host "Timeout: ${Timeout}s per task"
+Write-Host "Iterations: $Iterations (per task)"
 Write-Host "Progress: $ProgressFile"
 if ($DryRun) {
     Write-Host "Mode: DRY RUN (no Claude sessions)"
@@ -187,6 +192,7 @@ Write-Host ""
 # Stats
 $Succeeded = 0
 $Failed = 0
+$Script:TotalIterations = 0
 
 # Main loop
 for ($i = 0; $i -lt $Total; $i++) {
@@ -260,88 +266,129 @@ $($Task.acceptance_criteria)
 "@ | Set-Content -Path $TaskFile
     }
 
-    # Retry loop
-    $Retries = 0
-    $Success = $false
+    # Create truncated task title for progress log readability
+    $TaskTitle = $Task.description
+    if ($TaskTitle.Length -gt 80) {
+        $TaskTitle = $TaskTitle.Substring(0, 80) + "..."
+    }
 
-    while ($Retries -lt $MaxRetries -and -not $Success) {
-        $Attempt = $Retries + 1
-        Write-Host "Attempt $Attempt of $MaxRetries..."
+    # Track iterations for this task
+    $IterationsCompleted = 0
+    $TaskFullyComplete = $false
 
-        $AttemptTimestamp = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
-        Add-Content -Path $ProgressFile -Value "### Task $($Task.id) - Attempt $Attempt - $AttemptTimestamp"
+    # Outer loop: Success iterations (Ralph Loop philosophy)
+    # Each task must complete $Iterations successful runs before moving on
+    while ($IterationsCompleted -lt $Iterations -and -not $TaskFullyComplete) {
+        $CurrentIteration = $IterationsCompleted + 1
+        Write-Host "Iteration $CurrentIteration of $Iterations..."
 
-        try {
-            if ($DryRun) {
-                # Dry run mode - simulate success
-                Write-Host "[DRY RUN] Would execute: claude -p `"Read .claude/current-task.md and execute task $($Task.id)`""
-                Write-Host "[DRY RUN] Task file contents:"
-                Get-Content -Path $TaskFile -TotalCount 10 | ForEach-Object { Write-Host "  $_" }
-                Write-Host "  ..."
-                Start-Sleep -Milliseconds 500
-                $Success = $true
-                $Succeeded++
-                Add-Content -Path $ProgressFile -Value "Status: SUCCESS (dry-run)"
-                Write-Host "Task $($Task.id): SUCCESS (dry-run)"
-            } else {
-                # Spawn Claude with timeout using Start-Process
-                # CRITICAL: Use --dangerously-skip-permissions to prevent interactive prompts that cause hangs
-                # Safety is enforced via --disallowedTools instead
-                $pinfo = New-Object System.Diagnostics.ProcessStartInfo
-                # Use resolved full path - UseShellExecute=$false doesn't search PATH
-                $pinfo.FileName = $ClaudePath
+        # Log iteration start
+        Add-Content -Path $ProgressFile -Value "### Task $($Task.id): $TaskTitle"
+        $IterTimestamp = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+        Add-Content -Path $ProgressFile -Value "#### Iteration $CurrentIteration - $IterTimestamp"
 
-                $ClaudePrompt = "Read .claude/current-task.md and execute the task described. When complete, simply exit."
-                if ($NoSafety) {
-                    # User explicitly disabled safety - use standard permissions
-                    $pinfo.Arguments = "-p `"$ClaudePrompt`""
+        # Reset retry counter for this iteration (fresh start)
+        $Retries = 0
+        $IterationSuccess = $false
+
+        # Inner loop: Retry on failure (existing logic)
+        while ($Retries -lt $MaxRetries -and -not $IterationSuccess) {
+            $Attempt = $Retries + 1
+            Write-Host "  Attempt $Attempt of $MaxRetries..."
+
+            # Log attempt start
+            $AttemptTimestamp = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+            Add-Content -Path $ProgressFile -Value "  Attempt $Attempt - $AttemptTimestamp"
+
+            try {
+                if ($DryRun) {
+                    # Dry run mode - simulate success
+                    Write-Host "[DRY RUN] Would execute: claude -p `"Read .claude/current-task.md and execute task $($Task.id)`""
+                    Write-Host "[DRY RUN] Task file contents:"
+                    Get-Content -Path $TaskFile -TotalCount 10 | ForEach-Object { Write-Host "    $_" }
+                    Write-Host "    ..."
+                    Start-Sleep -Milliseconds 500
+                    $IterationSuccess = $true
+                    $IterationsCompleted++
+                    $Script:TotalIterations++
+                    Add-Content -Path $ProgressFile -Value "  Status: SUCCESS (dry-run, iteration $CurrentIteration)"
+                    Write-Host "  Iteration $CurrentIteration`: SUCCESS (dry-run)"
                 } else {
-                    # Default: skip permissions but block dangerous tools
-                    $pinfo.Arguments = "--dangerously-skip-permissions --disallowedTools $BlockedTools -p `"$ClaudePrompt`""
+                    # Spawn Claude with timeout using Start-Process
+                    # CRITICAL: Use --dangerously-skip-permissions to prevent interactive prompts that cause hangs
+                    # Safety is enforced via --disallowedTools instead
+                    $pinfo = New-Object System.Diagnostics.ProcessStartInfo
+                    # Use resolved full path - UseShellExecute=$false doesn't search PATH
+                    $pinfo.FileName = $ClaudePath
+
+                    $ClaudePrompt = "Read .claude/current-task.md and execute the task described. When complete, simply exit."
+                    if ($NoSafety) {
+                        # User explicitly disabled safety - use standard permissions
+                        $pinfo.Arguments = "-p `"$ClaudePrompt`""
+                    } else {
+                        # Default: skip permissions but block dangerous tools
+                        $pinfo.Arguments = "--dangerously-skip-permissions --disallowedTools $BlockedTools -p `"$ClaudePrompt`""
+                    }
+
+                    $pinfo.RedirectStandardOutput = $true
+                    $pinfo.RedirectStandardError = $true
+                    $pinfo.UseShellExecute = $false
+                    $pinfo.CreateNoWindow = $true
+
+                    $process = New-Object System.Diagnostics.Process
+                    $process.StartInfo = $pinfo
+                    $process.Start() | Out-Null
+
+                    # Use EffectiveTimeout which may be extended for test/build tasks
+                    $completed = $process.WaitForExit($EffectiveTimeout * 1000)
+
+                    if (-not $completed) {
+                        $process.Kill()
+                        throw "Timeout after $EffectiveTimeout seconds"
+                    }
+
+                    if ($process.ExitCode -eq 0) {
+                        $IterationSuccess = $true
+                        $IterationsCompleted++
+                        $Script:TotalIterations++
+                        Add-Content -Path $ProgressFile -Value "  Status: SUCCESS (iteration $CurrentIteration)"
+                        Write-Host "  Iteration $CurrentIteration`: SUCCESS" -ForegroundColor Green
+                    } else {
+                        throw "Exit code: $($process.ExitCode)"
+                    }
                 }
+            } catch {
+                $Retries++
+                Add-Content -Path $ProgressFile -Value "  Status: FAILED ($_)"
+                Write-Host "  Iteration $CurrentIteration, attempt $Attempt`: FAILED ($_)" -ForegroundColor Yellow
 
-                $pinfo.RedirectStandardOutput = $true
-                $pinfo.RedirectStandardError = $true
-                $pinfo.UseShellExecute = $false
-                $pinfo.CreateNoWindow = $true
-
-                $process = New-Object System.Diagnostics.Process
-                $process.StartInfo = $pinfo
-                $process.Start() | Out-Null
-
-                # Use EffectiveTimeout which may be extended for test/build tasks
-                $completed = $process.WaitForExit($EffectiveTimeout * 1000)
-
-                if (-not $completed) {
-                    $process.Kill()
-                    throw "Timeout after $EffectiveTimeout seconds"
-                }
-
-                if ($process.ExitCode -eq 0) {
-                    $Success = $true
-                    $Succeeded++
-                    Add-Content -Path $ProgressFile -Value "Status: SUCCESS"
-                    Write-Host "Task $($Task.id): SUCCESS" -ForegroundColor Green
-                } else {
-                    throw "Exit code: $($process.ExitCode)"
+                if ($Retries -lt $MaxRetries) {
+                    Write-Host "  Retrying in 2 seconds..."
+                    Start-Sleep -Seconds 2
                 }
             }
-        } catch {
-            $Retries++
-            Add-Content -Path $ProgressFile -Value "Status: FAILED ($_)"
-            Write-Host "Task $($Task.id): FAILED (attempt $Attempt)" -ForegroundColor Yellow
+        }
 
-            if ($Retries -lt $MaxRetries) {
-                Write-Host "Retrying in 2 seconds..."
-                Start-Sleep -Seconds 2
-            }
+        # If this iteration exhausted retries without success, mark task as failed
+        if (-not $IterationSuccess) {
+            Add-Content -Path $ProgressFile -Value "  Iteration $CurrentIteration`: FAILED after $MaxRetries attempts"
+            Write-Host "  Iteration $CurrentIteration`: FAILED after $MaxRetries attempts" -ForegroundColor Red
+            $TaskFullyComplete = $true  # Exit iteration loop
+            $Failed++
+        }
+
+        # Brief pause between iterations (if more iterations needed)
+        if ($IterationsCompleted -lt $Iterations -and $IterationSuccess) {
+            Write-Host "  Pausing before next iteration..."
+            Start-Sleep -Seconds 1
         }
     }
 
-    if (-not $Success) {
-        $Failed++
-        Add-Content -Path $ProgressFile -Value "Status: FAILED PERMANENTLY after $MaxRetries attempts"
-        Write-Host "Task $($Task.id): FAILED permanently - continuing to next task" -ForegroundColor Red
+    # Only count as succeeded if ALL iterations completed
+    if ($IterationsCompleted -eq $Iterations) {
+        $Succeeded++
+        Write-Host "Task $($Task.id): FULLY COMPLETE ($Iterations iterations)" -ForegroundColor Green
+        Add-Content -Path $ProgressFile -Value "Task Status: FULLY COMPLETE ($Iterations/$Iterations iterations)"
     }
 
     Add-Content -Path $ProgressFile -Value ""
@@ -356,13 +403,15 @@ $($Task.acceptance_criteria)
 
 # Summary
 Write-Host ""
-Write-Host "=========================================="
+Write-Host "==========================================" -ForegroundColor Blue
 Write-Host "  EXECUTION COMPLETE"
-Write-Host "=========================================="
-Write-Host "Total: $Total"
-Write-Host "Succeeded: $Succeeded"
-Write-Host "Failed: $Failed"
-Write-Host "=========================================="
+Write-Host "==========================================" -ForegroundColor Blue
+Write-Host "Total Tasks: $Total"
+Write-Host "Succeeded (all iterations): $Succeeded" -ForegroundColor Green
+Write-Host "Failed: $Failed" -ForegroundColor $(if ($Failed -gt 0) { "Red" } else { "Green" })
+Write-Host "Total Iterations Run: $Script:TotalIterations"
+Write-Host "Target Iterations/Task: $Iterations"
+Write-Host "==========================================" -ForegroundColor Blue
 
 # Append summary to progress file
 $CompletedTimestamp = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
@@ -370,8 +419,10 @@ $CompletedTimestamp = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss
 
 ## Summary
 - Completed: $CompletedTimestamp
-- Succeeded: $Succeeded / $Total
-- Failed: $Failed
+- Tasks Succeeded: $Succeeded / $Total
+- Tasks Failed: $Failed
+- Total Iterations: $Script:TotalIterations
+- Target Iterations/Task: $Iterations
 "@ | Add-Content -Path $ProgressFile
 
 # Final cleanup: Remove task file if it exists

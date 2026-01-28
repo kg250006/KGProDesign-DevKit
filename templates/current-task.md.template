@@ -75,8 +75,52 @@ Specialists have access to these skills when needed:
 1. **Assess the task domain** - Determine which specialist is best suited
 2. **Delegate via Task tool** - Hand off to the appropriate agent with full context
 3. **Or execute directly** - If simple enough, complete the task yourself
-4. **Validate the work** - Ensure acceptance criteria are met
-5. **Exit when done** - The orchestrator handles the next task
+4. **Consider edge cases** - When the task looks relatively complete:
+   - Review acceptance criteria against implementation
+   - Consider boundary conditions and error states
+   - Think about what could break or behave unexpectedly
+   - Ensure the foundation is solid before marking complete
+5. **Validate the work** - Ensure acceptance criteria are met
+6. **Exit when done** - The orchestrator handles the next task
+
+---
+
+## Edge Case Consideration (Ralph Loop Quality Gate)
+
+**IMPORTANT:** Before considering this task complete, apply the edge case quality gate:
+
+### When Task Looks Complete, Ask:
+
+1. **Boundary Conditions**
+   - What happens at minimum/maximum values?
+   - How does the code handle empty inputs, null values, or zero-length collections?
+   - Are there off-by-one errors in loops or array access?
+
+2. **Error States**
+   - What happens when external dependencies fail?
+   - Are error messages clear and actionable?
+   - Does the code fail gracefully or crash unexpectedly?
+
+3. **Concurrency & Timing**
+   - Are there race conditions in async operations?
+   - What if operations complete out of order?
+   - Are timeouts and retries handled properly?
+
+4. **Success Criteria Alignment**
+   - Does the implementation actually satisfy EACH criterion?
+   - Are there hidden assumptions that could break in production?
+   - Would this pass a code review by a senior engineer?
+
+### Quality Checkpoint
+
+If you identify potential edge cases:
+- Fix them NOW, not in a future iteration
+- Add defensive code where appropriate
+- Document any intentional limitations
+
+**Remember:** Each iteration is context-isolated. The next Claude won't know what you considered. Make this iteration count.
+
+---
 
 ## CRITICAL CONSTRAINTS
 

@@ -296,17 +296,29 @@ Execute PRP with hard session isolation - each task runs in a fresh Claude sessi
 # Basic usage
 /$PLUGIN_NAME:prp-execute-isolated PRPs/feature.md
 
+# With iteration configuration (Ralph Loop philosophy)
+/$PLUGIN_NAME:prp-execute-isolated PRPs/quality-feature.md --iterations 3
+
 # With retry configuration
 /$PLUGIN_NAME:prp-execute-isolated PRPs/feature.md --max-retries 5
 
 # With longer timeout
 /$PLUGIN_NAME:prp-execute-isolated PRPs/feature.md --timeout 600
+
+# Combined options for maximum quality
+/$PLUGIN_NAME:prp-execute-isolated PRPs/critical-feature.md --iterations 3 --max-retries 5
 ```
+
+**Options:**
+- `--iterations N` - Minimum successful iterations per task (default: 2). Each iteration runs in a fresh context, allowing fresh perspectives to enhance the work.
+- `--max-retries N` - Max retries per task before marking blocked (default: 3)
+- `--timeout N` - Timeout in seconds per task (default: 300)
 
 **When to use:**
 - PRPs with 10+ tasks (prevents context rot)
 - When deterministic execution is required
 - When previous runs showed Claude "optimizing" by combining tasks
+- When you want compounding quality through multiple fresh perspectives
 
 **How it works:**
 1. External shell script orchestrates (not Claude)
@@ -314,6 +326,7 @@ Execute PRP with hard session isolation - each task runs in a fresh Claude sessi
 3. Fresh Claude session spawned per task
 4. Claude sees ONLY current task (not full PRP)
 5. Progress logged to `.claude/prp-progress.md`
+6. With `--iterations N`, each task runs N successful iterations before moving on
 
 **Comparison:**
 
@@ -323,6 +336,7 @@ Execute PRP with hard session isolation - each task runs in a fresh Claude sessi
 | **Control** | Claude decides | Script controls |
 | **Task visibility** | Claude sees all tasks | Claude sees only current |
 | **Use case** | Quick, interactive | Complex, deterministic |
+| **Iterations** | N/A | Configurable (default: 2) |
 
 ### Workflow Commands
 
@@ -510,6 +524,38 @@ For complex PRPs (10+ tasks), every task should run in a completely separate ses
 |---------|-----------|---------|----------|
 | `prp-execute` | Shared context | Claude decides | Quick PRPs (< 5 tasks) |
 | `prp-execute-isolated` | Fresh per task | Script controls | Complex PRPs (10+ tasks) |
+
+### Success Iteration System
+
+Every task runs N successful iterations (default: 2) before moving to the next task.
+
+**Why this matters:**
+- **Fresh context produces fresh perspectives** - Each iteration approaches the task without preconceptions from previous attempts
+- **Each iteration can enhance what previous ones built** - Later iterations review and improve upon earlier work
+- **Compounds quality without human intervention** - Multiple passes naturally catch edge cases and improve robustness
+
+**How iterations work:**
+```
+Task 1 → Iteration 1 (fresh context) → Success
+       → Iteration 2 (fresh context) → Success → Move to Task 2
+Task 2 → Iteration 1 (fresh context) → Success
+       → Iteration 2 (fresh context) → Success → Move to Task 3
+...
+```
+
+**Important:** The executing Claude has NO knowledge of which iteration it's on. Each iteration is completely context-isolated. Claude cannot "phone it in" on iteration 2 because it doesn't know there was an iteration 1.
+
+**Configuring iterations:**
+```bash
+# Default: 2 iterations per task
+/$PLUGIN_NAME:prp-execute-isolated PRPs/feature.md
+
+# High quality: 3 iterations per task
+/$PLUGIN_NAME:prp-execute-isolated PRPs/critical-feature.md --iterations 3
+
+# Single pass (legacy behavior)
+/$PLUGIN_NAME:prp-execute-isolated PRPs/simple-feature.md --iterations 1
+```
 
 ### For Code Review
 

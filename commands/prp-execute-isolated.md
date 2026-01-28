@@ -1,6 +1,6 @@
 ---
 description: "[KGP] Execute PRP with hard session isolation - each task in fresh context"
-argument-hint: "<prp-file.md> [--max-retries N] [--timeout M] [--no-safety] [--skip-validation]"
+argument-hint: "<prp-file.md> [--iterations N] [--max-retries N] [--timeout M] [--no-safety] [--skip-validation]"
 allowed-tools: [Bash, Read]
 ---
 
@@ -247,12 +247,55 @@ This is slower but provides maximum safety through interactive approval.
 4. **Reproducible results** - Fresh context means consistent behavior
 </philosophy>
 
+<iterations>
+## Success Iteration System (Ralph Loop Philosophy)
+
+By default, every task runs **2 successful iterations** before moving to the next task.
+
+**Why iterate on success?**
+1. Fresh context produces fresh perspectives
+2. Each iteration can catch what previous ones missed
+3. Compounds quality without human intervention
+4. Deepens the Ralph Loop philosophy of iterative improvement
+
+**How it works:**
+- Task succeeds on attempt 1 → Run iteration 2 with fresh context
+- Task succeeds on iteration 2 → Task fully complete, move to next
+- If any iteration fails all retries → Task marked as failed
+
+**Important:** The executing Claude has NO knowledge of which iteration it's on.
+Each iteration is completely context-isolated - this is by design.
+
+```
+Iteration 1: Fresh Claude → Execute task → SUCCESS
+Iteration 2: Fresh Claude → Execute task → SUCCESS → TASK COMPLETE
+```
+
+**Override iterations:**
+```bash
+# Production quality (recommended)
+--iterations 2  (default)
+
+# Maximum quality for critical features
+--iterations 3
+
+# Quick test (not recommended for production)
+--iterations 1
+```
+</iterations>
+
 <example>
 ## Example Usage
 
 ```bash
 # Basic usage - execute a PRP with isolation (safety mode enabled by default)
 /$PLUGIN_NAME:prp-execute-isolated PRPs/my-feature.md
+
+# With iteration configuration (Ralph Loop philosophy)
+/$PLUGIN_NAME:prp-execute-isolated PRPs/quality-feature.md --iterations 3
+
+# Single iteration for quick tests (not recommended for production)
+/$PLUGIN_NAME:prp-execute-isolated PRPs/test-feature.md --iterations 1
 
 # With retry configuration for flaky tasks
 /$PLUGIN_NAME:prp-execute-isolated PRPs/complex-feature.md --max-retries 5
@@ -267,7 +310,7 @@ This is slower but provides maximum safety through interactive approval.
 /$PLUGIN_NAME:prp-execute-isolated PRPs/quick-feature.md --skip-validation
 
 # All options
-/$PLUGIN_NAME:prp-execute-isolated PRPs/mega-feature.md --max-retries 5 --timeout 600 --no-safety
+/$PLUGIN_NAME:prp-execute-isolated PRPs/mega-feature.md --iterations 2 --max-retries 5 --timeout 600 --no-safety
 ```
 </example>
 

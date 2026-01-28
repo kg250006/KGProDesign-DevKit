@@ -40,6 +40,8 @@ param(
 
     [int]$Timeout = 300,
 
+    [int]$Iterations = 2,
+
     [Alias("dry-run")]
     [switch]$DryRun,
 
@@ -86,6 +88,7 @@ OPTIONS:
   -BatchFile FILE       Read PRP paths from a file (one per line)
   -MaxRetries N         Max retry attempts per task within each PRP (default: 3)
   -Timeout M            Timeout in seconds per task (default: 300)
+  -Iterations N         Min successful iterations per task (default: 2)
   -DryRun               Test mode - simulate execution without running Claude
   -NoSafety             Disable safety mode (use standard permissions)
   -SkipValidation       Skip acceptance criteria validation
@@ -182,6 +185,7 @@ OUTPUT:
 - Total PRPs: $($AllPrpFiles.Count)
 - Max Retries: $MaxRetries
 - Timeout: ${Timeout}s per task
+- Iterations: $Iterations per task
 
 ## PRPs to Execute
 "@
@@ -203,6 +207,7 @@ OUTPUT:
     Write-Host "Total PRPs: $($AllPrpFiles.Count)"
     Write-Host "Max Retries: $MaxRetries"
     Write-Host "Timeout: ${Timeout}s per task"
+    Write-Host "Iterations: $Iterations (per task)"
     if ($DryRun) {
         Write-Host "Mode: DRY RUN" -ForegroundColor Yellow
     }
@@ -215,7 +220,7 @@ OUTPUT:
 
     # Build orchestrator arguments
     $OrchestratorScript = Join-Path $ScriptDir "prp-orchestrator.ps1"
-    $BaseArgs = @("-MaxRetries", $MaxRetries, "-Timeout", $Timeout)
+    $BaseArgs = @("-Iterations", $Iterations, "-MaxRetries", $MaxRetries, "-Timeout", $Timeout)
     if ($DryRun) { $BaseArgs += "-DryRun" }
     if ($NoSafety) { $BaseArgs += "-NoSafety" }
     if ($SkipValidation) { $BaseArgs += "-SkipValidation" }

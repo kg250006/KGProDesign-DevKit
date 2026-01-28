@@ -1,6 +1,6 @@
 ---
 description: "[KGP] Execute multiple PRPs sequentially with full isolation between each"
-argument-hint: "<prp1.md> <prp2.md> ... OR --batch-file PRPs/batch.txt [--dry-run] [--timeout N]"
+argument-hint: "<prp1.md> <prp2.md> ... OR --batch-file PRPs/batch.txt [--iterations N] [--dry-run] [--timeout N]"
 allowed-tools: [Bash, Read, Glob]
 ---
 
@@ -44,6 +44,7 @@ Supported formats:
 - Wildcard (expand first): `PRPs/*.md` needs Glob expansion
 
 Options:
+- `--iterations N`: Min successful iterations per task (default: 2)
 - `--dry-run`: Simulate execution without running Claude
 - `--timeout N`: Timeout per task in seconds (default: 300)
 - `--max-retries N`: Max retries per task (default: 3)
@@ -161,6 +162,9 @@ Then execute with:
 
 # Full options
 /KGP:prp-execute-batch --batch-file PRPs/queue.txt --max-retries 5 --timeout 900
+
+# High quality batch with 3 iterations per task
+/KGP:prp-execute-batch --batch-file PRPs/release.txt --iterations 3
 ```
 </example>
 

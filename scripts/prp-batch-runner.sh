@@ -22,6 +22,7 @@ NC='\033[0m' # No Color
 # Default values
 MAX_RETRIES=3
 TIMEOUT=300
+ITERATIONS=2
 DRY_RUN=false
 NO_SAFETY=false
 SKIP_VALIDATION=false
@@ -44,6 +45,7 @@ OPTIONS:
   --batch-file FILE     Read PRP paths from a file (one per line)
   --max-retries N       Max retry attempts per task within each PRP (default: 3)
   --timeout M           Timeout in seconds per task (default: 300)
+  --iterations N        Min successful iterations per task (default: 2)
   --dry-run             Test mode - simulate execution without running Claude
   --no-safety           Disable safety mode (use standard permissions)
   --skip-validation     Skip acceptance criteria validation
@@ -107,6 +109,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --timeout)
       TIMEOUT="$2"
+      shift 2
+      ;;
+    --iterations)
+      ITERATIONS="$2"
       shift 2
       ;;
     --dry-run)
@@ -225,6 +231,7 @@ cat > "$BATCH_PROGRESS" <<EOF
 - Total PRPs: ${#PRP_FILES[@]}
 - Max Retries: $MAX_RETRIES
 - Timeout: ${TIMEOUT}s per task
+- Iterations: $ITERATIONS per task
 
 ## PRPs to Execute
 EOF
@@ -245,6 +252,7 @@ echo -e "${BLUE}==========================================${NC}"
 echo "Total PRPs: ${#PRP_FILES[@]}"
 echo "Max Retries: $MAX_RETRIES"
 echo "Timeout: ${TIMEOUT}s per task"
+echo "Iterations: $ITERATIONS (per task)"
 if [[ "$DRY_RUN" == "true" ]]; then
   echo -e "${YELLOW}Mode: DRY RUN${NC}"
 fi
@@ -256,7 +264,7 @@ BATCH_SUCCEEDED=0
 BATCH_FAILED=0
 
 # Build options string for prp-execute-isolated command
-ISOLATED_OPTS="--max-retries $MAX_RETRIES --timeout $TIMEOUT"
+ISOLATED_OPTS="--iterations $ITERATIONS --max-retries $MAX_RETRIES --timeout $TIMEOUT"
 if [[ "$DRY_RUN" == "true" ]]; then
   ISOLATED_OPTS="$ISOLATED_OPTS --dry-run"
 fi
