@@ -264,10 +264,45 @@ OUTPUT:
             $ExitCode = $process.ExitCode
             $EndTime = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
 
-            if ($ExitCode -eq 0) {
+            # Parse the orchestrator's progress file for accurate task counts
+            # This provides ground truth regardless of exit code
+            $PrpProgressFile = ".claude\prp-progress.md"
+            $TasksSucceeded = 0
+            $TasksFailed = 0
+            $TotalTasks = 0
+
+            if (Test-Path $PrpProgressFile) {
+                $progressContent = Get-Content -Path $PrpProgressFile -Raw
+                # Extract task counts from summary section
+                if ($progressContent -match 'Tasks Succeeded: (\d+) / (\d+)') {
+                    $TasksSucceeded = [int]$Matches[1]
+                    $TotalTasks = [int]$Matches[2]
+                }
+                if ($progressContent -match 'Tasks Failed: (\d+)') {
+                    $TasksFailed = [int]$Matches[1]
+                }
+                # Fallback: count FULLY COMPLETE lines if summary not found
+                if ($TotalTasks -eq 0) {
+                    $TasksSucceeded = ([regex]::Matches($progressContent, 'FULLY COMPLETE')).Count
+                    $TasksFailed = ([regex]::Matches($progressContent, 'FAILED after')).Count
+                    $TotalTasks = $TasksSucceeded + $TasksFailed
+                }
+            }
+
+            # Determine actual success based on orchestrator results (not just exit code)
+            # A PRP succeeds if: exit code is 0 OR (tasks succeeded > 0 AND tasks failed == 0)
+            $PrpActuallySucceeded = ($ExitCode -eq 0) -or (($TasksSucceeded -gt 0) -and ($TasksFailed -eq 0))
+
+            if ($PrpActuallySucceeded) {
                 Write-Host "PRP $PrpNum`: SUCCESS" -ForegroundColor Green
+                if ($TotalTasks -gt 0) {
+                    Write-Host "  Tasks: $TasksSucceeded/$TotalTasks succeeded"
+                }
                 Add-Content -Path $BatchProgress -Value "- Completed: $EndTime"
                 Add-Content -Path $BatchProgress -Value "- Status: SUCCESS"
+                if ($TotalTasks -gt 0) {
+                    Add-Content -Path $BatchProgress -Value "- Tasks: $TasksSucceeded/$TotalTasks succeeded"
+                }
                 $BatchSucceeded++
                 # Update checkbox to mark as complete
                 $content = Get-Content -Path $BatchProgress -Raw
@@ -275,8 +310,14 @@ OUTPUT:
                 Set-Content -Path $BatchProgress -Value $content -NoNewline
             } else {
                 Write-Host "PRP $PrpNum`: FAILED (exit code: $ExitCode)" -ForegroundColor Red
+                if ($TotalTasks -gt 0) {
+                    Write-Host "  Tasks: $TasksSucceeded/$TotalTasks succeeded, $TasksFailed failed"
+                }
                 Add-Content -Path $BatchProgress -Value "- Completed: $EndTime"
                 Add-Content -Path $BatchProgress -Value "- Status: FAILED (exit code: $ExitCode)"
+                if ($TotalTasks -gt 0) {
+                    Add-Content -Path $BatchProgress -Value "- Tasks: $TasksSucceeded/$TotalTasks succeeded, $TasksFailed failed"
+                }
                 $BatchFailed++
                 # Update checkbox to mark as failed
                 $content = Get-Content -Path $BatchProgress -Raw

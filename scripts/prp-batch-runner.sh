@@ -89,9 +89,8 @@ OUTPUT:
 ARCHITECTURE:
   prp-batch-runner.sh
     └─► For each PRP:
-         └─► tmux session: claude -p "/KGP:prp-execute-isolated <prp>"
-              └─► prp-orchestrator.sh (launched by command)
-                   └─► Fresh Claude session per task
+         └─► tmux session: prp-orchestrator.sh <prp>
+              └─► Fresh Claude session per task
 
 EOF
 }
@@ -301,15 +300,15 @@ for i in "${!PRP_FILES[@]}"; do
   # Using tmux wait-for pattern: command signals completion, main script blocks until signal
   WAIT_SIGNAL="prp-done-$$-$PRP_NUM"
 
-  # Build the claude command to invoke /KGP:prp-execute-isolated
-  # This ensures each PRP goes through the same command path for consistency
-  CLAUDE_CMD="claude -p \"/KGP:prp-execute-isolated $PRP_FILE $ISOLATED_OPTS\""
+  # Call prp-orchestrator.sh directly (not via claude -p slash command)
+  # This ensures accurate exit code capture and avoids "streaming mode" errors
+  ORCHESTRATOR_CMD="bash '$SCRIPT_DIR/prp-orchestrator.sh' '$PRP_FILE' $ISOLATED_OPTS"
 
-  # Command runs claude with the isolated executor command, saves exit code, then signals completion
-  TMUX_CMD="$CLAUDE_CMD; echo \$? > $EXIT_STATUS_FILE; tmux wait-for -S $WAIT_SIGNAL"
+  # Command runs orchestrator, saves exit code, then signals completion
+  TMUX_CMD="$ORCHESTRATOR_CMD; echo \$? > $EXIT_STATUS_FILE; tmux wait-for -S $WAIT_SIGNAL"
 
   echo "Starting tmux session: $SESSION_NAME"
-  echo "Command: /KGP:prp-execute-isolated $PRP_FILE"
+  echo "Command: prp-orchestrator.sh $PRP_FILE"
 
   # Cleanup function for this session
   cleanup_session() {
@@ -342,13 +341,10 @@ for i in "${!PRP_FILES[@]}"; do
 
   echo "PRP execution completed"
 
-  # Capture output for logging (get last 100 lines from pane)
-  tmux capture-pane -t "$SESSION_NAME" -p -S -100 2>/dev/null >> "$BATCH_PROGRESS" || true
-
   # Kill the session
   tmux kill-session -t "$SESSION_NAME" 2>/dev/null || true
 
-  # Check exit status
+  # Check exit status from file
   END_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
   if [[ -f "$EXIT_STATUS_FILE" ]]; then
@@ -358,17 +354,54 @@ for i in "${!PRP_FILES[@]}"; do
     EXIT_CODE=1  # Assume failure if no status file
   fi
 
-  if [[ "$EXIT_CODE" == "0" ]]; then
+  # Parse the orchestrator's progress file for accurate task counts
+  # This provides ground truth regardless of exit code
+  PRP_PROGRESS_FILE=".claude/prp-progress.md"
+  TASKS_SUCCEEDED=0
+  TASKS_FAILED=0
+  TOTAL_TASKS=0
+
+  if [[ -f "$PRP_PROGRESS_FILE" ]]; then
+    # Extract task counts from summary section
+    TASKS_SUCCEEDED=$(grep -oP 'Tasks Succeeded: \K\d+' "$PRP_PROGRESS_FILE" 2>/dev/null | tail -1 || echo "0")
+    TOTAL_TASKS=$(grep -oP 'Tasks Succeeded: \d+ / \K\d+' "$PRP_PROGRESS_FILE" 2>/dev/null | tail -1 || echo "0")
+    TASKS_FAILED=$(grep -oP 'Tasks Failed: \K\d+' "$PRP_PROGRESS_FILE" 2>/dev/null | tail -1 || echo "0")
+
+    # Fallback: check for "FULLY COMPLETE" lines if summary not found
+    if [[ "$TOTAL_TASKS" == "0" ]] || [[ -z "$TOTAL_TASKS" ]]; then
+      TASKS_SUCCEEDED=$(grep -c "FULLY COMPLETE" "$PRP_PROGRESS_FILE" 2>/dev/null || echo "0")
+      TASKS_FAILED=$(grep -c "FAILED after" "$PRP_PROGRESS_FILE" 2>/dev/null || echo "0")
+      TOTAL_TASKS=$((TASKS_SUCCEEDED + TASKS_FAILED))
+    fi
+  fi
+
+  # Determine actual success based on orchestrator results (not just exit code)
+  # A PRP succeeds if: exit code is 0 OR (tasks succeeded > 0 AND tasks failed == 0)
+  if [[ "$EXIT_CODE" == "0" ]] || { [[ "$TASKS_SUCCEEDED" -gt 0 ]] && [[ "$TASKS_FAILED" == "0" ]]; }; then
+    PRP_STATUS="SUCCESS"
     echo -e "${GREEN}PRP $PRP_NUM: SUCCESS${NC}"
+    if [[ "$TOTAL_TASKS" -gt 0 ]]; then
+      echo "  Tasks: $TASKS_SUCCEEDED/$TOTAL_TASKS succeeded"
+    fi
     echo "- Completed: $END_TIME" >> "$BATCH_PROGRESS"
     echo "- Status: SUCCESS" >> "$BATCH_PROGRESS"
+    if [[ "$TOTAL_TASKS" -gt 0 ]]; then
+      echo "- Tasks: $TASKS_SUCCEEDED/$TOTAL_TASKS succeeded" >> "$BATCH_PROGRESS"
+    fi
     BATCH_SUCCEEDED=$((BATCH_SUCCEEDED + 1))
     # Update checkbox to mark as complete
     sed -i.bak "s|^- \[ \] $PRP_FILE\$|- [x] $PRP_FILE|" "$BATCH_PROGRESS" && rm -f "${BATCH_PROGRESS}.bak"
   else
+    PRP_STATUS="FAILED"
     echo -e "${RED}PRP $PRP_NUM: $(get_status_message $EXIT_CODE)${NC}"
+    if [[ "$TOTAL_TASKS" -gt 0 ]]; then
+      echo "  Tasks: $TASKS_SUCCEEDED/$TOTAL_TASKS succeeded, $TASKS_FAILED failed"
+    fi
     echo "- Completed: $END_TIME" >> "$BATCH_PROGRESS"
     echo "- Status: $(get_status_message $EXIT_CODE)" >> "$BATCH_PROGRESS"
+    if [[ "$TOTAL_TASKS" -gt 0 ]]; then
+      echo "- Tasks: $TASKS_SUCCEEDED/$TOTAL_TASKS succeeded, $TASKS_FAILED failed" >> "$BATCH_PROGRESS"
+    fi
     BATCH_FAILED=$((BATCH_FAILED + 1))
     # Update checkbox to mark as failed
     sed -i.bak "s|^- \[ \] $PRP_FILE\$|- [~] $PRP_FILE (FAILED)|" "$BATCH_PROGRESS" && rm -f "${BATCH_PROGRESS}.bak"
