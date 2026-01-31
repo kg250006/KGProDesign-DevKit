@@ -310,7 +310,7 @@ Execute PRP with hard session isolation - each task runs in a fresh Claude sessi
 ```
 
 **Options:**
-- `--iterations N` - Minimum successful iterations per task (default: 2). Each iteration runs in a fresh context, allowing fresh perspectives to enhance the work.
+- `--iterations N` - Minimum successful iterations per task (default: 1). Each iteration runs in a fresh context, allowing fresh perspectives to enhance the work.
 - `--max-retries N` - Max retries per task before marking blocked (default: 3)
 - `--timeout N` - Timeout in seconds per task (default: 300)
 
@@ -336,7 +336,7 @@ Execute PRP with hard session isolation - each task runs in a fresh Claude sessi
 | **Control** | Claude decides | Script controls |
 | **Task visibility** | Claude sees all tasks | Claude sees only current |
 | **Use case** | Quick, interactive | Complex, deterministic |
-| **Iterations** | N/A | Configurable (default: 2) |
+| **Iterations** | N/A | Configurable (default: 1) |
 
 ### Workflow Commands
 
@@ -527,7 +527,7 @@ For complex PRPs (10+ tasks), every task should run in a completely separate ses
 
 ### Success Iteration System
 
-Every task runs N successful iterations (default: 2) before moving to the next task.
+Every task runs N successful iterations (default: 1) before moving to the next task.
 
 **Why this matters:**
 - **Fresh context produces fresh perspectives** - Each iteration approaches the task without preconceptions from previous attempts

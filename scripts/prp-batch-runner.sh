@@ -22,7 +22,7 @@ NC='\033[0m' # No Color
 # Default values
 MAX_RETRIES=3
 TIMEOUT=300
-ITERATIONS=2
+ITERATIONS=1
 DRY_RUN=false
 NO_SAFETY=false
 SKIP_VALIDATION=false
@@ -45,7 +45,7 @@ OPTIONS:
   --batch-file FILE     Read PRP paths from a file (one per line)
   --max-retries N       Max retry attempts per task within each PRP (default: 3)
   --timeout M           Timeout in seconds per task (default: 300)
-  --iterations N        Min successful iterations per task (default: 2)
+  --iterations N        Min successful iterations per task (default: 1)
   --dry-run             Test mode - simulate execution without running Claude
   --no-safety           Disable safety mode (use standard permissions)
   --skip-validation     Skip acceptance criteria validation

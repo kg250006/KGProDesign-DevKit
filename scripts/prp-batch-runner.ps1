@@ -40,7 +40,7 @@ param(
 
     [int]$Timeout = 300,
 
-    [int]$Iterations = 2,
+    [int]$Iterations = 1,
 
     [Alias("dry-run")]
     [switch]$DryRun,
@@ -88,7 +88,7 @@ OPTIONS:
   -BatchFile FILE       Read PRP paths from a file (one per line)
   -MaxRetries N         Max retry attempts per task within each PRP (default: 3)
   -Timeout M            Timeout in seconds per task (default: 300)
-  -Iterations N         Min successful iterations per task (default: 2)
+  -Iterations N         Min successful iterations per task (default: 1)
   -DryRun               Test mode - simulate execution without running Claude
   -NoSafety             Disable safety mode (use standard permissions)
   -SkipValidation       Skip acceptance criteria validation

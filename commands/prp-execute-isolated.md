@@ -250,7 +250,7 @@ This is slower but provides maximum safety through interactive approval.
 <iterations>
 ## Success Iteration System (Ralph Loop Philosophy)
 
-By default, every task runs **2 successful iterations** before moving to the next task.
+By default, every task runs **1 successful iteration** before moving to the next task.
 
 **Why iterate on success?**
 1. Fresh context produces fresh perspectives

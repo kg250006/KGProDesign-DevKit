@@ -44,7 +44,7 @@ Supported formats:
 - Wildcard (expand first): `PRPs/*.md` needs Glob expansion
 
 Options:
-- `--iterations N`: Min successful iterations per task (default: 2)
+- `--iterations N`: Min successful iterations per task (default: 1)
 - `--dry-run`: Simulate execution without running Claude
 - `--timeout N`: Timeout per task in seconds (default: 300)
 - `--max-retries N`: Max retries per task (default: 3)

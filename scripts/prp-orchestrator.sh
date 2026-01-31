@@ -259,7 +259,7 @@ get_status_message() {
 # Default values
 MAX_RETRIES=3
 TIMEOUT=300  # 5 minutes per task
-MIN_ITERATIONS=2  # Minimum successful iterations per task (Ralph Loop philosophy)
+MIN_ITERATIONS=1  # Minimum successful iterations per task (default: 1, use --iterations for more)
 DRY_RUN=false
 NO_SAFETY=false
 SKIP_VALIDATION=false
@@ -285,7 +285,7 @@ ARGUMENTS:
 OPTIONS:
   --max-retries N     Max retry attempts per task (default: 3)
   --timeout M         Timeout in seconds per task (default: 300)
-  --iterations N      Min successful iterations per task (default: 2)
+  --iterations N      Min successful iterations per task (default: 1)
   --dry-run           Test mode - echo commands instead of running Claude
   --no-safety         Disable safety mode (use standard permissions)
   --skip-validation   Skip acceptance criteria validation
