@@ -42,10 +42,13 @@ Start with overview, then drill into details. Phases before tasks, tasks before 
 **3. Research Before Writing**
 Always analyze the codebase (PRPs) or gather requirements (PRDs) before generating documents.
 
-**4. Validation Built-In**
+**4. Don't Reinvent the Wheel**
+Search for proven libraries, patterns, and best practices before designing implementation. Leverage battle-tested open source solutions for common problems (auth, validation, storage, etc.).
+
+**5. Validation Built-In**
 Every PRP includes executable validation commands. Every PRD includes measurable acceptance criteria.
 
-**5. Right-Sized Documents**
+**6. Right-Sized Documents**
 - Default: Single document with phases if needed
 - Split into multiple documents only for gargantuan features (10+ major components)
 </essential_principles>
@@ -98,6 +101,18 @@ What would you like to create?
     <affected-files>Files to modify/create</affected-files>
     <dependencies>Required packages/services</dependencies>
   </codebase-analysis>
+
+  <research-findings>
+    <recommended-libraries>
+      <library name="pkg" purpose="what it solves">
+        <rationale>Why this over alternatives</rationale>
+        <docs-url>Link to docs</docs-url>
+      </library>
+    </recommended-libraries>
+    <patterns-to-follow>Proven patterns from research</patterns-to-follow>
+    <pitfalls-to-avoid>Common mistakes to avoid</pitfalls-to-avoid>
+    <documentation-references>Key docs to reference</documentation-references>
+  </research-findings>
 
   <phases>
     <phase id="1" name="Foundation">

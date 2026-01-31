@@ -456,13 +456,100 @@ const goal = goalMatch ? goalMatch[1].trim() : '';
 const nameMatch = content.match(/<prp\s+name="([^"]+)"/);
 const prpName = nameMatch ? nameMatch[1] : path.basename(prpFile, '.md');
 
+// ============================================================================
+// Extract research findings (don't reinvent the wheel)
+// ============================================================================
+const researchFindings = {
+  libraries: [],
+  patterns: [],
+  pitfalls: [],
+  references: []
+};
+
+// Extract recommended libraries
+const librariesMatch = content.match(/<recommended-libraries>([\s\S]*?)<\/recommended-libraries>/);
+if (librariesMatch) {
+  const libRegex = /<library\s+name="([^"]+)"\s+purpose="([^"]+)"[^>]*>([\s\S]*?)<\/library>/g;
+  let libMatch;
+  while ((libMatch = libRegex.exec(librariesMatch[1])) !== null) {
+    const lib = {
+      name: libMatch[1],
+      purpose: libMatch[2]
+    };
+    // Extract rationale
+    const rationaleMatch = libMatch[3].match(/<rationale>([^<]+)<\/rationale>/);
+    if (rationaleMatch) lib.rationale = rationaleMatch[1].trim();
+    // Extract docs URL
+    const docsMatch = libMatch[3].match(/<docs-url>([^<]+)<\/docs-url>/);
+    if (docsMatch) lib.docsUrl = docsMatch[1].trim();
+    // Extract install command
+    const installMatch = libMatch[3].match(/<install>([^<]+)<\/install>/);
+    if (installMatch) lib.install = installMatch[1].trim();
+
+    researchFindings.libraries.push(lib);
+  }
+}
+
+// Extract patterns to follow
+const patternsMatch = content.match(/<patterns-to-follow>([\s\S]*?)<\/patterns-to-follow>/);
+if (patternsMatch) {
+  const patternRegex = /<pattern\s+source="([^"]+)"[^>]*>([\s\S]*?)<\/pattern>/g;
+  let patMatch;
+  while ((patMatch = patternRegex.exec(patternsMatch[1])) !== null) {
+    const pattern = { source: patMatch[1] };
+    const descMatch = patMatch[2].match(/<description>([^<]+)<\/description>/);
+    if (descMatch) pattern.description = descMatch[1].trim();
+    const appMatch = patMatch[2].match(/<applicability>([^<]+)<\/applicability>/);
+    if (appMatch) pattern.applicability = appMatch[1].trim();
+    researchFindings.patterns.push(pattern);
+  }
+}
+
+// Extract pitfalls to avoid
+const pitfallsMatch = content.match(/<pitfalls-to-avoid>([\s\S]*?)<\/pitfalls-to-avoid>/);
+if (pitfallsMatch) {
+  const pitfallRegex = /<pitfall\s+source="([^"]+)"[^>]*>([\s\S]*?)<\/pitfall>/g;
+  let pitMatch;
+  while ((pitMatch = pitfallRegex.exec(pitfallsMatch[1])) !== null) {
+    const pitfall = { source: pitMatch[1] };
+    const issueMatch = pitMatch[2].match(/<issue>([^<]+)<\/issue>/);
+    if (issueMatch) pitfall.issue = issueMatch[1].trim();
+    const mitMatch = pitMatch[2].match(/<mitigation>([^<]+)<\/mitigation>/);
+    if (mitMatch) pitfall.mitigation = mitMatch[1].trim();
+    researchFindings.pitfalls.push(pitfall);
+  }
+}
+
+// Extract documentation references
+const refsMatch = content.match(/<documentation-references>([\s\S]*?)<\/documentation-references>/);
+if (refsMatch) {
+  const refRegex = /<reference\s+url="([^"]+)"\s+topic="([^"]+)"[^>]*>([\s\S]*?)<\/reference>/g;
+  let refMatch;
+  while ((refMatch = refRegex.exec(refsMatch[1])) !== null) {
+    const ref = { url: refMatch[1], topic: refMatch[2], keyPoints: [] };
+    const pointRegex = /<point>([^<]+)<\/point>/g;
+    let pointMatch;
+    while ((pointMatch = pointRegex.exec(refMatch[3])) !== null) {
+      ref.keyPoints.push(pointMatch[1].trim());
+    }
+    researchFindings.references.push(ref);
+  }
+}
+
+// Check if we have any research findings
+const hasResearch = researchFindings.libraries.length > 0 ||
+                    researchFindings.patterns.length > 0 ||
+                    researchFindings.pitfalls.length > 0 ||
+                    researchFindings.references.length > 0;
+
 // Output JSON structure
 const output = {
   name: prpName,
   goal: goal,
   tasks: tasks,
   validation: validationCommands,
-  total: tasks.length
+  total: tasks.length,
+  research: hasResearch ? researchFindings : null
 };
 
 console.log(JSON.stringify(output, null, 2));

@@ -50,6 +50,42 @@ Use this template structure when generating PRPs. Copy and fill in all sections.
   </gotchas>
 </codebase-analysis>
 
+<research-findings>
+  <!-- Research results from web search - don't reinvent the wheel -->
+
+  <recommended-libraries>
+    <library name="[package-name]" purpose="[what problem it solves]">
+      <rationale>[Why this library over alternatives - maintenance, popularity, docs]</rationale>
+      <docs-url>[Link to official documentation]</docs-url>
+      <install>[npm install X / pip install X / etc.]</install>
+    </library>
+  </recommended-libraries>
+
+  <patterns-to-follow>
+    <pattern source="[URL or 'official docs']">
+      <description>[What the pattern accomplishes]</description>
+      <applicability>[How it applies to this feature]</applicability>
+    </pattern>
+  </patterns-to-follow>
+
+  <pitfalls-to-avoid>
+    <pitfall source="[URL or community knowledge]">
+      <issue>[Common mistake others have made]</issue>
+      <mitigation>[How to avoid it in our implementation]</mitigation>
+    </pitfall>
+  </pitfalls-to-avoid>
+
+  <documentation-references>
+    <!-- Key docs to reference during implementation -->
+    <reference url="[URL]" topic="[Topic]">
+      <key-points>
+        <point>[Critical detail from documentation]</point>
+        <point>[Configuration requirement]</point>
+      </key-points>
+    </reference>
+  </documentation-references>
+</research-findings>
+
 <phases>
 
   <phase id="1" name="Foundation">

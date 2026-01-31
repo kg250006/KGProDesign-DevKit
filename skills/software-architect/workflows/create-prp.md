@@ -50,6 +50,148 @@ find . -type f -name "*.ts" -o -name "*.tsx" -o -name "*.py" | head -50
 ```
 </step_2_analyze_codebase>
 
+<step_2b_research_existing_solutions>
+**Research Existing Solutions (Don't Reinvent the Wheel)**
+
+Before designing implementation, search for proven solutions, libraries, and best practices.
+
+<research_triggers>
+ALWAYS research when the feature involves:
+- **Authentication/Authorization** - OAuth, JWT, session management, RBAC
+- **User Management** - registration, profiles, password reset, multi-tenancy
+- **Payment Processing** - Stripe, PayPal, billing, subscriptions
+- **File Upload/Storage** - S3, Azure Blob, image processing, CDN
+- **Email/Notifications** - SMTP, SendGrid, push notifications, webhooks
+- **Data Validation** - form validation, schema validation, sanitization
+- **API Design** - REST patterns, GraphQL, rate limiting, versioning
+- **State Management** - complex UI state, caching, real-time sync
+- **Infrastructure** - Azure, AWS, GCP, Docker, Kubernetes
+- **Security** - encryption, CSRF, XSS prevention, input sanitization
+- **Complex Algorithms** - search, sorting, scheduling, optimization
+</research_triggers>
+
+<research_process>
+Use WebSearch to find:
+
+1. **Established Libraries** - Don't build what exists
+   ```
+   WebSearch: "[feature] [framework] library 2025"
+   WebSearch: "best [feature] package npm/pypi/nuget"
+   ```
+
+2. **Implementation Patterns** - How others solved this
+   ```
+   WebSearch: "[feature] implementation [framework] tutorial"
+   WebSearch: "[feature] best practices [language]"
+   ```
+
+3. **Framework-Specific Guidance** - Official docs and recommendations
+   ```
+   WebSearch: "[framework] official [feature] documentation"
+   WebSearch: "[framework] recommended [feature] approach"
+   ```
+
+4. **Common Pitfalls** - Learn from others' mistakes
+   ```
+   WebSearch: "[feature] gotchas [framework]"
+   WebSearch: "[library] issues problems"
+   ```
+</research_process>
+
+<library_evaluation>
+When evaluating libraries, check:
+
+| Criteria | What to Look For |
+|----------|------------------|
+| **Maintenance** | Last commit < 6 months, active issues resolved |
+| **Popularity** | NPM weekly downloads, GitHub stars (relative to age) |
+| **Documentation** | Clear setup guides, API reference, examples |
+| **Type Support** | TypeScript definitions (@types or built-in) |
+| **Bundle Size** | Reasonable for the functionality (check bundlephobia) |
+| **Security** | No critical vulnerabilities, security-focused if relevant |
+| **Compatibility** | Works with project's framework/runtime versions |
+
+Use WebFetch on library documentation when more detail needed:
+```
+WebFetch: "https://docs.library.io/getting-started" - Extract setup requirements
+```
+</library_evaluation>
+
+<document_findings>
+Document research in the PRP's `<research-findings>` section:
+
+```xml
+<research-findings>
+  <recommended-libraries>
+    <library name="[package-name]" purpose="[what it solves]">
+      <rationale>[Why this over alternatives]</rationale>
+      <docs-url>[Link to documentation]</docs-url>
+      <install>[npm install / pip install command]</install>
+    </library>
+  </recommended-libraries>
+
+  <patterns-to-follow>
+    <pattern source="[URL or reference]">
+      <description>[What the pattern solves]</description>
+      <applicability>[How it applies to our feature]</applicability>
+    </pattern>
+  </patterns-to-follow>
+
+  <pitfalls-to-avoid>
+    <pitfall source="[URL or reference]">
+      <issue>[Common mistake]</issue>
+      <mitigation>[How to avoid it]</mitigation>
+    </pitfall>
+  </pitfalls-to-avoid>
+
+  <documentation-references>
+    <reference url="[URL]" topic="[Topic]">
+      <key-points>
+        <point>[Important detail to remember]</point>
+      </key-points>
+    </reference>
+  </documentation-references>
+</research-findings>
+```
+</document_findings>
+
+<research_examples>
+**Example 1: Feature requires authentication**
+```
+WebSearch: "nextjs 15 authentication library 2025"
+→ Find: NextAuth.js (Auth.js), Clerk, Lucia Auth
+→ Evaluate: Documentation quality, setup complexity, feature set
+→ Recommend: Auth.js for self-hosted, Clerk for managed
+```
+
+**Example 2: Feature requires Azure Blob storage**
+```
+WebSearch: "azure blob storage nodejs sdk best practices"
+WebFetch: "https://learn.microsoft.com/azure/storage/blobs/storage-quickstart-blobs-nodejs"
+→ Extract: @azure/storage-blob SDK patterns
+→ Document: Connection string handling, container creation, SAS tokens
+```
+
+**Example 3: Feature requires complex form validation**
+```
+WebSearch: "react form validation library comparison 2025"
+→ Find: React Hook Form, Formik, Zod
+→ Evaluate: Bundle size, TypeScript support, learning curve
+→ Recommend: React Hook Form + Zod for type-safe validation
+```
+</research_examples>
+
+<skip_research_when>
+Skip extensive research if:
+- Feature is purely codebase-specific (refactoring, internal reorganization)
+- The project already uses established patterns for this type of feature
+- Simple CRUD operations following existing conventions
+- Documentation or comment updates
+
+Even then, a quick search (1-2 queries) can surface useful patterns.
+</skip_research_when>
+</step_2b_research_existing_solutions>
+
 <step_3_design_phases>
 **Design Implementation Phases**
 

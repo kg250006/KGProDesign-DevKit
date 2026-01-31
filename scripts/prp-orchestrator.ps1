@@ -153,6 +153,63 @@ $Total = $TasksData.total
 $PrpName = $TasksData.name
 $PrpGoal = $TasksData.goal
 
+# Format research findings (if present)
+$ResearchContext = ""
+if ($null -ne $TasksData.research) {
+    $r = $TasksData.research
+    $ResearchContext = "## Research Context (Don't Reinvent the Wheel)`n`n"
+    $ResearchContext += "The following research was conducted during PRP creation. Use these proven solutions.`n`n"
+
+    if ($r.libraries -and $r.libraries.Count -gt 0) {
+        $ResearchContext += "### Recommended Libraries`n`n"
+        foreach ($lib in $r.libraries) {
+            $ResearchContext += "**$($lib.name)** - $($lib.purpose)`n"
+            if ($lib.rationale) { $ResearchContext += "- Why: $($lib.rationale)`n" }
+            if ($lib.install) { $ResearchContext += "- Install: ``$($lib.install)```n" }
+            if ($lib.docsUrl) { $ResearchContext += "- Docs: $($lib.docsUrl)`n" }
+            $ResearchContext += "`n"
+        }
+    }
+
+    if ($r.patterns -and $r.patterns.Count -gt 0) {
+        $ResearchContext += "### Patterns to Follow`n`n"
+        foreach ($p in $r.patterns) {
+            $desc = if ($p.description) { $p.description } else { "Pattern" }
+            $ResearchContext += "- **$desc**"
+            if ($p.applicability) { $ResearchContext += ": $($p.applicability)" }
+            if ($p.source -and $p.source -ne "official docs") { $ResearchContext += " (Source: $($p.source))" }
+            $ResearchContext += "`n"
+        }
+        $ResearchContext += "`n"
+    }
+
+    if ($r.pitfalls -and $r.pitfalls.Count -gt 0) {
+        $ResearchContext += "### Pitfalls to Avoid`n`n"
+        foreach ($p in $r.pitfalls) {
+            $issue = if ($p.issue) { $p.issue } else { "Issue" }
+            $ResearchContext += "- **$issue**"
+            if ($p.mitigation) { $ResearchContext += ": $($p.mitigation)" }
+            $ResearchContext += "`n"
+        }
+        $ResearchContext += "`n"
+    }
+
+    if ($r.references -and $r.references.Count -gt 0) {
+        $ResearchContext += "### Key Documentation`n`n"
+        foreach ($ref in $r.references) {
+            $ResearchContext += "- **$($ref.topic)**: $($ref.url)`n"
+            if ($ref.keyPoints -and $ref.keyPoints.Count -gt 0) {
+                foreach ($point in $ref.keyPoints) {
+                    $ResearchContext += "  - $point`n"
+                }
+            }
+        }
+        $ResearchContext += "`n"
+    }
+
+    Write-Host "Research findings detected - will include in task context"
+}
+
 # Initialize progress file
 $Timestamp = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
 @"
@@ -247,7 +304,8 @@ for ($i = 0; $i -lt $Total; $i++) {
             -replace '{{TASK_CRITERIA}}', $Task.acceptance_criteria `
             -replace '{{TASK_AGENT}}', $Task.agent `
             -replace '{{PRP_NAME}}', $PrpName `
-            -replace '{{PRP_FILE}}', $PrpFile
+            -replace '{{PRP_FILE}}', $PrpFile `
+            -replace '{{RESEARCH_CONTEXT}}', $ResearchContext
         $TaskContent | Set-Content -Path $TaskFile -NoNewline
     } else {
         # Fallback: inline template
@@ -269,6 +327,8 @@ $($Task.pseudocode)
 
 ## Acceptance Criteria
 $($Task.acceptance_criteria)
+
+$ResearchContext
 
 ## Instructions
 1. Complete this task fully

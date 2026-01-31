@@ -178,13 +178,18 @@ Follow the create-prp.md workflow EXACTLY with these inputs:
 **Workflow Steps to Execute:**
 1. Clarify Requirements (step_1_clarify) - may skip if already expanded
 2. Analyze Codebase (step_2_analyze_codebase) - REQUIRED, always do this
-3. Design Phases (step_3_design_phases) - break into Foundation, Core, Integration, Validation
-4. Create Tasks (step_4_create_tasks) - micro-tasks with XML structure
-5. Assign Agents (step_5_assign_agents) - backend-engineer, frontend-engineer, etc.
-6. Rank Tasks (step_6_rank_tasks) - effort (S/M/L/XL) and value (H/M/L)
-7. Add Validation (step_7_add_validation) - project-specific commands
-8. Write Document (step_8_write_document) - full XML PRP structure
-9. Save and Verify (step_9_save_and_verify)
+3. **Research Existing Solutions (step_2b_research_existing_solutions)** - REQUIRED, don't reinvent the wheel
+   - Search for proven libraries, patterns, and best practices
+   - Check official documentation for frameworks/services involved
+   - Document recommended libraries with rationale
+   - Note common pitfalls to avoid
+4. Design Phases (step_3_design_phases) - break into Foundation, Core, Integration, Validation
+5. Create Tasks (step_4_create_tasks) - micro-tasks with XML structure
+6. Assign Agents (step_5_assign_agents) - backend-engineer, frontend-engineer, etc.
+7. Rank Tasks (step_6_rank_tasks) - effort (S/M/L/XL) and value (H/M/L)
+8. Add Validation (step_7_add_validation) - project-specific commands
+9. Write Document (step_8_write_document) - full XML PRP structure with research-findings
+10. Save and Verify (step_9_save_and_verify)
 </execute_workflow>
 
 <xml_structure_requirements>
@@ -201,6 +206,18 @@ The generated PRP MUST use the full XML structure from templates/prp-template.md
     <dependencies>...</dependencies>
     <gotchas>...</gotchas>
   </codebase-analysis>
+  <research-findings>
+    <recommended-libraries>
+      <library name="..." purpose="...">
+        <rationale>Why this over alternatives</rationale>
+        <docs-url>Link to docs</docs-url>
+        <install>npm install X</install>
+      </library>
+    </recommended-libraries>
+    <patterns-to-follow>...</patterns-to-follow>
+    <pitfalls-to-avoid>...</pitfalls-to-avoid>
+    <documentation-references>...</documentation-references>
+  </research-findings>
   <phases>
     <phase id="N" name="...">
       <tasks>

@@ -390,11 +390,79 @@ if command -v jq &> /dev/null; then
   TOTAL=$(echo "$TASKS_JSON" | jq '.total')
   PRP_NAME=$(echo "$TASKS_JSON" | jq -r '.name')
   PRP_GOAL=$(echo "$TASKS_JSON" | jq -r '.goal')
+  HAS_RESEARCH=$(echo "$TASKS_JSON" | jq -r '.research != null')
 else
   # Fallback: use node for JSON parsing
   TOTAL=$(echo "$TASKS_JSON" | node -e "const d=require('fs').readFileSync(0,'utf8');console.log(JSON.parse(d).total)")
   PRP_NAME=$(echo "$TASKS_JSON" | node -e "const d=require('fs').readFileSync(0,'utf8');console.log(JSON.parse(d).name)")
   PRP_GOAL=""
+  HAS_RESEARCH=$(echo "$TASKS_JSON" | node -e "const d=JSON.parse(require('fs').readFileSync(0,'utf8'));console.log(d.research!==null)")
+fi
+
+# Extract and format research findings (if present)
+RESEARCH_CONTEXT=""
+if [[ "$HAS_RESEARCH" == "true" ]]; then
+  # Use Node.js to format research findings into readable markdown
+  RESEARCH_CONTEXT=$(echo "$TASKS_JSON" | node -e '
+    const fs = require("fs");
+    const data = JSON.parse(fs.readFileSync(0, "utf8"));
+    const r = data.research;
+    if (!r) { console.log(""); process.exit(0); }
+
+    let out = "## Research Context (Don'\''t Reinvent the Wheel)\n\n";
+    out += "The following research was conducted during PRP creation. Use these proven solutions.\n\n";
+
+    if (r.libraries && r.libraries.length > 0) {
+      out += "### Recommended Libraries\n\n";
+      for (const lib of r.libraries) {
+        out += `**${lib.name}** - ${lib.purpose}\n`;
+        if (lib.rationale) out += `- Why: ${lib.rationale}\n`;
+        if (lib.install) out += `- Install: \`${lib.install}\`\n`;
+        if (lib.docsUrl) out += `- Docs: ${lib.docsUrl}\n`;
+        out += "\n";
+      }
+    }
+
+    if (r.patterns && r.patterns.length > 0) {
+      out += "### Patterns to Follow\n\n";
+      for (const p of r.patterns) {
+        out += `- **${p.description || "Pattern"}**`;
+        if (p.applicability) out += `: ${p.applicability}`;
+        if (p.source && p.source !== "official docs") out += ` (Source: ${p.source})`;
+        out += "\n";
+      }
+      out += "\n";
+    }
+
+    if (r.pitfalls && r.pitfalls.length > 0) {
+      out += "### Pitfalls to Avoid\n\n";
+      for (const p of r.pitfalls) {
+        out += `- **${p.issue || "Issue"}**`;
+        if (p.mitigation) out += `: ${p.mitigation}`;
+        out += "\n";
+      }
+      out += "\n";
+    }
+
+    if (r.references && r.references.length > 0) {
+      out += "### Key Documentation\n\n";
+      for (const ref of r.references) {
+        out += `- **${ref.topic}**: ${ref.url}\n`;
+        if (ref.keyPoints && ref.keyPoints.length > 0) {
+          for (const point of ref.keyPoints) {
+            out += `  - ${point}\n`;
+          }
+        }
+      }
+      out += "\n";
+    }
+
+    console.log(out);
+  ' 2>/dev/null)
+
+  if [[ -n "$RESEARCH_CONTEXT" ]]; then
+    echo "Research findings detected - will include in task context"
+  fi
 fi
 
 # Initialize progress file
@@ -511,7 +579,7 @@ for i in $(seq 0 $((TOTAL - 1))); do
 
     # Re-render template with iteration context for this iteration
     if [[ -f "$TASK_TEMPLATE" ]]; then
-      export TASK_ID TASK_DESC TASK_FILES TASK_PSEUDO TASK_CRITERIA TASK_AGENT PRP_NAME PRP_FILE
+      export TASK_ID TASK_DESC TASK_FILES TASK_PSEUDO TASK_CRITERIA TASK_AGENT PRP_NAME PRP_FILE RESEARCH_CONTEXT
       export TASK_FILE_PATH="$TASK_FILE"
       export TEMPLATE_PATH="$TASK_TEMPLATE"
 
@@ -526,7 +594,8 @@ for i in $(seq 0 $((TOTAL - 1))); do
           TASK_CRITERIA: process.env.TASK_CRITERIA || "",
           TASK_AGENT: process.env.TASK_AGENT || "",
           PRP_NAME: process.env.PRP_NAME || "",
-          PRP_FILE: process.env.PRP_FILE || ""
+          PRP_FILE: process.env.PRP_FILE || "",
+          RESEARCH_CONTEXT: process.env.RESEARCH_CONTEXT || ""
         };
         let output = template;
         for (const [key, value] of Object.entries(vars)) {
@@ -564,6 +633,8 @@ $TASK_PSEUDO
 
 ## Acceptance Criteria
 $TASK_CRITERIA
+
+$RESEARCH_CONTEXT
 
 ## Instructions
 1. Complete this task fully
