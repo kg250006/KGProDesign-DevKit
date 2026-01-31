@@ -1,0 +1,7 @@
+# PRP files (generated/working files)
+PRPs/*.md
+
+# Claude working files
+.claude/current-task.md
+.claude/prp-progress.md
+.claude/prp-batch-progress.md
