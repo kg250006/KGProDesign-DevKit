@@ -258,7 +258,7 @@ get_status_message() {
 
 # Default values
 MAX_RETRIES=3
-TIMEOUT=300  # 5 minutes per task
+TIMEOUT=600  # 10 minutes per task
 MIN_ITERATIONS=1  # Minimum successful iterations per task (default: 1, use --iterations for more)
 DRY_RUN=false
 NO_SAFETY=false
@@ -286,7 +286,7 @@ ARGUMENTS:
 
 OPTIONS:
   --max-retries N     Max retry attempts per task (default: 3)
-  --timeout M         Timeout in seconds per task (default: 300)
+  --timeout M         Timeout in seconds per task (default: 600)
   --iterations N      Min successful iterations per task (default: 1)
   --fresh             Start fresh - ignore previous progress (default: auto-resume)
   --dry-run           Test mode - echo commands instead of running Claude
