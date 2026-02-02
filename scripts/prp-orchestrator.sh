@@ -485,32 +485,37 @@ fi
 
 # Function to get the PRP file path from an existing progress file
 # Returns the PRP path or empty string if not found
+# Uses sed instead of grep -P for macOS/bash 3.x compatibility
 get_progress_prp_file() {
   local progress_file="$1"
   if [[ -f "$progress_file" ]]; then
     # Look for "- PRP: <path>" line in the progress file
-    grep -oP '^- PRP: \K.*' "$progress_file" 2>/dev/null | head -1 || true
+    grep '^- PRP:' "$progress_file" 2>/dev/null | head -1 | sed 's/^- PRP: *//' || true
   fi
 }
 
 # Function to get completed task IDs from progress file
 # Returns a newline-separated list of task IDs that have "FULLY COMPLETE" status
+# Uses sed instead of grep -P for macOS/bash 3.x compatibility
 get_completed_tasks() {
   local progress_file="$1"
   if [[ -f "$progress_file" ]]; then
     # Parse lines like "Task Status: FULLY COMPLETE" and extract the preceding task ID
     # Look for "### Task X.X:" headers followed by "Task Status: FULLY COMPLETE"
+    # Use sed to extract task IDs (e.g., "1.1" from "### Task 1.1: Description")
     grep -B 10 "Task Status: FULLY COMPLETE" "$progress_file" 2>/dev/null | \
-      grep -oP '### Task \K[0-9]+\.[0-9]+' | sort -u || true
+      grep '### Task' | sed 's/.*### Task \([0-9]*\.[0-9]*\).*/\1/' | sort -u || true
   fi
 }
 
-# Declare associative array for completed tasks (bash 4+)
-declare -A COMPLETED_TASKS
+# Using newline-separated string instead of associative array for bash 3.x compatibility
+# (macOS ships with bash 3.2 which doesn't support declare -A)
+COMPLETED_TASKS_LIST=""
 
 # Resume logic: Auto-resume is ON by default
 # Check for existing progress unless --fresh was specified
 SKIPPED_COUNT=0
+COMPLETED_TASKS_COUNT=0
 if [[ "$RESUME" == "true" ]] && [[ -f "$PROGRESS_FILE" ]]; then
   echo "Checking for previous progress..."
 
@@ -525,20 +530,20 @@ if [[ "$RESUME" == "true" ]] && [[ -f "$PROGRESS_FILE" ]]; then
     echo "Starting fresh (previous progress will be overwritten)"
     echo ""
     # Don't load any completed tasks - start fresh
+    COMPLETED_TASKS_LIST=""
   else
     # Same PRP (or no PRP recorded) - safe to resume
-    # Load completed task IDs into associative array
-    while IFS= read -r task_id; do
-      if [[ -n "$task_id" ]]; then
-        COMPLETED_TASKS["$task_id"]=1
-      fi
-    done < <(get_completed_tasks "$PROGRESS_FILE")
+    # Load completed task IDs into newline-separated list (bash 3.x compatible)
+    COMPLETED_TASKS_LIST=$(get_completed_tasks "$PROGRESS_FILE")
 
-    if [[ ${#COMPLETED_TASKS[@]} -gt 0 ]]; then
-      echo "Found ${#COMPLETED_TASKS[@]} completed tasks from previous run"
+    if [[ -n "$COMPLETED_TASKS_LIST" ]]; then
+      COMPLETED_TASKS_COUNT=$(printf '%s\n' "$COMPLETED_TASKS_LIST" | grep -c . || echo "0")
+      echo "Found $COMPLETED_TASKS_COUNT completed tasks from previous run"
       echo "Auto-resuming: Will skip completed tasks (use --fresh to start over)"
-      for task_id in "${!COMPLETED_TASKS[@]}"; do
-        echo "  - $task_id [complete]"
+      echo "$COMPLETED_TASKS_LIST" | while read -r task_id; do
+        if [[ -n "$task_id" ]]; then
+          echo "  - $task_id [complete]"
+        fi
       done
       echo ""
     else
@@ -552,15 +557,15 @@ fi
 # Initialize progress file
 # If resuming with completed tasks, append to existing file; otherwise create fresh
 TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-if [[ ${#COMPLETED_TASKS[@]} -gt 0 ]]; then
+if [[ $COMPLETED_TASKS_COUNT -gt 0 ]]; then
   # Append resume session marker to existing progress file
   cat >> "$PROGRESS_FILE" <<EOF
 
 ---
 ## Resume Session
 - Resumed: $TIMESTAMP
-- Previously Completed: ${#COMPLETED_TASKS[@]} tasks
-- Remaining: $((TOTAL - ${#COMPLETED_TASKS[@]})) tasks
+- Previously Completed: $COMPLETED_TASKS_COUNT tasks
+- Remaining: $((TOTAL - COMPLETED_TASKS_COUNT)) tasks
 
 EOF
 else
@@ -597,8 +602,8 @@ echo "Progress: $PROGRESS_FILE"
 if [[ "$DRY_RUN" == "true" ]]; then
   echo "Mode: DRY RUN (no Claude sessions)"
 fi
-if [[ ${#COMPLETED_TASKS[@]} -gt 0 ]]; then
-  echo "Mode: AUTO-RESUME (skipping ${#COMPLETED_TASKS[@]} completed tasks)"
+if [[ $COMPLETED_TASKS_COUNT -gt 0 ]]; then
+  echo "Mode: AUTO-RESUME (skipping $COMPLETED_TASKS_COUNT completed tasks)"
 fi
 if [[ "$FRESH" == "true" ]]; then
   echo "Mode: FRESH START (ignoring previous progress)"
@@ -638,7 +643,8 @@ for i in $(seq 0 $((TOTAL - 1))); do
   fi
 
   # Resume mode: Skip already-completed tasks
-  if [[ "$RESUME" == "true" ]] && [[ -n "${COMPLETED_TASKS[$TASK_ID]:-}" ]]; then
+  # Using grep to check if task ID is in the newline-separated list (bash 3.x compatible)
+  if [[ "$RESUME" == "true" ]] && [[ -n "$COMPLETED_TASKS_LIST" ]] && echo "$COMPLETED_TASKS_LIST" | grep -qxF "$TASK_ID"; then
     echo ""
     echo "=========================================="
     echo "TASK $TASK_NUM / $TOTAL: $TASK_ID [SKIPPED - Already Complete]"

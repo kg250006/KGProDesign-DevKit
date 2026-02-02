@@ -551,9 +551,10 @@ for i in "${!PRP_FILES[@]}"; do
 
   if [[ -f "$PRP_PROGRESS_FILE" ]]; then
     # Strategy 1: Parse summary section (most accurate)
-    TASKS_SUCCEEDED=$(grep -oP 'Tasks Succeeded: \K\d+' "$PRP_PROGRESS_FILE" 2>/dev/null | tail -1 || echo "")
-    TOTAL_TASKS=$(grep -oP 'Tasks Succeeded: \d+ / \K\d+' "$PRP_PROGRESS_FILE" 2>/dev/null | tail -1 || echo "")
-    TASKS_FAILED=$(grep -oP 'Tasks Failed: \K\d+' "$PRP_PROGRESS_FILE" 2>/dev/null | tail -1 || echo "")
+    # Uses sed instead of grep -P for macOS/bash 3.x compatibility
+    TASKS_SUCCEEDED=$(grep 'Tasks Succeeded:' "$PRP_PROGRESS_FILE" 2>/dev/null | tail -1 | sed 's/.*Tasks Succeeded: *\([0-9]*\).*/\1/' || echo "")
+    TOTAL_TASKS=$(grep 'Tasks Succeeded:' "$PRP_PROGRESS_FILE" 2>/dev/null | tail -1 | sed 's/.*Tasks Succeeded: *[0-9]* *\/ *\([0-9]*\).*/\1/' || echo "")
+    TASKS_FAILED=$(grep 'Tasks Failed:' "$PRP_PROGRESS_FILE" 2>/dev/null | tail -1 | sed 's/.*Tasks Failed: *\([0-9]*\).*/\1/' || echo "")
 
     # Strategy 2: Count "FULLY COMPLETE" and "FAILED after" markers
     if [[ -z "$TASKS_SUCCEEDED" ]] || [[ "$TASKS_SUCCEEDED" == "0" && -z "$TOTAL_TASKS" ]]; then
@@ -578,8 +579,9 @@ for i in "${!PRP_FILES[@]}"; do
     [[ -z "$TOTAL_TASKS" ]] && TOTAL_TASKS=0
 
     # Validate: if TOTAL_TASKS is still 0, try to extract from header
+    # Uses sed instead of grep -P for macOS/bash 3.x compatibility
     if [[ "$TOTAL_TASKS" == "0" ]]; then
-      TOTAL_TASKS=$(grep -oP 'Total Tasks: \K\d+' "$PRP_PROGRESS_FILE" 2>/dev/null | head -1 || echo "0")
+      TOTAL_TASKS=$(grep 'Total Tasks:' "$PRP_PROGRESS_FILE" 2>/dev/null | head -1 | sed 's/.*Total Tasks: *\([0-9]*\).*/\1/' || echo "0")
       TOTAL_TASKS=$(echo "$TOTAL_TASKS" | tr -d '[:space:]')
       [[ -z "$TOTAL_TASKS" ]] && TOTAL_TASKS=$((TASKS_SUCCEEDED + TASKS_FAILED))
     fi
