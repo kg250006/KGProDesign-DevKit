@@ -1,6 +1,6 @@
 ---
 description: "[KGP] Execute multiple PRPs sequentially with full isolation between each"
-argument-hint: "<prp1.md> <prp2.md> ... OR --batch-file PRPs/batch.txt [--iterations N] [--dry-run] [--timeout N]"
+argument-hint: "<prp1.md> <prp2.md> ... OR --batch-file PRPs/batch.txt [--fresh] [--retry-failed] [--iterations N] [--timeout N]"
 allowed-tools: [Bash, Read, Glob]
 ---
 
@@ -16,6 +16,8 @@ This command ensures:
 - Complete isolation between PRPs (no context bleed)
 - Sequential execution (PRP N finishes before PRP N+1 starts)
 - Aggregated results in a batch progress file
+- Auto-resume on interruption (skips completed PRPs)
+- Per-PRP progress archival for post-batch review
 </objective>
 
 <when_to_use>
@@ -50,6 +52,12 @@ Options:
 - `--max-retries N`: Max retries per task (default: 3)
 - `--no-safety`: Disable safety mode
 - `--skip-validation`: Skip acceptance criteria validation
+- `--fresh`: Start fresh - ignore previous progress (default: auto-resume)
+- `--retry-failed`: Retry PRPs that previously failed (marked with [~])
+
+**Note:** Auto-resume is enabled by default. If a previous batch run exists in
+`.claude/prp-batch-progress.md`, completed PRPs (marked [x]) will be skipped.
+Failed PRPs (marked [~]) are also skipped unless `--retry-failed` is used.
 
 ## Step 2: Validate PRP Files
 
@@ -148,7 +156,7 @@ Then execute with:
 ## Examples
 
 ```bash
-# Execute three PRPs in sequence
+# Execute three PRPs in sequence (auto-resumes if interrupted)
 /KGP:prp-execute-batch PRPs/step1.md PRPs/step2.md PRPs/step3.md
 
 # Use a batch file for a release
@@ -165,6 +173,17 @@ Then execute with:
 
 # High quality batch with 3 iterations per task
 /KGP:prp-execute-batch --batch-file PRPs/release.txt --iterations 3
+
+# Resume/Retry Examples:
+
+# After interruption, run the same command again - completed PRPs are skipped
+/KGP:prp-execute-batch PRPs/step1.md PRPs/step2.md PRPs/step3.md
+
+# Retry failed PRPs from previous batch
+/KGP:prp-execute-batch --batch-file PRPs/release.txt --retry-failed
+
+# Force fresh start (ignore previous progress)
+/KGP:prp-execute-batch PRPs/*.md --fresh
 ```
 </example>
 
@@ -183,13 +202,18 @@ tail -f .claude/prp-batch-progress.md
 # On Unix, attach to current PRP's tmux session
 tmux list-sessions | grep prp-batch
 tmux attach -t <session-name>
+
+# View individual PRP progress files (archived after each PRP)
+ls .claude/prp-progress-*.md
+cat .claude/prp-progress-my-feature.md
 ```
 
 The batch progress file shows:
-- Which PRPs have completed
+- Which PRPs have completed (`[x]`) or failed (`[~]`)
 - Success/failure status per PRP
 - Timestamps for each execution
-- Final summary with totals
+- Links to archived per-PRP progress files
+- Final summary with totals (succeeded, failed, skipped)
 </monitoring>
 
 <architecture>
@@ -246,6 +270,34 @@ calling prp-orchestrator.sh directly. This ensures:
 - Captures exit code
 </architecture>
 
+<resume>
+## Resume and Recovery
+
+The batch runner supports automatic resumption after interruption:
+
+### Auto-Resume (Default)
+- If batch is interrupted (Ctrl+C, crash, etc.), simply re-run the same command
+- Completed PRPs (marked `[x]`) are automatically skipped
+- Failed PRPs (marked `[~]`) are also skipped (use `--retry-failed` to retry)
+- Progress is preserved in `.claude/prp-batch-progress.md`
+
+### Interrupt Behavior
+When interrupted, the batch runner:
+1. Logs the interruption to the progress file
+2. Displays resume instructions
+3. Preserves all progress for later continuation
+
+### Flags
+- `--fresh`: Force start from scratch, ignoring previous progress
+- `--retry-failed`: Include previously failed PRPs in this run
+
+### Per-PRP Progress Archival
+After each PRP completes (success or failure), its progress is archived:
+- Format: `.claude/prp-progress-{prp-name}.md`
+- Example: `prp-progress-my-feature.md`
+- Enables post-batch review of individual PRP execution details
+</resume>
+
 <comparison>
 ## Comparison: Single vs Batch Execution
 
@@ -253,7 +305,9 @@ calling prp-orchestrator.sh directly. This ensures:
 |--------|---------------------|-------------------|
 | **Input** | Single PRP | Multiple PRPs |
 | **Isolation** | Per-task | Per-task AND per-PRP |
-| **Monitoring** | Single progress file | Batch + individual logs |
+| **Monitoring** | Single progress file | Batch + individual archives |
 | **Use case** | One feature | Release pipeline |
 | **Context** | Fresh per task | Fresh per task AND per PRP |
+| **Resume** | Auto (task-level) | Auto (PRP-level + task-level) |
+| **Retry failed** | Re-run command | `--retry-failed` flag |
 </comparison>

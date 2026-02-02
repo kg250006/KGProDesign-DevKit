@@ -263,6 +263,8 @@ MIN_ITERATIONS=1  # Minimum successful iterations per task (default: 1, use --it
 DRY_RUN=false
 NO_SAFETY=false
 SKIP_VALIDATION=false
+RESUME=true   # Auto-resume is ON by default - use --fresh to start over
+FRESH=false   # Explicit flag to force fresh start
 
 # Safety configuration
 BLOCKED_TOOLS="WebFetch,WebSearch,KillShell,Task,NotebookEdit"
@@ -286,10 +288,15 @@ OPTIONS:
   --max-retries N     Max retry attempts per task (default: 3)
   --timeout M         Timeout in seconds per task (default: 300)
   --iterations N      Min successful iterations per task (default: 1)
+  --fresh             Start fresh - ignore previous progress (default: auto-resume)
   --dry-run           Test mode - echo commands instead of running Claude
   --no-safety         Disable safety mode (use standard permissions)
   --skip-validation   Skip acceptance criteria validation
   --help, -h          Show this help message
+
+NOTE:
+  Auto-resume is enabled by default. If a previous run exists for the same PRP,
+  completed tasks will be skipped automatically. Use --fresh to force a clean start.
 
 DESCRIPTION:
   Executes each PRP task in a completely separate Claude session.
@@ -313,7 +320,8 @@ SAFETY MODEL:
   Use --no-safety to revert to standard permission prompts (slower)
 
 EXAMPLE:
-  ./prp-orchestrator.sh PRPs/my-feature.md
+  ./prp-orchestrator.sh PRPs/my-feature.md              # Auto-resumes if prior progress exists
+  ./prp-orchestrator.sh PRPs/my-feature.md --fresh      # Force fresh start, ignore prior progress
   ./prp-orchestrator.sh PRPs/my-feature.md --no-safety
   ./prp-orchestrator.sh PRPs/complex.md --timeout 600 --skip-validation
 
@@ -350,6 +358,16 @@ while [[ $# -gt 0 ]]; do
       ;;
     --skip-validation)
       SKIP_VALIDATION=true
+      shift
+      ;;
+    --fresh)
+      FRESH=true
+      RESUME=false
+      shift
+      ;;
+    --resume)
+      # Legacy flag - resume is now default, but accept for backwards compatibility
+      RESUME=true
       shift
       ;;
     --help|-h)
@@ -465,9 +483,89 @@ if [[ "$HAS_RESEARCH" == "true" ]]; then
   fi
 fi
 
+# Function to get the PRP file path from an existing progress file
+# Returns the PRP path or empty string if not found
+get_progress_prp_file() {
+  local progress_file="$1"
+  if [[ -f "$progress_file" ]]; then
+    # Look for "- PRP: <path>" line in the progress file
+    grep -oP '^- PRP: \K.*' "$progress_file" 2>/dev/null | head -1 || true
+  fi
+}
+
+# Function to get completed task IDs from progress file
+# Returns a newline-separated list of task IDs that have "FULLY COMPLETE" status
+get_completed_tasks() {
+  local progress_file="$1"
+  if [[ -f "$progress_file" ]]; then
+    # Parse lines like "Task Status: FULLY COMPLETE" and extract the preceding task ID
+    # Look for "### Task X.X:" headers followed by "Task Status: FULLY COMPLETE"
+    grep -B 10 "Task Status: FULLY COMPLETE" "$progress_file" 2>/dev/null | \
+      grep -oP '### Task \K[0-9]+\.[0-9]+' | sort -u || true
+  fi
+}
+
+# Declare associative array for completed tasks (bash 4+)
+declare -A COMPLETED_TASKS
+
+# Resume logic: Auto-resume is ON by default
+# Check for existing progress unless --fresh was specified
+SKIPPED_COUNT=0
+if [[ "$RESUME" == "true" ]] && [[ -f "$PROGRESS_FILE" ]]; then
+  echo "Checking for previous progress..."
+
+  # CRITICAL: Verify the progress file is for the SAME PRP
+  EXISTING_PRP=$(get_progress_prp_file "$PROGRESS_FILE")
+
+  if [[ -n "$EXISTING_PRP" ]] && [[ "$EXISTING_PRP" != "$PRP_FILE" ]]; then
+    # Different PRP - the progress file is stale/from another run
+    echo "Existing progress is for a different PRP:"
+    echo "  Previous: $EXISTING_PRP"
+    echo "  Current:  $PRP_FILE"
+    echo "Starting fresh (previous progress will be overwritten)"
+    echo ""
+    # Don't load any completed tasks - start fresh
+  else
+    # Same PRP (or no PRP recorded) - safe to resume
+    # Load completed task IDs into associative array
+    while IFS= read -r task_id; do
+      if [[ -n "$task_id" ]]; then
+        COMPLETED_TASKS["$task_id"]=1
+      fi
+    done < <(get_completed_tasks "$PROGRESS_FILE")
+
+    if [[ ${#COMPLETED_TASKS[@]} -gt 0 ]]; then
+      echo "Found ${#COMPLETED_TASKS[@]} completed tasks from previous run"
+      echo "Auto-resuming: Will skip completed tasks (use --fresh to start over)"
+      for task_id in "${!COMPLETED_TASKS[@]}"; do
+        echo "  - $task_id [complete]"
+      done
+      echo ""
+    else
+      echo "No completed tasks found - starting fresh"
+    fi
+  fi
+elif [[ "$FRESH" == "true" ]]; then
+  echo "Fresh start requested - ignoring any previous progress"
+fi
+
 # Initialize progress file
+# If resuming with completed tasks, append to existing file; otherwise create fresh
 TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-cat > "$PROGRESS_FILE" <<EOF
+if [[ ${#COMPLETED_TASKS[@]} -gt 0 ]]; then
+  # Append resume session marker to existing progress file
+  cat >> "$PROGRESS_FILE" <<EOF
+
+---
+## Resume Session
+- Resumed: $TIMESTAMP
+- Previously Completed: ${#COMPLETED_TASKS[@]} tasks
+- Remaining: $((TOTAL - ${#COMPLETED_TASKS[@]})) tasks
+
+EOF
+else
+  # Fresh start - overwrite progress file
+  cat > "$PROGRESS_FILE" <<EOF
 # PRP Execution Progress (Isolated Mode)
 
 ## Session Info
@@ -482,6 +580,7 @@ cat > "$PROGRESS_FILE" <<EOF
 ## Task Log
 
 EOF
+fi
 
 # Banner
 echo ""
@@ -497,6 +596,12 @@ echo "Iterations: $MIN_ITERATIONS (per task)"
 echo "Progress: $PROGRESS_FILE"
 if [[ "$DRY_RUN" == "true" ]]; then
   echo "Mode: DRY RUN (no Claude sessions)"
+fi
+if [[ ${#COMPLETED_TASKS[@]} -gt 0 ]]; then
+  echo "Mode: AUTO-RESUME (skipping ${#COMPLETED_TASKS[@]} completed tasks)"
+fi
+if [[ "$FRESH" == "true" ]]; then
+  echo "Mode: FRESH START (ignoring previous progress)"
 fi
 echo "=========================================="
 echo ""
@@ -530,6 +635,17 @@ for i in $(seq 0 $((TOTAL - 1))); do
     TASK_CRITERIA=""
     TASK_FILES=""
     TASK_PSEUDO=""
+  fi
+
+  # Resume mode: Skip already-completed tasks
+  if [[ "$RESUME" == "true" ]] && [[ -n "${COMPLETED_TASKS[$TASK_ID]:-}" ]]; then
+    echo ""
+    echo "=========================================="
+    echo "TASK $TASK_NUM / $TOTAL: $TASK_ID [SKIPPED - Already Complete]"
+    echo "=========================================="
+    SKIPPED_COUNT=$((SKIPPED_COUNT + 1))
+    SUCCEEDED=$((SUCCEEDED + 1))  # Count as succeeded for final stats
+    continue
   fi
 
   # Determine effective timeout for this task
@@ -765,6 +881,9 @@ echo "  EXECUTION COMPLETE"
 echo "=========================================="
 echo "Total Tasks: $TOTAL"
 echo "Succeeded (all iterations): $SUCCEEDED"
+if [[ $SKIPPED_COUNT -gt 0 ]]; then
+  echo "  (includes $SKIPPED_COUNT skipped/resumed)"
+fi
 echo "Failed: $FAILED"
 echo "Total Iterations Run: $TOTAL_ITERATIONS"
 echo "Target Iterations/Task: $MIN_ITERATIONS"
@@ -776,6 +895,7 @@ cat >> "$PROGRESS_FILE" <<EOF
 ## Summary
 - Completed: $(date -u +%Y-%m-%dT%H:%M:%SZ)
 - Tasks Succeeded: $SUCCEEDED / $TOTAL
+- Tasks Skipped (resumed): $SKIPPED_COUNT
 - Tasks Failed: $FAILED
 - Total Iterations: $TOTAL_ITERATIONS
 - Target Iterations/Task: $MIN_ITERATIONS

@@ -19,6 +19,8 @@ param(
 
     [int]$Iterations = 1,
 
+    [switch]$Fresh,
+
     [Alias("dry-run")]
     [switch]$DryRun,
 
@@ -101,10 +103,15 @@ OPTIONS:
   -MaxRetries N     Max retry attempts per task (default: 3)
   -Timeout M        Timeout in seconds per task (default: 300)
   -Iterations N     Min successful iterations per task (default: 1)
+  -Fresh            Start fresh - ignore previous progress (default: auto-resume)
   -DryRun           Test mode - echo commands instead of running Claude
   -NoSafety         Disable safety mode (use standard permissions)
   -SkipValidation   Skip acceptance criteria validation
   -Help, -h         Show this help message
+
+NOTE:
+  Auto-resume is enabled by default. If a previous run exists for the same PRP,
+  completed tasks will be skipped automatically. Use -Fresh to force a clean start.
 
 DESCRIPTION:
   Executes each PRP task in a completely separate Claude session.
@@ -114,7 +121,8 @@ DESCRIPTION:
   Claude cannot "optimize" by combining tasks.
 
 EXAMPLE:
-  .\prp-orchestrator.ps1 PRPs\my-feature.md
+  .\prp-orchestrator.ps1 PRPs\my-feature.md            # Auto-resumes if prior progress exists
+  .\prp-orchestrator.ps1 PRPs\my-feature.md -Fresh     # Force fresh start, ignore prior progress
   .\prp-orchestrator.ps1 PRPs\my-feature.md -MaxRetries 5 -Timeout 600
 
 OUTPUT:
@@ -152,6 +160,82 @@ $TasksData = $TasksJson | ConvertFrom-Json
 $Total = $TasksData.total
 $PrpName = $TasksData.name
 $PrpGoal = $TasksData.goal
+
+# Function to get the PRP file path from an existing progress file
+# Returns the PRP path or empty string if not found
+function Get-ProgressPrpFile {
+    param([string]$ProgressFilePath)
+
+    if (Test-Path $ProgressFilePath) {
+        $content = Get-Content -Path $ProgressFilePath -Raw
+        # Look for "- PRP: <path>" line in the progress file
+        if ($content -match '(?m)^- PRP: (.+)$') {
+            return $matches[1].Trim()
+        }
+    }
+    return ""
+}
+
+# Function to get completed task IDs from progress file
+# Returns an array of task IDs that have "FULLY COMPLETE" status
+function Get-CompletedTasks {
+    param([string]$ProgressFilePath)
+
+    $completedTasks = @{}
+
+    if (Test-Path $ProgressFilePath) {
+        $content = Get-Content -Path $ProgressFilePath -Raw
+        # Match lines like "Task Status: FULLY COMPLETE" and find preceding task ID headers
+        # Look for "### Task X.X:" headers followed by "Task Status: FULLY COMPLETE"
+        $regex = '### Task (\d+\.\d+):.*?Task Status: FULLY COMPLETE'
+        $regexMatches = [regex]::Matches($content, $regex, [System.Text.RegularExpressions.RegexOptions]::Singleline)
+        foreach ($match in $regexMatches) {
+            $taskId = $match.Groups[1].Value
+            $completedTasks[$taskId] = $true
+        }
+    }
+
+    return $completedTasks
+}
+
+# Resume logic: Auto-resume is ON by default
+# Check for existing progress unless -Fresh was specified
+$CompletedTasks = @{}
+$SkippedCount = 0
+$Resume = -not $Fresh  # Resume unless Fresh is explicitly set
+
+if ($Resume -and (Test-Path $ProgressFile)) {
+    Write-Host "Checking for previous progress..."
+
+    # CRITICAL: Verify the progress file is for the SAME PRP
+    $ExistingPrp = Get-ProgressPrpFile -ProgressFilePath $ProgressFile
+
+    if ($ExistingPrp -and $ExistingPrp -ne $PrpFile) {
+        # Different PRP - the progress file is stale/from another run
+        Write-Host "Existing progress is for a different PRP:"
+        Write-Host "  Previous: $ExistingPrp"
+        Write-Host "  Current:  $PrpFile"
+        Write-Host "Starting fresh (previous progress will be overwritten)"
+        Write-Host ""
+        # Don't load any completed tasks - start fresh
+    } else {
+        # Same PRP (or no PRP recorded) - safe to resume
+        $CompletedTasks = Get-CompletedTasks -ProgressFilePath $ProgressFile
+
+        if ($CompletedTasks.Count -gt 0) {
+            Write-Host "Found $($CompletedTasks.Count) completed tasks from previous run"
+            Write-Host "Auto-resuming: Will skip completed tasks (use -Fresh to start over)"
+            foreach ($taskId in $CompletedTasks.Keys) {
+                Write-Host "  - $taskId [complete]"
+            }
+            Write-Host ""
+        } else {
+            Write-Host "No completed tasks found - starting fresh"
+        }
+    }
+} elseif ($Fresh) {
+    Write-Host "Fresh start requested - ignoring any previous progress"
+}
 
 # Format research findings (if present)
 $ResearchContext = ""
@@ -211,7 +295,21 @@ if ($null -ne $TasksData.research) {
 }
 
 # Initialize progress file
+# If resuming with completed tasks, append to existing file; otherwise create fresh
 $Timestamp = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+if ($CompletedTasks.Count -gt 0) {
+    # Append resume session marker to existing progress file
+@"
+
+---
+## Resume Session
+- Resumed: $Timestamp
+- Previously Completed: $($CompletedTasks.Count) tasks
+- Remaining: $($Total - $CompletedTasks.Count) tasks
+
+"@ | Add-Content -Path $ProgressFile
+} else {
+    # Fresh start - overwrite progress file
 @"
 # PRP Execution Progress (Isolated Mode)
 
@@ -227,6 +325,7 @@ $Timestamp = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
 ## Task Log
 
 "@ | Set-Content -Path $ProgressFile
+}
 
 # Banner
 Write-Host ""
@@ -243,6 +342,12 @@ Write-Host "Progress: $ProgressFile"
 if ($DryRun) {
     Write-Host "Mode: DRY RUN (no Claude sessions)"
 }
+if ($CompletedTasks.Count -gt 0) {
+    Write-Host "Mode: AUTO-RESUME (skipping $($CompletedTasks.Count) completed tasks)"
+}
+if ($Fresh) {
+    Write-Host "Mode: FRESH START (ignoring previous progress)"
+}
 Write-Host "=========================================="
 Write-Host ""
 
@@ -255,6 +360,17 @@ $Script:TotalIterations = 0
 for ($i = 0; $i -lt $Total; $i++) {
     $TaskNum = $i + 1
     $Task = $TasksData.tasks[$i]
+
+    # Resume mode: Skip already-completed tasks
+    if ($Resume -and $CompletedTasks.ContainsKey($Task.id)) {
+        Write-Host ""
+        Write-Host "=========================================="
+        Write-Host "TASK $TaskNum / $Total : $($Task.id) [SKIPPED - Already Complete]"
+        Write-Host "=========================================="
+        $SkippedCount++
+        $Succeeded++  # Count as succeeded for final stats
+        continue
+    }
 
     # Determine effective timeout for this task
     # Supports: numeric value (e.g., "900"), "extended" (600s), or default
@@ -485,6 +601,9 @@ Write-Host "  EXECUTION COMPLETE"
 Write-Host "==========================================" -ForegroundColor Blue
 Write-Host "Total Tasks: $Total"
 Write-Host "Succeeded (all iterations): $Succeeded" -ForegroundColor Green
+if ($SkippedCount -gt 0) {
+    Write-Host "  (includes $SkippedCount skipped/resumed)"
+}
 Write-Host "Failed: $Failed" -ForegroundColor $(if ($Failed -gt 0) { "Red" } else { "Green" })
 Write-Host "Total Iterations Run: $Script:TotalIterations"
 Write-Host "Target Iterations/Task: $Iterations"
@@ -497,6 +616,7 @@ $CompletedTimestamp = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss
 ## Summary
 - Completed: $CompletedTimestamp
 - Tasks Succeeded: $Succeeded / $Total
+- Tasks Skipped (resumed): $SkippedCount
 - Tasks Failed: $Failed
 - Total Iterations: $Script:TotalIterations
 - Target Iterations/Task: $Iterations

@@ -5,7 +5,7 @@
   },
   "metadata": {
     "description": "Universal development toolkit for any project - streamlined from 40 agents to 8, 59 commands to 23",
-    "version": "1.7.4",
+    "version": "1.7.5",
     "category": "development",
     "visibility": "public"
   },
@@ -14,7 +14,7 @@
       "name": "KGP",
       "source": "./",
       "description": "8 core agents covering frontend, backend, data, QA, project management, documentation, and DevOps",
-      "version": "1.7.4",
+      "version": "1.7.5",
       "strict": true
     }
   ]

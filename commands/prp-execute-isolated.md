@@ -1,6 +1,6 @@
 ---
 description: "[KGP] Execute PRP with hard session isolation - each task in fresh context"
-argument-hint: "<prp-file.md> [--iterations N] [--max-retries N] [--timeout M] [--no-safety] [--skip-validation]"
+argument-hint: "<prp-file.md> [--fresh] [--iterations N] [--max-retries N] [--timeout M] [--no-safety] [--skip-validation]"
 allowed-tools: [Bash, Read]
 ---
 
@@ -288,8 +288,11 @@ Iteration 2: Fresh Claude → Execute task → SUCCESS → TASK COMPLETE
 ## Example Usage
 
 ```bash
-# Basic usage - execute a PRP with isolation (safety mode enabled by default)
+# Basic usage - auto-resumes if previous progress exists
 /$PLUGIN_NAME:prp-execute-isolated PRPs/my-feature.md
+
+# Force fresh start - ignore any previous progress
+/$PLUGIN_NAME:prp-execute-isolated PRPs/my-feature.md --fresh
 
 # With iteration configuration (Ralph Loop philosophy)
 /$PLUGIN_NAME:prp-execute-isolated PRPs/quality-feature.md --iterations 3
@@ -309,9 +312,12 @@ Iteration 2: Fresh Claude → Execute task → SUCCESS → TASK COMPLETE
 # Skip validation step after each task
 /$PLUGIN_NAME:prp-execute-isolated PRPs/quick-feature.md --skip-validation
 
-# All options
-/$PLUGIN_NAME:prp-execute-isolated PRPs/mega-feature.md --iterations 2 --max-retries 5 --timeout 600 --no-safety
+# All options (auto-resume is default, --fresh would override)
+/$PLUGIN_NAME:prp-execute-isolated PRPs/mega-feature.md --iterations 2 --max-retries 5 --timeout 600
 ```
+
+**Note:** Auto-resume is enabled by default. If a previous run of the same PRP exists,
+completed tasks are automatically skipped. Use `--fresh` to force starting over.
 </example>
 
 <monitoring>
