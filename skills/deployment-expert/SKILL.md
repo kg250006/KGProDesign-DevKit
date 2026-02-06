@@ -67,35 +67,74 @@ Adding a new platform = adding a new reference file + workflow additions.
 </essential_principles>
 
 <intake>
-**Ask the user:**
+**First: Detect deployment state (new vs existing app)**
+
+```bash
+# Quick state detection
+if [[ -f ".deployment-profile.json" ]]; then
+    PLATFORM=$(jq -r '.platform' .deployment-profile.json)
+    STATE="existing"
+else
+    STATE="new"
+fi
+```
+
+**If STATE = "existing" AND user says "deploy/ship/push":**
+→ Go directly to fast-path workflow for that platform
+→ Don't ask questions, just execute
+
+**If STATE = "new" OR user explicitly asks for setup:**
+→ Ask what they want to do (menu below)
+
+---
+
+**Menu (for new apps or explicit requests):**
 
 What would you like to do?
-1. Deploy this project
-2. Set up deployment profile (first-time setup)
-3. Manage environment variables
-4. Check deployment status
-5. Troubleshoot deployment issues
-6. Connect/configure account (Netlify, Azure, FTP)
-7. Set up VM auto-deploy (cron-based git monitoring)
-8. Run post-deploy health checks
+1. Ship to production (commit → PR → deploy → monitor) **[FAST PATH]**
+2. Deploy this project (full workflow)
+3. Set up deployment profile (first-time setup)
+4. Manage environment variables
+5. Check deployment status
+6. Troubleshoot deployment issues
+7. Connect/configure account (Netlify, Azure, FTP)
+8. Set up VM auto-deploy (cron-based git monitoring)
+9. Run post-deploy health checks
 
 **Then read the matching workflow and follow it.**
 </intake>
 
 <routing>
+## Smart Routing (State-Aware)
+
+**FAST PATH - Existing Azure VM App:**
+When user says "deploy", "ship", "push", "commit to production", "merge to production" AND `.deployment-profile.json` exists with `platform: "azure-vm"`:
+→ Route directly to `workflows/azure-vm-ship.md`
+→ No questions, no menu - just execute the ship flow
+
+**Standard Routing:**
 | Response | Workflow |
 |----------|----------|
-| 1, "deploy", "push", "ship", "publish" | `workflows/deploy.md` |
-| 2, "setup", "profile", "configure", "first" | `workflows/setup-profile.md` |
-| 3, "env", "variables", "secrets", "config" | `workflows/manage-env-vars.md` |
-| 4, "status", "check", "verify" | `workflows/check-status.md` |
-| 5, "trouble", "fix", "debug", "broken", "failed", "502", "error" | `workflows/troubleshoot.md` |
-| 6, "connect", "account", "auth", "login" | `workflows/connect-account.md` |
-| 7, "auto-deploy", "cron", "vm setup", "git monitoring" | `workflows/vm-auto-deploy-setup.md` |
-| 8, "health", "post-deploy", "verify deployment" | `workflows/post-deploy-health.md` |
+| 1, "ship", "commit and deploy", "push to prod", "merge to production" | `workflows/azure-vm-ship.md` (if azure-vm) |
+| 2, "deploy", "push", "publish" | `workflows/deploy.md` |
+| 3, "setup", "profile", "configure", "first" | `workflows/setup-profile.md` |
+| 4, "env", "variables", "secrets", "config" | `workflows/manage-env-vars.md` |
+| 5, "status", "check", "verify" | `workflows/check-status.md` |
+| 6, "trouble", "fix", "debug", "broken", "failed", "502", "error" | `workflows/troubleshoot.md` |
+| 7, "connect", "account", "auth", "login" | `workflows/connect-account.md` |
+| 8, "auto-deploy", "cron", "vm setup", "git monitoring" | `workflows/vm-auto-deploy-setup.md` |
+| 9, "health", "post-deploy", "verify deployment" | `workflows/post-deploy-health.md` |
 
-**Platform auto-detection:**
-- If `.deployment-profile.json` exists → read platform, route to platform-specific reference
+**Platform-Specific Fast Paths:**
+| Platform | Fast Path Trigger | Workflow |
+|----------|-------------------|----------|
+| azure-vm | "ship", "deploy", existing profile | `workflows/azure-vm-ship.md` |
+| netlify | "deploy", existing profile | `workflows/deploy.md` (netlify section) |
+| github-production | "ship", "merge to production" | `workflows/azure-vm-ship.md` (shared flow) |
+| ftp | "deploy", "upload" | `workflows/deploy.md` (ftp section) |
+
+**Platform auto-detection (for new apps):**
+- If `.deployment-profile.json` exists → read platform, use fast path
 - If `netlify.toml` exists → suggest Netlify profile
 - If repo has `production` branch → suggest GitHub Production profile
 - If `.azure/` or `azure-pipelines.yml` exists → suggest Azure VM profile
@@ -237,16 +276,39 @@ All in `references/`:
 
 All in `workflows/`:
 
+### Fast Path (Existing Apps)
+| File | Purpose | When to Use |
+|------|---------|-------------|
+| **azure-vm-ship.md** | Commit → PR → Merge → Monitor deployment | Existing Azure VM app with auto-deploy configured |
+
+### Standard Workflows
 | File | Purpose |
 |------|---------|
-| deploy.md | Execute deployment based on profile |
+| deploy.md | Execute deployment based on profile (full workflow) |
 | setup-profile.md | Create deployment profile for new project |
 | manage-env-vars.md | Sync and manage environment variables |
 | check-status.md | Verify deployment status and health |
 | troubleshoot.md | Debug failed deployments (includes VM/Docker issues) |
 | connect-account.md | Set up platform credentials |
-| vm-auto-deploy-setup.md | **NEW:** Set up cron-based git monitoring auto-deploy |
-| post-deploy-health.md | **NEW:** Comprehensive post-deploy health checks with NPM reload |
+| vm-auto-deploy-setup.md | Set up cron-based git monitoring auto-deploy |
+| post-deploy-health.md | Comprehensive post-deploy health checks with NPM reload |
+
+### Workflow Selection Logic
+
+```
+User says "deploy" or "ship"
+    │
+    ├─► .deployment-profile.json exists with platform: "azure-vm"?
+    │       │
+    │       ├─► YES → azure-vm-ship.md (fast path)
+    │       │         Monitor only, don't intervene
+    │       │         All fixes go through codebase
+    │       │
+    │       └─► NO → setup-profile.md first, then deploy.md
+    │
+    └─► User says "setup" or "first-time"
+            └─► vm-auto-deploy-setup.md (full infrastructure setup)
+```
 </workflows_index>
 
 <templates_index>
