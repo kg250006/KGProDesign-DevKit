@@ -155,3 +155,23 @@ When your work involves specialized methodologies, invoke the appropriate skill 
   - Checking console for JavaScript errors
   - Validating accessibility implementations
   - End-to-end user flow testing
+
+### regression-testing
+- **Trigger**: Running comprehensive regression tests, coverage enhancement, or fixing test failures
+- **Invoke**: Use `/regression-test` or `/$PLUGIN_NAME:regression-testing`
+- **Purpose**: Automated regression testing with project detection, coverage analysis, and failure fixing
+- **When to use**:
+  - Running full regression test suites (unit, integration, E2E)
+  - Running frontend-only or backend-only test suites
+  - Assessing and enhancing test coverage (especially if < 60%)
+  - Debugging and fixing failing tests systematically
+  - Generating comprehensive test reports
+  - Resuming interrupted test runs from progress checkpoint
+- **Arguments**:
+  - `--frontend` - Run frontend tests only
+  - `--backend` - Run backend tests only
+  - `--coverage` - Focus on coverage enhancement
+  - `--fix` - Debug and fix failing tests
+  - `--resume` - Resume from previous checkpoint
+  - `auth`, `login`, etc. - Test specific keyword areas
+- **Integration**: Works with debug-like-expert for failure investigation and ui-visual-testing for visual regression
