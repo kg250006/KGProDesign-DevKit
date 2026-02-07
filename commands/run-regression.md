@@ -1,42 +1,42 @@
 ---
-name: regression-test
-description: Run automated regression tests across any project. Supports frontend, backend, E2E, and coverage enhancement. Designed for headless execution.
+name: run-regression
+description: "[KGP] Run automated regression tests across any project. Supports frontend, backend, E2E, and coverage enhancement."
 argument-hint: [--frontend|--backend|--coverage|--fix|--resume] [keywords...]
 allowed-tools: Skill(regression-testing), Read, Bash, Grep, Glob, Write, Edit, Task
 ---
 
-Invoke the regression-testing skill for: $ARGUMENTS
+Invoke the KGP plugin regression-testing skill for: $ARGUMENTS
 
 ## Quick Reference
 
 ### Full Regression (default)
 ```bash
-/regression-test
+/run-regression
 ```
 Runs all tests: unit, integration, E2E
 
 ### Targeted Testing
 ```bash
-/regression-test --frontend     # UI/React/frontend tests only
-/regression-test --backend      # API/service/backend tests only
-/regression-test auth login     # Tests matching keywords
+/run-regression --frontend     # UI/React/frontend tests only
+/run-regression --backend      # API/service/backend tests only
+/run-regression auth login     # Tests matching keywords
 ```
 
 ### Coverage Enhancement
 ```bash
-/regression-test --coverage
+/run-regression --coverage
 ```
 Assess current coverage and enhance to target (100% if < 60%)
 
 ### Fix Mode
 ```bash
-/regression-test --fix
+/run-regression --fix
 ```
 Debug and fix failing tests from previous run using debug-like-expert skill
 
 ### Resume
 ```bash
-/regression-test --resume
+/run-regression --resume
 ```
 Resume from `.claude/regression-progress.md` checkpoint
 
