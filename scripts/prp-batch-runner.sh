@@ -471,6 +471,19 @@ for i in "${!PRP_FILES[@]}"; do
   echo -e "${BLUE}  $PRP_FILE${NC}"
   echo -e "${BLUE}==========================================${NC}"
 
+  # Restore archived progress for retry-failed PRPs so the orchestrator can auto-resume
+  # The orchestrator reads .claude/prp-progress.md to find completed tasks.
+  # Without this restore, the orchestrator starts fresh and redoes all tasks.
+  PRP_BASENAME=$(basename "$PRP_FILE" .md)
+  PRP_ARCHIVE_FILE=".claude/prp-progress-${PRP_BASENAME}.md"
+  PRP_PROGRESS_FILE=".claude/prp-progress.md"
+
+  if [[ "$RETRY_FAILED" == "true" ]] && [[ -f "$PRP_ARCHIVE_FILE" ]]; then
+    cp "$PRP_ARCHIVE_FILE" "$PRP_PROGRESS_FILE"
+    echo "  Restored previous progress from: $PRP_ARCHIVE_FILE"
+    echo "  Orchestrator will auto-resume from completed tasks"
+  fi
+
   # Log to batch progress
   START_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)
   echo "### PRP $PRP_NUM: $PRP_FILE" >> "$BATCH_PROGRESS"
@@ -587,13 +600,17 @@ for i in "${!PRP_FILES[@]}"; do
     fi
   fi
 
-  # Archive the PRP's progress file before it gets overwritten by next PRP
-  # This preserves per-PRP detail for post-batch review
+  # Archive the PRP's progress file and clear it for the next PRP
+  # CRITICAL: Use mv (not cp) so the next PRP's orchestrator doesn't see
+  # a stale progress file from a different PRP and skip auto-resume.
+  # The orchestrator checks "- PRP:" in prp-progress.md to verify it matches
+  # the current PRP — if it finds a different PRP, it starts fresh.
   PRP_BASENAME=$(basename "$PRP_FILE" .md)
   PRP_ARCHIVE_FILE=".claude/prp-progress-${PRP_BASENAME}.md"
 
   if [[ -f "$PRP_PROGRESS_FILE" ]]; then
     cp "$PRP_PROGRESS_FILE" "$PRP_ARCHIVE_FILE"
+    rm -f "$PRP_PROGRESS_FILE"
     echo "  Archived progress: $PRP_ARCHIVE_FILE"
   fi
 

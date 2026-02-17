@@ -38,7 +38,7 @@ param(
     [Alias("max-retries")]
     [int]$MaxRetries = 3,
 
-    [int]$Timeout = 300,
+    [int]$Timeout = 600,
 
     [int]$Iterations = 1,
 
@@ -50,6 +50,11 @@ param(
 
     [Alias("skip-validation")]
     [switch]$SkipValidation,
+
+    [Alias("retry-failed")]
+    [switch]$RetryFailed,
+
+    [switch]$Fresh,
 
     [Alias("h")]
     [switch]$Help
@@ -87,12 +92,20 @@ ARGUMENTS:
 OPTIONS:
   -BatchFile FILE       Read PRP paths from a file (one per line)
   -MaxRetries N         Max retry attempts per task within each PRP (default: 3)
-  -Timeout M            Timeout in seconds per task (default: 300)
+  -Timeout M            Timeout in seconds per task (default: 600)
   -Iterations N         Min successful iterations per task (default: 1)
   -DryRun               Test mode - simulate execution without running Claude
   -NoSafety             Disable safety mode (use standard permissions)
   -SkipValidation       Skip acceptance criteria validation
+  -Fresh                Start fresh - ignore previous progress (default: auto-resume)
+  -RetryFailed          Retry PRPs that previously failed (marked with [~])
   -Help, -h             Show this help message
+
+NOTE:
+  Auto-resume is enabled by default. If a previous batch run exists in
+  .claude\prp-batch-progress.md, completed PRPs (marked [x]) will be skipped.
+  Failed PRPs (marked [~]) are also skipped unless -RetryFailed is used.
+  Use -Fresh to force starting from scratch.
 
 DESCRIPTION:
   Executes multiple PRPs sequentially, each in its own separate process.
@@ -176,8 +189,90 @@ OUTPUT:
     $BatchProgress = ".claude\prp-batch-progress.md"
     $Timestamp = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
 
-    # Initialize batch progress file
-    $initContent = @"
+    # Resume logic: auto-resume is ON by default (matching prp-orchestrator behavior)
+    $Resume = -not $Fresh
+    $CompletedPrps = @()
+    $FailedPrps = @()
+    $CompletedCount = 0
+    $FailedCount = 0
+    $SkippedCount = 0
+
+    # Extract completed/failed PRPs from batch progress file
+    function Get-CompletedPrps($progressFile) {
+        if (Test-Path $progressFile) {
+            $lines = Get-Content -Path $progressFile
+            $results = @()
+            foreach ($line in $lines) {
+                if ($line -match '^\- \[x\] (.+?)(\s|$)') {
+                    $results += $Matches[1]
+                }
+            }
+            return $results
+        }
+        return @()
+    }
+
+    function Get-FailedPrps($progressFile) {
+        if (Test-Path $progressFile) {
+            $lines = Get-Content -Path $progressFile
+            $results = @()
+            foreach ($line in $lines) {
+                if ($line -match '^\- \[~\] (.+?)(\s|\()') {
+                    $results += $Matches[1]
+                }
+            }
+            return $results
+        }
+        return @()
+    }
+
+    if ($Resume -and (Test-Path $BatchProgress) -and (-not $Fresh)) {
+        Write-Host "Checking for previous batch progress..."
+
+        $CompletedPrps = Get-CompletedPrps $BatchProgress
+        $CompletedCount = $CompletedPrps.Count
+
+        $FailedPrps = Get-FailedPrps $BatchProgress
+        $FailedCount = $FailedPrps.Count
+
+        if ($CompletedCount -gt 0 -or $FailedCount -gt 0) {
+            Write-Host "Found previous progress:"
+            Write-Host "  - Completed: $CompletedCount PRPs"
+            Write-Host "  - Failed: $FailedCount PRPs"
+            Write-Host ""
+            if ($RetryFailed) {
+                Write-Host "Mode: AUTO-RESUME (-RetryFailed: will retry failed PRPs)"
+            } else {
+                Write-Host "Mode: AUTO-RESUME (will skip completed and failed PRPs)"
+                Write-Host "      Use -RetryFailed to retry failed PRPs"
+            }
+            Write-Host ""
+
+            # Append resume marker to existing progress file
+            $resumeMarker = @"
+
+---
+## Resume Session
+- Resumed: $Timestamp
+- Previously Completed: $CompletedCount PRPs
+- Previously Failed: $FailedCount PRPs
+- Retry Failed: $RetryFailed
+
+"@
+            Add-Content -Path $BatchProgress -Value $resumeMarker
+        } else {
+            Write-Host "No completed/failed PRPs found in previous progress - starting fresh"
+            $Resume = $false
+        }
+    } elseif ($Fresh) {
+        Write-Host "Fresh start requested - ignoring previous progress"
+        # Clean up archived progress files
+        Get-ChildItem -Path ".claude\prp-progress-*.md" -ErrorAction SilentlyContinue | Remove-Item -Force
+    }
+
+    # Initialize batch progress file (fresh start only)
+    if (-not $Resume -or ($CompletedCount -eq 0 -and $FailedCount -eq 0)) {
+        $initContent = @"
 # PRP Batch Execution Progress
 
 ## Batch Info
@@ -198,6 +293,7 @@ OUTPUT:
     Add-Content -Path $BatchProgress -Value ""
     Add-Content -Path $BatchProgress -Value "## Execution Log"
     Add-Content -Path $BatchProgress -Value ""
+    }
 
     # Banner
     Write-Host ""
@@ -210,6 +306,19 @@ OUTPUT:
     Write-Host "Iterations: $Iterations (per task)"
     if ($DryRun) {
         Write-Host "Mode: DRY RUN" -ForegroundColor Yellow
+    }
+    if ($CompletedCount -gt 0) {
+        Write-Host "Mode: AUTO-RESUME (skipping $CompletedCount completed PRPs)" -ForegroundColor Yellow
+    }
+    if ($FailedCount -gt 0) {
+        if ($RetryFailed) {
+            Write-Host "Mode: RETRY-FAILED (will retry $FailedCount failed PRPs)" -ForegroundColor Yellow
+        } else {
+            Write-Host "Note: $FailedCount failed PRPs will be skipped (use -RetryFailed to retry)" -ForegroundColor Yellow
+        }
+    }
+    if ($Fresh) {
+        Write-Host "Mode: FRESH START" -ForegroundColor Yellow
     }
     Write-Host "==========================================" -ForegroundColor Blue
     Write-Host ""
@@ -230,11 +339,49 @@ OUTPUT:
         $PrpFile = $AllPrpFiles[$i]
         $PrpNum = $i + 1
 
+        # Resume mode: Skip completed PRPs
+        if ($CompletedPrps -contains $PrpFile) {
+            Write-Host ""
+            Write-Host "==========================================" -ForegroundColor Yellow
+            Write-Host "  PRP $PrpNum / $($AllPrpFiles.Count) [SKIPPED - Already Complete]" -ForegroundColor Yellow
+            Write-Host "  $PrpFile" -ForegroundColor Yellow
+            Write-Host "==========================================" -ForegroundColor Yellow
+            $SkippedCount++
+            $BatchSucceeded++  # Count toward final stats
+            continue
+        }
+
+        # Resume mode: Skip failed PRPs unless -RetryFailed
+        if (($FailedPrps -contains $PrpFile) -and (-not $RetryFailed)) {
+            Write-Host ""
+            Write-Host "==========================================" -ForegroundColor Yellow
+            Write-Host "  PRP $PrpNum / $($AllPrpFiles.Count) [SKIPPED - Previously Failed]" -ForegroundColor Yellow
+            Write-Host "  $PrpFile" -ForegroundColor Yellow
+            Write-Host "  (use -RetryFailed to retry)" -ForegroundColor Yellow
+            Write-Host "==========================================" -ForegroundColor Yellow
+            $SkippedCount++
+            $BatchFailed++  # Still counts as failed
+            continue
+        }
+
         Write-Host ""
         Write-Host "==========================================" -ForegroundColor Blue
         Write-Host "  PRP $PrpNum / $($AllPrpFiles.Count)" -ForegroundColor Blue
         Write-Host "  $PrpFile" -ForegroundColor Blue
         Write-Host "==========================================" -ForegroundColor Blue
+
+        # Restore archived progress for retry-failed PRPs so the orchestrator can auto-resume
+        # The orchestrator reads .claude\prp-progress.md to find completed tasks.
+        # Without this restore, the orchestrator starts fresh and redoes all tasks.
+        $PrpBasename = [System.IO.Path]::GetFileNameWithoutExtension($PrpFile)
+        $PrpArchiveFile = ".claude\prp-progress-${PrpBasename}.md"
+        $PrpProgressFile = ".claude\prp-progress.md"
+
+        if ($RetryFailed -and (Test-Path $PrpArchiveFile)) {
+            Copy-Item -Path $PrpArchiveFile -Destination $PrpProgressFile -Force
+            Write-Host "  Restored previous progress from: $PrpArchiveFile"
+            Write-Host "  Orchestrator will auto-resume from completed tasks"
+        }
 
         # Log to batch progress
         $StartTime = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
@@ -303,6 +450,7 @@ OUTPUT:
                 if ($TotalTasks -gt 0) {
                     Add-Content -Path $BatchProgress -Value "- Tasks: $TasksSucceeded/$TotalTasks succeeded"
                 }
+                Add-Content -Path $BatchProgress -Value "- Progress Log: $PrpArchiveFile"
                 $BatchSucceeded++
                 # Update checkbox to mark as complete
                 $content = Get-Content -Path $BatchProgress -Raw
@@ -318,11 +466,24 @@ OUTPUT:
                 if ($TotalTasks -gt 0) {
                     Add-Content -Path $BatchProgress -Value "- Tasks: $TasksSucceeded/$TotalTasks succeeded, $TasksFailed failed"
                 }
+                Add-Content -Path $BatchProgress -Value "- Progress Log: $PrpArchiveFile"
                 $BatchFailed++
                 # Update checkbox to mark as failed
                 $content = Get-Content -Path $BatchProgress -Raw
                 $content = $content -replace [regex]::Escape("- [ ] $PrpFile"), "- [~] $PrpFile (FAILED)"
                 Set-Content -Path $BatchProgress -Value $content -NoNewline
+            }
+
+            # Archive the PRP's progress file and clear it for the next PRP
+            # CRITICAL: Archive then remove so the next PRP's orchestrator doesn't see
+            # a stale progress file from a different PRP and skip auto-resume.
+            $PrpBasename = [System.IO.Path]::GetFileNameWithoutExtension($PrpFile)
+            $PrpArchiveFile = ".claude\prp-progress-${PrpBasename}.md"
+
+            if (Test-Path $PrpProgressFile) {
+                Copy-Item -Path $PrpProgressFile -Destination $PrpArchiveFile -Force
+                Remove-Item -Path $PrpProgressFile -Force
+                Write-Host "  Archived progress: $PrpArchiveFile"
             }
         }
         catch {
@@ -355,6 +516,9 @@ OUTPUT:
     Write-Host "==========================================" -ForegroundColor Blue
     Write-Host "Total PRPs: $($AllPrpFiles.Count)"
     Write-Host "Succeeded: $BatchSucceeded" -ForegroundColor Green
+    if ($SkippedCount -gt 0) {
+        Write-Host "  (includes $SkippedCount skipped/resumed)"
+    }
     Write-Host "Failed: $BatchFailed" -ForegroundColor $(if ($BatchFailed -gt 0) { "Red" } else { "Green" })
     Write-Host "==========================================" -ForegroundColor Blue
 
@@ -365,12 +529,16 @@ OUTPUT:
 - Completed: $FinalTime
 - Total PRPs: $($AllPrpFiles.Count)
 - Succeeded: $BatchSucceeded
+- Skipped (resumed): $SkippedCount
 - Failed: $BatchFailed
 "@
     Add-Content -Path $BatchProgress -Value $summaryContent
 
     Write-Host ""
     Write-Host "Batch progress saved to: $BatchProgress"
+    Write-Host ""
+    Write-Host "To view individual PRP logs:"
+    Write-Host "  Get-ChildItem .claude\prp-progress-*.md"
 
     # Exit with appropriate code
     if ($BatchFailed -gt 0) {
