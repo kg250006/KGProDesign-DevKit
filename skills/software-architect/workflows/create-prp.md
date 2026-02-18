@@ -204,10 +204,31 @@ Break down the feature into logical phases:
 
 Each phase should be independently valuable (could be merged if feature is small).
 
-For gargantuan features (10+ major components across 20+ files):
-- Consider splitting into multiple PRP documents
-- Each PRP should be completable in a focused session
-- Create a parent PRP that references child PRPs
+<prp_sizing_constraints>
+**PRP Sizing Constraints (ENFORCED)**
+
+Every PRP must comply with these hard limits:
+
+| Constraint | Limit |
+|------------|-------|
+| Max tasks (all small effort) | 20 |
+| Max tasks (all medium effort) | 15 |
+| Max tasks (mixed small + medium) | 15–20 |
+| Max lines per PRP file | 2,400 |
+| Allowed task effort sizes | S and M only |
+
+**Before writing any PRP, assess the total scope:**
+1. Count all tasks needed for the full feature
+2. Classify each as S or M (decompose any L/XL into multiple S/M)
+3. Estimate line count (~80 lines per S task, ~120 per M task, +200 for metadata)
+4. Determine if splitting into multiple PRPs is needed
+
+**If the feature exceeds constraints, split into multiple PRPs:**
+- Group by phase boundaries (preferred) or domain boundaries
+- Name as `PRP-{feature}-part-1.md`, `PRP-{feature}-part-2.md`, etc.
+- Each PRP must be independently executable in sequence
+- Earlier PRPs' outputs become later PRPs' prerequisites
+</prp_sizing_constraints>
 </step_3_design_phases>
 
 <step_4_create_tasks>
@@ -246,6 +267,8 @@ export class FeatureService {
 
 **Task Guidelines:**
 - Each task should be completable in 15-30 minutes of focused work
+- **Task effort MUST be Small (S) or Medium (M) only — L and XL are NOT allowed**
+- If a task feels like L or XL, decompose it into 2-3 smaller S/M tasks
 - Include specific file paths (not placeholders)
 - Pseudocode should reference actual patterns from the codebase
 - Acceptance criteria must be verifiable (not "works correctly")
@@ -299,11 +322,13 @@ If a task spans multiple domains, assign to the primary domain and note collabor
 
 Apply t-shirt sizing:
 
-**Effort:**
+**Effort (S and M ONLY in PRPs):**
 - S (Small): < 15 min, single file, clear pattern exists
 - M (Medium): 15-30 min, 2-3 files, some decisions needed
-- L (Large): 30-60 min, multiple files, new patterns needed
-- XL (Extra Large): 1+ hours, significant complexity
+
+**L and XL are NOT permitted in PRPs.** If a task estimates as L or XL:
+- Decompose into 2-3 S/M subtasks
+- If it cannot be decomposed, it may need its own PRP
 
 **Value:**
 - H (High): Core functionality, blocking other work, user-facing
@@ -359,14 +384,19 @@ mkdir -p PRPs
 
 # Save document
 Write: PRPs/PRP-{feature-name}.md
+# (or PRP-{feature-name}-part-N.md for multi-PRP features)
 ```
 
-Run a quick verification:
-- Count tasks: Should be 5-30 for typical feature
-- Check file paths: All referenced files should exist or have clear creation paths
-- Validate XML: Structure should parse correctly
+Run verification for EACH PRP:
+- **Task count:** Within limits (max 20 for all-S, max 15 for all-M, 15-20 mixed)
+- **Task effort:** All tasks are S or M only — no L or XL
+- **Line count:** File does NOT exceed 2,400 lines
+- **File paths:** All referenced files should exist or have clear creation paths
+- **XML structure:** All tags properly nested and closed
 
-Report completion with confidence score.
+If line count exceeds 2,400, split the PRP into multiple parts.
+
+Report completion with confidence score and sizing summary.
 </step_9_save_and_verify>
 
 </process>
@@ -397,6 +427,10 @@ Report completion with confidence score.
 </output_format>
 
 <success_criteria>
+- **All tasks are S or M effort only — no L or XL tasks in any PRP**
+- **Task count within limits per PRP (20 S / 15 M / 15-20 mixed)**
+- **No PRP exceeds 2,400 lines**
+- **Sizing assessment was performed before generation**
 - All tasks have agent assignments
 - All tasks have effort/value rankings
 - All tasks have verifiable acceptance criteria
@@ -404,16 +438,19 @@ Report completion with confidence score.
 - File paths are specific and accurate
 - Validation commands use project's actual tools
 - Document can be executed by Ralph Loop without clarification
-- Single document (unless feature requires 10+ major components)
+- Multi-PRP features have sequential execution order documented
 </success_criteria>
 
 <anti_patterns>
 Avoid these common mistakes:
+- **Cramming too many tasks into a single PRP** — respect the 20/15/15-20 limits
+- **Leaving L or XL tasks** — always decompose to S/M
+- **Exceeding 2,400 lines** — split into multiple PRPs
+- **Skipping the sizing assessment** — it must happen automatically before generation
 - Generic pseudocode that doesn't match project style
 - Placeholder file paths like "src/feature/index.ts"
 - Vague acceptance criteria like "works correctly"
 - Missing handoff information between tasks
 - Skipping codebase research
-- Over-scoping (try to split if >30 tasks)
 - Under-scoping (tasks should be atomic, not combined)
 </anti_patterns>

@@ -75,7 +75,7 @@ Missing elements: [list what's missing for SHORT, or "N/A" for DETAILED]
 
 Then proceed to the appropriate step:
 - If SHORT: Go to step_2_expand
-- If DETAILED: Go to step_3_invoke_software_architect
+- If DETAILED: Go to step_3_sizing_assessment
 </classification_output>
 </step_1_evaluate_input>
 
@@ -146,14 +146,120 @@ After receiving expanded requirements from the sub-agent:
 
 1. Confirm the expansion is sufficient (50+ words, has acceptance criteria)
 2. If still insufficient, ask ONE direct follow-up question using AskUserQuestion
-3. Proceed to step_3_invoke_software_architect with the expanded requirements
+3. Proceed to step_3_sizing_assessment with the expanded requirements
 </post_expansion>
 </step_2_expand>
 
-<step_3_invoke_software_architect>
+<step_3_sizing_assessment>
+**PRP Sizing Assessment (MANDATORY - runs automatically)**
+
+Before generating any PRP files, perform a sizing assessment to determine whether the feature fits in a single PRP or requires splitting into multiple PRPs.
+
+<prp_constraints>
+**Hard Constraints for Every PRP:**
+
+| Constraint | Limit |
+|------------|-------|
+| Max tasks (all small effort) | 20 |
+| Max tasks (all medium effort) | 15 |
+| Max tasks (mixed small + medium) | 15–20 (weighted toward task complexity) |
+| Max lines per PRP file | 2,400 |
+| Allowed task effort sizes | Small (S) and Medium (M) only |
+
+**Key Rules:**
+- L and XL tasks MUST be decomposed into S or M tasks before counting
+- Each PRP should contain ONLY small or medium effort tasks
+- If a PRD has significant pseudocode or detailed specifications, account for the line count impact — verbose tasks may push a PRP past 2,400 lines even with fewer tasks
+</prp_constraints>
+
+<assessment_process>
+**Step 3a: Decompose into Full Task List**
+
+Analyze the feature requirements (expanded or original) and identify ALL implementation tasks needed:
+1. List every discrete implementation task
+2. Include setup, core logic, integration, testing, and documentation tasks
+3. Do NOT skip tasks to fit constraints — list the real scope
+
+**Step 3b: Classify Each Task**
+
+For each task, classify effort as Small (S) or Medium (M):
+- **S (Small):** < 15 min, single file, clear pattern exists
+- **M (Medium):** 15-30 min, 2-3 files, some decisions needed
+- If a task is L or XL, decompose it into multiple S/M tasks
+
+**Step 3c: Calculate PRP Count**
+
+Apply these rules to determine how many PRPs are needed:
+
+```
+total_tasks = count of all S + M tasks
+small_count = count of S tasks
+medium_count = count of M tasks
+
+# Task count check
+if medium_count == 0:
+    max_tasks_per_prp = 20
+elif small_count == 0:
+    max_tasks_per_prp = 15
+else:
+    # Mixed: scale between 15-20 based on medium ratio
+    medium_ratio = medium_count / total_tasks
+    max_tasks_per_prp = round(20 - (5 * medium_ratio))
+
+prps_needed_by_count = ceil(total_tasks / max_tasks_per_prp)
+
+# Line count check (estimate ~80-150 lines per task depending on pseudocode detail)
+estimated_lines = (small_count * 80) + (medium_count * 120) + 200  # 200 for metadata/headers
+prps_needed_by_lines = ceil(estimated_lines / 2400)
+
+# Final count
+prps_needed = max(prps_needed_by_count, prps_needed_by_lines)
+```
+
+**Step 3d: Report Assessment**
+
+Output the sizing assessment summary BEFORE proceeding:
+
+```
+## PRP Sizing Assessment
+
+**Total tasks identified:** [N]
+**Effort breakdown:** [X] small, [Y] medium
+**Estimated total lines:** [N]
+**PRPs required:** [N]
+
+| PRP | Tasks | Effort Mix | Est. Lines |
+|-----|-------|------------|------------|
+| PRP-{name}-part-1 | 1–[N] | [X]S / [Y]M | ~[N] |
+| PRP-{name}-part-2 | [N+1]–[M] | [X]S / [Y]M | ~[N] |
+| ... | ... | ... | ... |
+
+**Grouping strategy:** [How tasks are grouped — by phase, by domain, by dependency chain]
+```
+
+If only 1 PRP is needed, state: "Feature fits within a single PRP — no splitting required."
+</assessment_process>
+
+<splitting_strategy>
+When multiple PRPs are needed, group tasks by:
+
+1. **Phase boundaries** (preferred) — Foundation tasks in PRP-1, Core in PRP-2, etc.
+2. **Domain boundaries** — Backend tasks in one PRP, frontend in another
+3. **Dependency chains** — Tasks that depend on each other stay in the same PRP
+
+**Naming convention for multi-PRP features:**
+- `PRPs/PRP-{feature-name}-part-1.md`
+- `PRPs/PRP-{feature-name}-part-2.md`
+- etc.
+
+**Each PRP must be independently executable** — it should not require another PRP to be running simultaneously. Sequential execution (PRP-1 before PRP-2) is fine.
+</splitting_strategy>
+</step_3_sizing_assessment>
+
+<step_4_invoke_software_architect>
 **Invoke Software Architect Skill**
 
-Now generate the PRP using the software-architect skill's workflow.
+Now generate the PRP(s) using the software-architect skill's workflow. If the sizing assessment determined multiple PRPs are needed, generate each one following the same workflow.
 
 <load_skill>
 Invoke the software-architect skill for PRP creation guidance:
@@ -174,6 +280,7 @@ Follow the create-prp.md workflow EXACTLY with these inputs:
 **Feature Requirements:**
 - If expanded: Use the expanded_requirements from step_2
 - If original was detailed: Use $ARGUMENTS directly
+- Apply the sizing assessment from step_3 to scope each PRP
 
 **Workflow Steps to Execute:**
 1. Clarify Requirements (step_1_clarify) - may skip if already expanded
@@ -184,12 +291,14 @@ Follow the create-prp.md workflow EXACTLY with these inputs:
    - Document recommended libraries with rationale
    - Note common pitfalls to avoid
 4. Design Phases (step_3_design_phases) - break into Foundation, Core, Integration, Validation
-5. Create Tasks (step_4_create_tasks) - micro-tasks with XML structure
+5. Create Tasks (step_4_create_tasks) - micro-tasks with XML structure, respecting PRP sizing constraints
 6. Assign Agents (step_5_assign_agents) - backend-engineer, frontend-engineer, etc.
-7. Rank Tasks (step_6_rank_tasks) - effort (S/M/L/XL) and value (H/M/L)
+7. Rank Tasks (step_6_rank_tasks) - effort (S/M only) and value (H/M/L)
 8. Add Validation (step_7_add_validation) - project-specific commands
 9. Write Document (step_8_write_document) - full XML PRP structure with research-findings
-10. Save and Verify (step_9_save_and_verify)
+10. Save and Verify (step_9_save_and_verify) - including line count verification
+
+**For multi-PRP features:** Repeat steps 4-10 for each PRP, using the task groupings from the sizing assessment.
 </execute_workflow>
 
 <xml_structure_requirements>
@@ -243,13 +352,20 @@ The generated PRP MUST use the full XML structure from templates/prp-template.md
 
 DO NOT use simplified markdown PRP format. Use full XML structure for Ralph Loop compatibility.
 </xml_structure_requirements>
-</step_3_invoke_software_architect>
+</step_4_invoke_software_architect>
 
-<step_4_save_and_report>
-**Save PRP and Report**
+<step_5_save_and_report>
+**Save PRP(s) and Report**
 
 <save_location>
-Save the PRP to: `PRPs/PRP-{feature-name}.md`
+**Single PRP:**
+Save to: `PRPs/PRP-{feature-name}.md`
+
+**Multiple PRPs:**
+Save to:
+- `PRPs/PRP-{feature-name}-part-1.md`
+- `PRPs/PRP-{feature-name}-part-2.md`
+- etc.
 
 Where {feature-name} is kebab-case derived from the feature (e.g., "user-authentication", "payment-integration").
 
@@ -260,13 +376,15 @@ mkdir -p PRPs
 </save_location>
 
 <verification>
-After saving, verify:
+After saving, verify EACH PRP:
 - [ ] File exists at correct path
 - [ ] XML structure is valid (all tags properly closed)
 - [ ] All tasks have agent assignments
-- [ ] All tasks have effort/value rankings
+- [ ] All tasks have effort/value rankings (S or M effort only)
 - [ ] Validation commands are project-specific
-- [ ] Task count is appropriate (5-30 for typical feature)
+- [ ] Task count within limits (max 20 for all-S, max 15 for all-M, 15-20 for mixed)
+- [ ] File does NOT exceed 2,400 lines
+- [ ] No L or XL effort tasks remain (all decomposed to S/M)
 </verification>
 
 <report_output>
@@ -275,7 +393,17 @@ Provide completion report:
 ```
 ## PRP Created
 
-**Location:** `PRPs/PRP-{feature-name}.md`
+**Sizing Assessment:**
+- Total tasks identified: [N]
+- Effort breakdown: [X] small, [Y] medium
+- PRPs generated: [N]
+
+**Location(s):** `PRPs/PRP-{feature-name}.md`
+[or list each PRP-part file for multi-PRP features]
+
+| PRP File | Tasks | Lines | Effort Mix |
+|----------|-------|-------|------------|
+| PRP-{name}.md | [N] | [N] | [X]S / [Y]M |
 
 **Summary:**
 - Input type: [SHORT (expanded) | DETAILED (direct)]
@@ -292,7 +420,7 @@ Provide completion report:
 /KGP:prp-execute-isolated PRPs/PRP-{feature-name}.md
 ```
 
-**Execute with Ralph Loop :**
+**Execute with Ralph Loop:**
 ```bash
 /KGP:ralph-loop PRPs/PRP-{feature-name}.md
 ```
@@ -306,14 +434,23 @@ Provide completion report:
 ```bash
 /KGP:prp-validate PRPs/PRP-{feature-name}.md
 ```
+
+[For multi-PRP features, list execution commands for each PRP in order]
 ```
 </report_output>
-</step_4_save_and_report>
+</step_5_save_and_report>
 
 </process>
 
 <quality_checklist>
-Before saving, verify the PRP meets these criteria:
+Before saving, verify EACH PRP meets these criteria:
+
+**Sizing Constraints (MANDATORY):**
+- [ ] Sizing assessment was performed before PRP generation
+- [ ] All tasks are Small (S) or Medium (M) effort — no L or XL tasks
+- [ ] Task count within limits: max 20 (all S), max 15 (all M), 15-20 (mixed)
+- [ ] File does NOT exceed 2,400 lines
+- [ ] If multiple PRPs needed, each is independently executable
 
 **Structure:**
 - [ ] Uses full XML structure (not simplified markdown)
@@ -323,7 +460,7 @@ Before saving, verify the PRP meets these criteria:
 **Tasks:**
 - [ ] Each task is micro-sized (15-30 min of focused work)
 - [ ] All tasks have agent assignments from valid list
-- [ ] All tasks have effort (S/M/L/XL) and value (H/M/L) rankings
+- [ ] All tasks have effort (S/M) and value (H/M/L) rankings
 - [ ] Acceptance criteria are specific and verifiable (not "works correctly")
 - [ ] Handoff information specifies expects/produces
 
@@ -347,6 +484,9 @@ Avoid these common mistakes:
 - Don't make up requirements not mentioned by user
 
 **PRP Generation:**
+- Don't skip the sizing assessment — it is mandatory and automatic
+- Don't cram an oversized feature into a single PRP — split when constraints require it
+- Don't leave L or XL effort tasks — decompose them into S/M
 - Don't use simplified markdown format - use full XML
 - Don't use placeholder file paths like "src/feature/index.ts"
 - Don't generate vague acceptance criteria like "works correctly"
@@ -363,10 +503,15 @@ Avoid these common mistakes:
 <success_criteria>
 - Input evaluated and classified correctly
 - Short inputs expanded through sub-agent questioning
+- **Sizing assessment performed automatically before PRP generation**
+- **All tasks classified as Small (S) or Medium (M) effort only**
+- **Task count within PRP limits (20 S / 15 M / 15-20 mixed)**
+- **No single PRP exceeds 2,400 lines**
+- **Multi-PRP splitting applied when constraints require it**
 - Software-architect workflow executed completely
 - PRP uses full XML structure with micro-tasks
 - All tasks have agent assignments and effort/value rankings
 - Validation commands are project-specific and executable
-- PRP saved to correct location
+- PRP(s) saved to correct location
 - User provided clear next steps for execution
 </success_criteria>

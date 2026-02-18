@@ -85,6 +85,50 @@ Convert each PRD requirement into concrete implementation tasks:
 3. Create validation task
 </step_3_map_requirements>
 
+<step_3b_sizing_assessment>
+**PRP Sizing Assessment (MANDATORY)**
+
+After mapping all requirements to tasks, perform a sizing assessment BEFORE structuring into phases.
+
+<prp_constraints>
+**Hard Constraints for Every PRP:**
+
+| Constraint | Limit |
+|------------|-------|
+| Max tasks (all small effort) | 20 |
+| Max tasks (all medium effort) | 15 |
+| Max tasks (mixed small + medium) | 15–20 |
+| Max lines per PRP file | 2,400 |
+| Allowed task effort sizes | S and M only |
+</prp_constraints>
+
+**Assessment Steps:**
+
+1. **Count all mapped tasks** from step 3
+2. **Classify each as S or M** — decompose any L/XL into multiple S/M tasks
+3. **Estimate line count:** ~80 lines per S task, ~120 per M task, +200 for metadata/headers
+4. **Determine PRP count:**
+   - If all tasks fit within constraints → single PRP
+   - If tasks exceed limits → split into multiple PRPs
+
+**Report assessment:**
+```
+## PRP Sizing Assessment (from PRD)
+
+**Source PRD:** [path]
+**Total tasks mapped:** [N]
+**Effort breakdown:** [X] small, [Y] medium
+**Estimated lines:** [N]
+**PRPs required:** [N]
+```
+
+**Splitting strategy for multi-PRP conversions:**
+- Group by phase boundaries (preferred)
+- Group by PRD requirement clusters (functional grouping)
+- Name as `PRP-{feature}-part-1.md`, `PRP-{feature}-part-2.md`
+- Each PRP must be independently executable in sequence
+</step_3b_sizing_assessment>
+
 <step_4_structure_phases>
 **Structure into Phases**
 
@@ -304,4 +348,9 @@ Report conversion summary with traceability coverage.
 - Implementation uses actual codebase patterns
 - Validation commands work in this project
 - Coverage gaps are explicitly documented
+- **All tasks are S or M effort only — no L or XL**
+- **Task count within PRP limits (20 S / 15 M / 15-20 mixed)**
+- **No PRP exceeds 2,400 lines**
+- **Sizing assessment was performed before PRP generation**
+- **Multi-PRP splits documented with execution order**
 </success_criteria>

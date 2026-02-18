@@ -49,8 +49,11 @@ Search for proven libraries, patterns, and best practices before designing imple
 Every PRP includes executable validation commands. Every PRD includes measurable acceptance criteria.
 
 **6. Right-Sized Documents**
-- Default: Single document with phases if needed
-- Split into multiple documents only for gargantuan features (10+ major components)
+- Every PRP is automatically assessed for sizing before generation
+- Hard limits per PRP: max 20 tasks (all S), max 15 tasks (all M), 15-20 mixed, max 2,400 lines
+- Only S and M effort tasks allowed — L/XL must be decomposed
+- Split into multiple PRPs when constraints require it — never force-fit
+- A single PRP is perfectly fine when the feature is small enough
 </essential_principles>
 
 <intake>
@@ -215,11 +218,12 @@ Prioritize tasks using this matrix:
 
 | Effort\Value | High Value | Medium Value | Low Value |
 |--------------|------------|--------------|-----------|
-| Low Effort | **Do First** | Do Soon | Nice to Have |
-| Medium Effort | Do Soon | Evaluate | Skip |
-| High Effort | Evaluate | Defer | Skip |
+| Small (S) | **Do First** | Do Soon | Nice to Have |
+| Medium (M) | Do Soon | Evaluate | Skip |
 
-Use labels: effort="S|M|L|XL" value="H|M|L"
+Use labels: effort="S|M" value="H|M|L"
+
+**Note:** Only S and M effort tasks are allowed in PRPs. L and XL tasks must be decomposed into S/M before inclusion.
 </agent_mapping>
 
 <workflows_index>

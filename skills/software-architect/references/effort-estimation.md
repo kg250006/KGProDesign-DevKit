@@ -4,6 +4,38 @@
 Consistent effort estimation for PRP tasks using t-shirt sizing and complexity factors.
 </purpose>
 
+<prp_level_constraints>
+
+## PRP-Level Sizing Constraints
+
+Individual task sizing (below) feeds into PRP-level constraints. Every PRP must comply with these hard limits:
+
+| Constraint | Limit | Rationale |
+|------------|-------|-----------|
+| Max tasks (all S) | 20 | Keeps PRP focused and executable in one session |
+| Max tasks (all M) | 15 | Medium tasks need more context per task |
+| Max tasks (mixed S+M) | 15–20 | Weighted by complexity ratio |
+| Max lines per PRP | 2,400 | Prevents context overload for executing agents |
+| Allowed effort sizes | S and M only | L/XL must be decomposed |
+
+### How This Affects Task Design
+
+When creating tasks for a PRP:
+1. **Only S and M effort tasks are permitted** — L and XL must be split
+2. If a feature requires more tasks than limits allow, create multiple PRPs
+3. Account for line count: verbose pseudocode and detailed specs consume lines
+4. Estimate ~80 lines per S task, ~120 lines per M task, +200 for PRP metadata
+
+### Multi-PRP Splitting
+
+When a feature exceeds single-PRP constraints:
+- Split by phase boundaries (Foundation, Core, Integration, Validation)
+- Or split by domain (backend tasks, frontend tasks)
+- Name parts sequentially: `PRP-{feature}-part-1.md`, `PRP-{feature}-part-2.md`
+- Each PRP must be independently executable in order
+
+</prp_level_constraints>
+
 <sizing_definitions>
 
 ## T-Shirt Sizes
