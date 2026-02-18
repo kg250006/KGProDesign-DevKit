@@ -505,7 +505,8 @@ for i in "${!PRP_FILES[@]}"; do
   ORCHESTRATOR_CMD="bash '$SCRIPT_DIR/prp-orchestrator.sh' '$PRP_FILE' $ISOLATED_OPTS"
 
   # Command runs orchestrator, saves exit code, then signals completion
-  TMUX_CMD="$ORCHESTRATOR_CMD; echo \$? > $EXIT_STATUS_FILE; tmux wait-for -S $WAIT_SIGNAL"
+  # Unset CLAUDECODE in tmux session to allow nested claude -p invocations
+  TMUX_CMD="unset CLAUDECODE 2>/dev/null; $ORCHESTRATOR_CMD; echo \$? > $EXIT_STATUS_FILE; tmux wait-for -S $WAIT_SIGNAL"
 
   echo "Starting tmux session: $SESSION_NAME"
   echo "Command: prp-orchestrator.sh $PRP_FILE"

@@ -822,7 +822,12 @@ EOF
         # (timeout=124, task failure, etc.) don't kill the script.
         # This allows the retry loop and progress tracking to work properly.
         set +e
-        CLAUDE_OUTPUT=$($TIMEOUT_CMD "$EFFECTIVE_TIMEOUT" bash -c "$CLAUDE_FULL_CMD" 2>&1)
+        # Fix: Unset CLAUDECODE to prevent nested-session detection when launched
+        # from within an interactive Claude Code session.
+        # Fix: Redirect stdin from /dev/null to prevent SIGTTIN when timeout
+        # creates a background process group.
+        unset CLAUDECODE 2>/dev/null || true
+        CLAUDE_OUTPUT=$($TIMEOUT_CMD "$EFFECTIVE_TIMEOUT" bash -c "$CLAUDE_FULL_CMD" < /dev/null 2>&1)
         EXIT_CODE=$?
         set -e
 
