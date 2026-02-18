@@ -818,8 +818,13 @@ EOF
 
         # Execute with timeout and capture output
         # Uses EFFECTIVE_TIMEOUT which may be extended for test/build tasks
+        # CRITICAL: Disable errexit around this command so non-zero exits
+        # (timeout=124, task failure, etc.) don't kill the script.
+        # This allows the retry loop and progress tracking to work properly.
+        set +e
         CLAUDE_OUTPUT=$($TIMEOUT_CMD "$EFFECTIVE_TIMEOUT" bash -c "$CLAUDE_FULL_CMD" 2>&1)
         EXIT_CODE=$?
+        set -e
 
         if [[ $EXIT_CODE -eq 0 ]]; then
           ITERATION_SUCCESS=true
