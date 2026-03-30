@@ -1,10 +1,10 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    PRP Batch Runner - Execute multiple PRPs sequentially with process isolation
+    PRP Batch Runner - Execute multiple PRPs sequentially
 .DESCRIPTION
-    Executes multiple PRPs in sequence, each in its own separate process.
-    This ensures complete isolation between PRPs - no context bleed.
+    Executes multiple PRPs in sequence. By default, each PRP runs in a single
+    Claude context window via /KGP:prp-execute. Use -Isolated for per-task isolation.
 .PARAMETER PrpFiles
     One or more PRP files to execute sequentially
 .PARAMETER BatchFile
@@ -51,6 +51,8 @@ param(
     [Alias("skip-validation")]
     [switch]$SkipValidation,
 
+    [switch]$Isolated,
+
     [Alias("retry-failed")]
     [switch]$RetryFailed,
 
@@ -79,7 +81,7 @@ end {
     # Show help
     if ($Help) {
         $helpText = @"
-PRP Batch Runner - Execute multiple PRPs sequentially with process isolation
+PRP Batch Runner - Execute multiple PRPs sequentially
 
 USAGE:
   .\prp-batch-runner.ps1 <prp1.md> <prp2.md> ... [OPTIONS]
@@ -90,10 +92,11 @@ ARGUMENTS:
   prp1.md prp2.md ...   One or more PRP files to execute sequentially
 
 OPTIONS:
+  -Isolated             Use per-task isolation (fresh Claude session per task)
   -BatchFile FILE       Read PRP paths from a file (one per line)
-  -MaxRetries N         Max retry attempts per task within each PRP (default: 3)
-  -Timeout M            Timeout in seconds per task (default: 600)
-  -Iterations N         Min successful iterations per task (default: 1)
+  -MaxRetries N         Max retry attempts per task (default: 3, isolated mode only)
+  -Timeout M            Timeout in seconds per PRP (default: 600)
+  -Iterations N         Min successful iterations per task (default: 1, isolated mode only)
   -DryRun               Test mode - simulate execution without running Claude
   -NoSafety             Disable safety mode (use standard permissions)
   -SkipValidation       Skip acceptance criteria validation
@@ -108,18 +111,26 @@ NOTE:
   Use -Fresh to force starting from scratch.
 
 DESCRIPTION:
-  Executes multiple PRPs sequentially, each in its own separate process.
+  Executes multiple PRPs sequentially, each in its own process.
+
+  Default mode (same-context):
+  Each PRP runs entirely within a single Claude context window via
+  claude -p "/KGP:prp-execute <prp>". With larger context windows,
+  full PRPs can be executed in a single go.
+
+  Isolated mode (-Isolated):
+  Each task within a PRP runs in a fresh Claude session via
+  prp-orchestrator.ps1. Use for very large PRPs or when per-task
+  isolation is required.
 
   The workflow is:
   1. Parse list of PRPs from arguments, pipeline, or batch file
   2. For each PRP:
-     a. Spawn new PowerShell process running prp-orchestrator.ps1
+     a. Spawn process to execute the PRP
      b. Wait for process to complete
      c. Capture exit status and log results
      d. Brief pause, then proceed to next PRP
   3. Aggregate results and generate summary
-
-  This ensures complete isolation between PRPs - no context bleed.
 
 BATCH FILE FORMAT:
   # Comments start with #
@@ -272,15 +283,17 @@ OUTPUT:
 
     # Initialize batch progress file (fresh start only)
     if (-not $Resume -or ($CompletedCount -eq 0 -and $FailedCount -eq 0)) {
+        $ExecMode = if ($Isolated) { "Isolated (fresh context per task)" } else { "Same-Context (full PRP per session)" }
+        $IsolatedInfo = if ($Isolated) { "- Max Retries: $MaxRetries`n- Iterations: $Iterations per task" } else { "" }
         $initContent = @"
 # PRP Batch Execution Progress
 
 ## Batch Info
 - Started: $Timestamp
 - Total PRPs: $($AllPrpFiles.Count)
-- Max Retries: $MaxRetries
-- Timeout: ${Timeout}s per task
-- Iterations: $Iterations per task
+- Execution Mode: $ExecMode
+- Timeout: ${Timeout}s
+$IsolatedInfo
 
 ## PRPs to Execute
 "@
@@ -301,9 +314,14 @@ OUTPUT:
     Write-Host "  PRP BATCH RUNNER" -ForegroundColor Blue
     Write-Host "==========================================" -ForegroundColor Blue
     Write-Host "Total PRPs: $($AllPrpFiles.Count)"
-    Write-Host "Max Retries: $MaxRetries"
-    Write-Host "Timeout: ${Timeout}s per task"
-    Write-Host "Iterations: $Iterations (per task)"
+    if ($Isolated) {
+        Write-Host "Execution: ISOLATED (fresh context per task)" -ForegroundColor Yellow
+        Write-Host "Max Retries: $MaxRetries"
+        Write-Host "Iterations: $Iterations (per task)"
+    } else {
+        Write-Host "Execution: SAME-CONTEXT (full PRP per session)"
+    }
+    Write-Host "Timeout: ${Timeout}s"
     if ($DryRun) {
         Write-Host "Mode: DRY RUN" -ForegroundColor Yellow
     }
@@ -327,7 +345,7 @@ OUTPUT:
     $BatchSucceeded = 0
     $BatchFailed = 0
 
-    # Build orchestrator arguments
+    # Build execution arguments
     $OrchestratorScript = Join-Path $ScriptDir "prp-orchestrator.ps1"
     $BaseArgs = @("-Iterations", $Iterations, "-MaxRetries", $MaxRetries, "-Timeout", $Timeout)
     if ($DryRun) { $BaseArgs += "-DryRun" }
@@ -371,13 +389,12 @@ OUTPUT:
         Write-Host "==========================================" -ForegroundColor Blue
 
         # Restore archived progress for retry-failed PRPs so the orchestrator can auto-resume
-        # The orchestrator reads .claude\prp-progress.md to find completed tasks.
-        # Without this restore, the orchestrator starts fresh and redoes all tasks.
+        # (isolated mode only - same-context mode has no task-level progress files)
         $PrpBasename = [System.IO.Path]::GetFileNameWithoutExtension($PrpFile)
         $PrpArchiveFile = ".claude\prp-progress-${PrpBasename}.md"
         $PrpProgressFile = ".claude\prp-progress.md"
 
-        if ($RetryFailed -and (Test-Path $PrpArchiveFile)) {
+        if ($Isolated -and $RetryFailed -and (Test-Path $PrpArchiveFile)) {
             Copy-Item -Path $PrpArchiveFile -Destination $PrpProgressFile -Force
             Write-Host "  Restored previous progress from: $PrpArchiveFile"
             Write-Host "  Orchestrator will auto-resume from completed tasks"
@@ -388,37 +405,49 @@ OUTPUT:
         Add-Content -Path $BatchProgress -Value "### PRP $PrpNum`: $PrpFile"
         Add-Content -Path $BatchProgress -Value "- Started: $StartTime"
 
-        # Build full arguments for this PRP
-        $FullArgs = @($PrpFile) + $BaseArgs
+        # Build execution command based on mode
+        if ($Isolated) {
+            $FullArgs = @($PrpFile) + $BaseArgs
+            Write-Host "Starting PRP execution in separate process (isolated mode)..."
+            Write-Host "(This window will wait for completion)"
 
-        Write-Host "Starting PRP execution in separate process..."
-        Write-Host "(This window will wait for completion)"
-
-        try {
-            # Start the orchestrator in a new console window and wait for it
-            # Using -Wait ensures we block until completion
-            # Using -PassThru gives us the process object to check exit code
             $processArgs = @{
                 FilePath = "powershell.exe"
                 ArgumentList = @("-ExecutionPolicy", "Bypass", "-File", $OrchestratorScript) + $FullArgs
                 Wait = $true
                 PassThru = $true
-                NoNewWindow = $false  # Open in new window for visibility
+                NoNewWindow = $false
             }
+        } else {
+            Write-Host "Starting PRP execution in separate process (same-context mode)..."
+            Write-Host "(This window will wait for completion)"
 
+            $processArgs = @{
+                FilePath = "claude"
+                ArgumentList = @("-p", "/KGP:prp-execute $PrpFile", "--verbose")
+                Wait = $true
+                PassThru = $true
+                NoNewWindow = $false
+            }
+        }
+
+        try {
+            # Start the process and wait for it
+            # Using -Wait ensures we block until completion
+            # Using -PassThru gives us the process object to check exit code
             $process = Start-Process @processArgs
 
             $ExitCode = $process.ExitCode
             $EndTime = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
 
-            # Parse the orchestrator's progress file for accurate task counts
-            # This provides ground truth regardless of exit code
+            # Parse the orchestrator's progress file for accurate task counts (isolated mode only)
+            # In same-context mode, we rely on the exit code
             $PrpProgressFile = ".claude\prp-progress.md"
             $TasksSucceeded = 0
             $TasksFailed = 0
             $TotalTasks = 0
 
-            if (Test-Path $PrpProgressFile) {
+            if ($Isolated -and (Test-Path $PrpProgressFile)) {
                 $progressContent = Get-Content -Path $PrpProgressFile -Raw
                 # Extract task counts from summary section
                 if ($progressContent -match 'Tasks Succeeded: (\d+) / (\d+)') {
@@ -474,13 +503,11 @@ OUTPUT:
                 Set-Content -Path $BatchProgress -Value $content -NoNewline
             }
 
-            # Archive the PRP's progress file and clear it for the next PRP
-            # CRITICAL: Archive then remove so the next PRP's orchestrator doesn't see
-            # a stale progress file from a different PRP and skip auto-resume.
+            # Archive the PRP's progress file and clear it for the next PRP (isolated mode only)
             $PrpBasename = [System.IO.Path]::GetFileNameWithoutExtension($PrpFile)
             $PrpArchiveFile = ".claude\prp-progress-${PrpBasename}.md"
 
-            if (Test-Path $PrpProgressFile) {
+            if ($Isolated -and (Test-Path $PrpProgressFile)) {
                 Copy-Item -Path $PrpProgressFile -Destination $PrpArchiveFile -Force
                 Remove-Item -Path $PrpProgressFile -Force
                 Write-Host "  Archived progress: $PrpArchiveFile"

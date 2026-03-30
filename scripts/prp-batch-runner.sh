@@ -1,10 +1,10 @@
 #!/bin/bash
-# PRP Batch Runner - Execute multiple PRPs sequentially via /KGP:prp-execute-isolated
+# PRP Batch Runner - Execute multiple PRPs sequentially
 # Usage: ./prp-batch-runner.sh <prp1.md> <prp2.md> ... [OPTIONS]
 #    OR: ./prp-batch-runner.sh --batch-file PRPs/batch.txt [OPTIONS]
 #
-# Each PRP runs via the /KGP:prp-execute-isolated command in its own tmux session.
-# This ensures complete isolation between PRPs and consistent execution path.
+# Default: Each PRP runs in a single Claude context window via /KGP:prp-execute.
+# With --isolated: Each task within a PRP runs in a fresh Claude session via prp-orchestrator.sh.
 
 set -euo pipefail
 
@@ -26,6 +26,7 @@ ITERATIONS=1
 DRY_RUN=false
 NO_SAFETY=false
 SKIP_VALIDATION=false
+ISOLATED=false    # Default: same-context execution via prp-execute
 BATCH_FILE=""
 PRP_FILES=()
 RESUME=true       # Auto-resume is ON by default (matching prp-orchestrator.sh behavior)
@@ -35,7 +36,7 @@ RETRY_FAILED=false  # Explicit flag to retry failed PRPs
 # Show help
 show_help() {
   cat <<EOF
-PRP Batch Runner - Execute multiple PRPs sequentially with tmux isolation
+PRP Batch Runner - Execute multiple PRPs sequentially
 
 USAGE:
   ./prp-batch-runner.sh <prp1.md> <prp2.md> ... [OPTIONS]
@@ -45,10 +46,11 @@ ARGUMENTS:
   prp1.md prp2.md ...   One or more PRP files to execute sequentially
 
 OPTIONS:
+  --isolated            Use per-task isolation (fresh Claude session per task)
   --batch-file FILE     Read PRP paths from a file (one per line)
-  --max-retries N       Max retry attempts per task within each PRP (default: 3)
-  --timeout M           Timeout in seconds per task (default: 600)
-  --iterations N        Min successful iterations per task (default: 1)
+  --max-retries N       Max retry attempts per task (default: 3, isolated mode only)
+  --timeout M           Timeout in seconds per PRP (default: 600)
+  --iterations N        Min successful iterations per task (default: 1, isolated mode only)
   --dry-run             Test mode - simulate execution without running Claude
   --no-safety           Disable safety mode (use standard permissions)
   --skip-validation     Skip acceptance criteria validation
@@ -63,19 +65,26 @@ NOTE:
   Use --fresh to force starting from scratch.
 
 DESCRIPTION:
-  Executes multiple PRPs sequentially, each via /KGP:prp-execute-isolated.
+  Executes multiple PRPs sequentially, each in its own tmux session.
+
+  Default mode (same-context):
+  Each PRP runs entirely within a single Claude context window via
+  claude -p "/KGP:prp-execute <prp>". With larger context windows,
+  full PRPs can be executed in a single go.
+
+  Isolated mode (--isolated):
+  Each task within a PRP runs in a fresh Claude session via
+  prp-orchestrator.sh. Use for very large PRPs or when per-task
+  isolation is required.
 
   The workflow is:
   1. Parse list of PRPs from arguments or batch file
   2. For each PRP:
-     a. Spawn tmux session running: claude -p "/KGP:prp-execute-isolated <prp>"
+     a. Spawn tmux session running the PRP
      b. Wait until tmux session completes
      c. Capture exit status and log results
      d. Brief pause, then proceed to next PRP
   3. Aggregate results and generate summary
-
-  This ensures complete isolation between PRPs AND consistent execution path
-  through the /KGP:prp-execute-isolated command.
 
 BATCH FILE FORMAT:
   # Comments start with #
@@ -100,7 +109,9 @@ OUTPUT:
 ARCHITECTURE:
   prp-batch-runner.sh
     └─► For each PRP:
-         └─► tmux session: prp-orchestrator.sh <prp>
+         ├─► Default: tmux session: claude -p "/KGP:prp-execute <prp>"
+         │    └─► Full PRP in single context window
+         └─► --isolated: tmux session: prp-orchestrator.sh <prp>
               └─► Fresh Claude session per task
 
 EOF
@@ -135,6 +146,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --skip-validation)
       SKIP_VALIDATION=true
+      shift
+      ;;
+    --isolated)
+      ISOLATED=true
       shift
       ;;
     --fresh)
@@ -367,15 +382,21 @@ fi
 
 # Initialize batch progress file (fresh start only)
 if [[ "$RESUME" != "true" ]] || [[ $COMPLETED_COUNT -eq 0 && $FAILED_COUNT -eq 0 ]]; then
+  if [[ "$ISOLATED" == "true" ]]; then
+    EXEC_MODE="Isolated (fresh context per task)"
+  else
+    EXEC_MODE="Same-Context (full PRP per session)"
+  fi
+
   cat > "$BATCH_PROGRESS" <<EOF
 # PRP Batch Execution Progress
 
 ## Batch Info
 - Started: $TIMESTAMP
 - Total PRPs: ${#PRP_FILES[@]}
-- Max Retries: $MAX_RETRIES
-- Timeout: ${TIMEOUT}s per task
-- Iterations: $ITERATIONS per task
+- Execution Mode: $EXEC_MODE
+- Timeout: ${TIMEOUT}s
+$(if [[ "$ISOLATED" == "true" ]]; then echo "- Max Retries: $MAX_RETRIES"; echo "- Iterations: $ITERATIONS per task"; fi)
 
 ## PRPs to Execute
 EOF
@@ -395,9 +416,14 @@ echo -e "${BLUE}==========================================${NC}"
 echo -e "${BLUE}  PRP BATCH RUNNER${NC}"
 echo -e "${BLUE}==========================================${NC}"
 echo "Total PRPs: ${#PRP_FILES[@]}"
-echo "Max Retries: $MAX_RETRIES"
-echo "Timeout: ${TIMEOUT}s per task"
-echo "Iterations: $ITERATIONS (per task)"
+if [[ "$ISOLATED" == "true" ]]; then
+  echo -e "${YELLOW}Execution: ISOLATED (fresh context per task)${NC}"
+  echo "Max Retries: $MAX_RETRIES"
+  echo "Iterations: $ITERATIONS (per task)"
+else
+  echo "Execution: SAME-CONTEXT (full PRP per session)"
+fi
+echo "Timeout: ${TIMEOUT}s"
 if [[ "$DRY_RUN" == "true" ]]; then
   echo -e "${YELLOW}Mode: DRY RUN${NC}"
 fi
@@ -421,7 +447,7 @@ echo ""
 BATCH_SUCCEEDED=0
 BATCH_FAILED=0
 
-# Build options string for prp-execute-isolated command
+# Build options string for isolated mode (prp-orchestrator)
 ISOLATED_OPTS="--iterations $ITERATIONS --max-retries $MAX_RETRIES --timeout $TIMEOUT"
 if [[ "$DRY_RUN" == "true" ]]; then
   ISOLATED_OPTS="$ISOLATED_OPTS --dry-run"
@@ -472,13 +498,12 @@ for i in "${!PRP_FILES[@]}"; do
   echo -e "${BLUE}==========================================${NC}"
 
   # Restore archived progress for retry-failed PRPs so the orchestrator can auto-resume
-  # The orchestrator reads .claude/prp-progress.md to find completed tasks.
-  # Without this restore, the orchestrator starts fresh and redoes all tasks.
+  # (isolated mode only - same-context mode has no task-level progress files)
   PRP_BASENAME=$(basename "$PRP_FILE" .md)
   PRP_ARCHIVE_FILE=".claude/prp-progress-${PRP_BASENAME}.md"
   PRP_PROGRESS_FILE=".claude/prp-progress.md"
 
-  if [[ "$RETRY_FAILED" == "true" ]] && [[ -f "$PRP_ARCHIVE_FILE" ]]; then
+  if [[ "$ISOLATED" == "true" ]] && [[ "$RETRY_FAILED" == "true" ]] && [[ -f "$PRP_ARCHIVE_FILE" ]]; then
     cp "$PRP_ARCHIVE_FILE" "$PRP_PROGRESS_FILE"
     echo "  Restored previous progress from: $PRP_ARCHIVE_FILE"
     echo "  Orchestrator will auto-resume from completed tasks"
@@ -500,16 +525,21 @@ for i in "${!PRP_FILES[@]}"; do
   # Using tmux wait-for pattern: command signals completion, main script blocks until signal
   WAIT_SIGNAL="prp-done-$$-$PRP_NUM"
 
-  # Call prp-orchestrator.sh directly (not via claude -p slash command)
-  # This ensures accurate exit code capture and avoids "streaming mode" errors
-  ORCHESTRATOR_CMD="bash '$SCRIPT_DIR/prp-orchestrator.sh' '$PRP_FILE' $ISOLATED_OPTS"
+  if [[ "$ISOLATED" == "true" ]]; then
+    # Isolated mode: use prp-orchestrator.sh (fresh Claude session per task)
+    EXEC_CMD="bash '$SCRIPT_DIR/prp-orchestrator.sh' '$PRP_FILE' $ISOLATED_OPTS"
+    echo "Starting tmux session: $SESSION_NAME"
+    echo "Command: prp-orchestrator.sh $PRP_FILE (isolated mode)"
+  else
+    # Default same-context mode: execute full PRP in single Claude session
+    EXEC_CMD="claude -p '/KGP:prp-execute $PRP_FILE' --verbose"
+    echo "Starting tmux session: $SESSION_NAME"
+    echo "Command: claude -p \"/KGP:prp-execute $PRP_FILE\" (same-context mode)"
+  fi
 
-  # Command runs orchestrator, saves exit code, then signals completion
+  # Command runs execution, saves exit code, then signals completion
   # Unset CLAUDECODE in tmux session to allow nested claude -p invocations
-  TMUX_CMD="unset CLAUDECODE 2>/dev/null; $ORCHESTRATOR_CMD; echo \$? > $EXIT_STATUS_FILE; tmux wait-for -S $WAIT_SIGNAL"
-
-  echo "Starting tmux session: $SESSION_NAME"
-  echo "Command: prp-orchestrator.sh $PRP_FILE"
+  TMUX_CMD="unset CLAUDECODE 2>/dev/null; $EXEC_CMD; echo \$? > $EXIT_STATUS_FILE; tmux wait-for -S $WAIT_SIGNAL"
 
   # Cleanup function for this session
   cleanup_session() {
@@ -555,15 +585,14 @@ for i in "${!PRP_FILES[@]}"; do
     EXIT_CODE=1  # Assume failure if no status file
   fi
 
-  # Parse the orchestrator's progress file for accurate task counts
-  # This provides ground truth regardless of exit code
-  # Uses multiple fallback strategies for robustness
+  # Parse the orchestrator's progress file for accurate task counts (isolated mode only)
+  # In same-context mode, we rely on the exit code since there's no orchestrator progress file
   PRP_PROGRESS_FILE=".claude/prp-progress.md"
   TASKS_SUCCEEDED=0
   TASKS_FAILED=0
   TOTAL_TASKS=0
 
-  if [[ -f "$PRP_PROGRESS_FILE" ]]; then
+  if [[ "$ISOLATED" == "true" ]] && [[ -f "$PRP_PROGRESS_FILE" ]]; then
     # Strategy 1: Parse summary section (most accurate)
     # Uses sed instead of grep -P for macOS/bash 3.x compatibility
     TASKS_SUCCEEDED=$(grep 'Tasks Succeeded:' "$PRP_PROGRESS_FILE" 2>/dev/null | tail -1 | sed 's/.*Tasks Succeeded: *\([0-9]*\).*/\1/' || echo "")
@@ -601,7 +630,7 @@ for i in "${!PRP_FILES[@]}"; do
     fi
   fi
 
-  # Archive the PRP's progress file and clear it for the next PRP
+  # Archive the PRP's progress file and clear it for the next PRP (isolated mode only)
   # CRITICAL: Use mv (not cp) so the next PRP's orchestrator doesn't see
   # a stale progress file from a different PRP and skip auto-resume.
   # The orchestrator checks "- PRP:" in prp-progress.md to verify it matches
@@ -609,7 +638,7 @@ for i in "${!PRP_FILES[@]}"; do
   PRP_BASENAME=$(basename "$PRP_FILE" .md)
   PRP_ARCHIVE_FILE=".claude/prp-progress-${PRP_BASENAME}.md"
 
-  if [[ -f "$PRP_PROGRESS_FILE" ]]; then
+  if [[ "$ISOLATED" == "true" ]] && [[ -f "$PRP_PROGRESS_FILE" ]]; then
     cp "$PRP_PROGRESS_FILE" "$PRP_ARCHIVE_FILE"
     rm -f "$PRP_PROGRESS_FILE"
     echo "  Archived progress: $PRP_ARCHIVE_FILE"

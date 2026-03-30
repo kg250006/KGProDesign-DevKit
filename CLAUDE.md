@@ -315,8 +315,8 @@ Execute PRP with hard session isolation - each task runs in a fresh Claude sessi
 - `--timeout N` - Timeout in seconds per task (default: 300)
 
 **When to use:**
-- PRPs with 10+ tasks (prevents context rot)
-- When deterministic execution is required
+- Very large PRPs (20+ tasks) where context pressure is a concern
+- When deterministic per-task execution is strictly required
 - When previous runs showed Claude "optimizing" by combining tasks
 - When you want compounding quality through multiple fresh perspectives
 
@@ -330,12 +330,12 @@ Execute PRP with hard session isolation - each task runs in a fresh Claude sessi
 
 **Comparison:**
 
-| Aspect | prp-execute | prp-execute-isolated |
-|--------|-------------|---------------------|
-| **Context** | Shared (one session) | Isolated (fresh per task) |
+| Aspect | prp-execute (default) | prp-execute-isolated |
+|--------|----------------------|---------------------|
+| **Context** | Single session (all tasks) | Isolated (fresh per task) |
 | **Control** | Claude decides | Script controls |
 | **Task visibility** | Claude sees all tasks | Claude sees only current |
-| **Use case** | Quick, interactive | Complex, deterministic |
+| **Use case** | Most PRPs | Very large PRPs needing isolation |
 | **Iterations** | N/A | Configurable (default: 1) |
 
 ### Workflow Commands
@@ -506,55 +506,43 @@ Git conflict resolution.
 3. **Break large features:** Multiple small PRPs beat one large PRP
 4. **Save successful PRPs:** Build a library of working patterns
 
-### Session Isolation Philosophy
+### Execution Philosophy
 
-For complex PRPs (10+ tasks), every task should run in a completely separate session:
-
-**HARD LINE:** Each task gets its own fresh context window. No judgment. No optimization. Even if a task is 2% of context, it gets its own fresh window.
-
-**Why this matters:**
-- **Prevents context rot** - Claude's performance degrades as context fills
-- **Ensures deterministic execution** - Same PRP always executes the same way
-- **Removes Claude's ability to "optimize"** - Claude cannot decide to combine tasks
-- **Reproducible results** - Fresh context means consistent behavior
+With larger context windows, full PRPs can be executed in a single Claude session. **Same-context execution is the default** for both `prp-execute` and `prp-execute-batch`. Per-task isolation is available via `prp-execute-isolated` or the `--isolated` flag on batch execution for edge cases.
 
 **Commands comparison:**
 
-| Command | Isolation | Control | Best For |
-|---------|-----------|---------|----------|
-| `prp-execute` | Shared context | Claude decides | Quick PRPs (< 5 tasks) |
-| `prp-execute-isolated` | Fresh per task | Script controls | Complex PRPs (10+ tasks) |
+| Command | Context | Best For |
+|---------|---------|----------|
+| `prp-execute` | Single session (all tasks) | Most PRPs |
+| `prp-execute-batch` | Single session per PRP | Multiple PRPs in sequence |
+| `prp-execute-batch --isolated` | Fresh session per task | Very large PRPs (20+ tasks) |
+| `prp-execute-isolated` | Fresh session per task | Single large PRP needing isolation |
 
-### Success Iteration System
+**When to use isolation (`--isolated`):**
+- PRPs with 20+ tasks where context pressure becomes noticeable
+- When previous runs showed Claude "optimizing" by combining tasks
+- When deterministic per-task execution is strictly required
 
-Every task runs N successful iterations (default: 1) before moving to the next task.
+### Success Iteration System (Isolated Mode Only)
+
+When using `--isolated`, every task runs N successful iterations (default: 1) before moving to the next task.
 
 **Why this matters:**
 - **Fresh context produces fresh perspectives** - Each iteration approaches the task without preconceptions from previous attempts
 - **Each iteration can enhance what previous ones built** - Later iterations review and improve upon earlier work
 - **Compounds quality without human intervention** - Multiple passes naturally catch edge cases and improve robustness
 
-**How iterations work:**
-```
-Task 1 → Iteration 1 (fresh context) → Success
-       → Iteration 2 (fresh context) → Success → Move to Task 2
-Task 2 → Iteration 1 (fresh context) → Success
-       → Iteration 2 (fresh context) → Success → Move to Task 3
-...
-```
-
-**Important:** The executing Claude has NO knowledge of which iteration it's on. Each iteration is completely context-isolated. Claude cannot "phone it in" on iteration 2 because it doesn't know there was an iteration 1.
-
 **Configuring iterations:**
 ```bash
-# Default: 2 iterations per task
+# Isolated mode with default 1 iteration per task
 /$PLUGIN_NAME:prp-execute-isolated PRPs/feature.md
 
 # High quality: 3 iterations per task
 /$PLUGIN_NAME:prp-execute-isolated PRPs/critical-feature.md --iterations 3
 
-# Single pass (legacy behavior)
-/$PLUGIN_NAME:prp-execute-isolated PRPs/simple-feature.md --iterations 1
+# Batch with isolation and iterations
+/$PLUGIN_NAME:prp-execute-batch --batch-file PRPs/release.txt --isolated --iterations 3
 ```
 
 ### For Code Review

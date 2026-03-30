@@ -1,23 +1,26 @@
 ---
-description: "[KGP] Execute multiple PRPs sequentially with full isolation between each"
-argument-hint: "<prp1.md> <prp2.md> ... OR --batch-file PRPs/batch.txt [--fresh] [--retry-failed] [--iterations N] [--timeout N]"
+description: "[KGP] Execute multiple PRPs sequentially with full context per PRP"
+argument-hint: "<prp1.md> <prp2.md> ... OR --batch-file PRPs/batch.txt [--fresh] [--retry-failed] [--isolated] [--iterations N] [--timeout N]"
 allowed-tools: [Bash, Read, Glob]
 ---
 
 # Execute Multiple PRPs in Batch
 
-Execute multiple PRPs sequentially where each PRP runs in complete isolation. Each PRP completes fully before the next one starts.
+Execute multiple PRPs sequentially where each PRP runs in its own Claude session. By default, each PRP executes in a single context window (same-context mode via `prp-execute`). Use `--isolated` to opt into per-task isolation.
 
 <objective>
 Launch the batch runner script to execute multiple PRPs from: $ARGUMENTS
 
 This command ensures:
 - Each PRP runs in its own process/tmux session
-- Complete isolation between PRPs (no context bleed)
 - Sequential execution (PRP N finishes before PRP N+1 starts)
 - Aggregated results in a batch progress file
 - Auto-resume on interruption (skips completed PRPs)
 - Per-PRP progress archival for post-batch review
+
+**Default mode (same-context):** Each PRP executes entirely within a single Claude context window. With larger context windows, full PRPs can be executed in a single go without context rot concerns.
+
+**Isolated mode (`--isolated`):** Each task within a PRP runs in a fresh Claude session. Use this for very large PRPs or when deterministic per-task isolation is required.
 </objective>
 
 <when_to_use>
@@ -25,13 +28,16 @@ This command ensures:
 
 Use `/KGP:prp-execute-batch` when:
 - You have multiple related PRPs to execute in order (e.g., release pipeline)
-- You need guaranteed isolation between PRPs
 - You want to queue up work and let it run unattended
 - Previous attempts to chain PRPs manually broke or had context issues
 
+Use `/KGP:prp-execute-batch --isolated` when:
+- PRPs are very large (20+ tasks) and you need per-task isolation
+- You need guaranteed fresh context per task (no context bleed within a PRP)
+
 Use `/KGP:prp-execute-isolated` when:
-- You only have a single PRP to execute
-- You want to monitor a single PRP interactively
+- You only have a single PRP to execute with per-task isolation
+- You want to monitor a single PRP interactively with isolation
 </when_to_use>
 
 <process>
@@ -46,10 +52,11 @@ Supported formats:
 - Wildcard (expand first): `PRPs/*.md` needs Glob expansion
 
 Options:
-- `--iterations N`: Min successful iterations per task (default: 1)
+- `--isolated`: Use per-task isolation mode (each task in fresh Claude session)
+- `--iterations N`: Min successful iterations per task (default: 1, only used with --isolated)
 - `--dry-run`: Simulate execution without running Claude
-- `--timeout N`: Timeout per task in seconds (default: 300)
-- `--max-retries N`: Max retries per task (default: 3)
+- `--timeout N`: Timeout per PRP in seconds (default: 600)
+- `--max-retries N`: Max retries per task (default: 3, only used with --isolated)
 - `--no-safety`: Disable safety mode
 - `--skip-validation`: Skip acceptance criteria validation
 - `--fresh`: Start fresh - ignore previous progress (default: auto-resume)
@@ -156,7 +163,7 @@ Then execute with:
 ## Examples
 
 ```bash
-# Execute three PRPs in sequence (auto-resumes if interrupted)
+# Execute three PRPs in sequence - each PRP in single context (default)
 /KGP:prp-execute-batch PRPs/step1.md PRPs/step2.md PRPs/step3.md
 
 # Use a batch file for a release
@@ -169,10 +176,13 @@ Then execute with:
 /KGP:prp-execute-batch PRPs/big1.md PRPs/big2.md --timeout 600
 
 # Full options
-/KGP:prp-execute-batch --batch-file PRPs/queue.txt --max-retries 5 --timeout 900
+/KGP:prp-execute-batch --batch-file PRPs/queue.txt --timeout 900
 
-# High quality batch with 3 iterations per task
-/KGP:prp-execute-batch --batch-file PRPs/release.txt --iterations 3
+# Use per-task isolation for very large PRPs
+/KGP:prp-execute-batch --batch-file PRPs/release.txt --isolated
+
+# Isolated mode with iterations and retries
+/KGP:prp-execute-batch --batch-file PRPs/release.txt --isolated --iterations 3 --max-retries 5
 
 # Resume/Retry Examples:
 
@@ -219,6 +229,8 @@ The batch progress file shows:
 <architecture>
 ## How It Works
 
+### Default Mode (Same-Context)
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                    Claude Code Session                       │
@@ -239,33 +251,60 @@ The batch progress file shows:
 │   ↓             │ │   ↓             │ │   ↓             │
 │   claude -p     │ │   claude -p     │ │   claude -p     │
 │   "/KGP:prp-    │ │   "/KGP:prp-    │ │   "/KGP:prp-    │
-│   execute-      │ │   execute-      │ │   execute-      │
-│   isolated"     │ │   isolated"     │ │   isolated"     │
+│   execute"      │ │   execute"      │ │   execute"      │
+│   ↓             │ │   ↓             │ │   ↓             │
+│   Full PRP in   │ │   Full PRP in   │ │   Full PRP in   │
+│   single context│ │   single context│ │   single context│
+└─────────────────┘ └─────────────────┘ └─────────────────┘
+     (wait)              (wait)              (done)
+```
+
+### Isolated Mode (`--isolated`)
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Claude Code Session                       │
+│  /KGP:prp-execute-batch --isolated → Launch batch runner     │
+└──────────────────────────┬──────────────────────────────────┘
+                           │
+┌──────────────────────────▼──────────────────────────────────┐
+│                    Batch Runner Script                       │
+│  prp-batch-runner.sh (Unix) or .ps1 (Windows)               │
+│  Iterates through PRP list sequentially                      │
+└──────────────────────────┬──────────────────────────────────┘
+                           │
+          ┌────────────────┼────────────────┐
+          │                │                │
+          ▼                ▼                ▼
+┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐
+│   PRP 1 (tmux)  │ │   PRP 2 (tmux)  │ │   PRP 3 (tmux)  │
 │   ↓             │ │   ↓             │ │   ↓             │
 │   orchestrator  │ │   orchestrator  │ │   orchestrator  │
 │   ↓             │ │   ↓             │ │   ↓             │
 │   task→task→... │ │   task→task→... │ │   task→task→... │
+│   (fresh each)  │ │   (fresh each)  │ │   (fresh each)  │
 └─────────────────┘ └─────────────────┘ └─────────────────┘
      (wait)              (wait)              (done)
 ```
 
 **Key Design Decision:**
-Each PRP is executed via `claude -p "/KGP:prp-execute-isolated <prp>"` rather than
-calling prp-orchestrator.sh directly. This ensures:
-- Consistent execution path for all PRPs
-- Same command whether run manually or in batch
-- Full skill/command context is loaded for each PRP
+With larger context windows, full PRPs can execute in a single Claude session without
+context rot. The default mode uses `claude -p "/KGP:prp-execute <prp>"` for each PRP,
+giving Claude the full picture of all tasks at once. The `--isolated` flag switches to
+`prp-orchestrator.sh` for per-task isolation when needed.
 
 **Unix (tmux-based):**
 - Each PRP runs in a detached tmux session
-- Inside session: `claude -p "/KGP:prp-execute-isolated <prp>"`
+- Default: `claude -p "/KGP:prp-execute <prp>"`
+- Isolated: `prp-orchestrator.sh <prp>` (fresh Claude per task)
 - Batch runner waits for session completion via tmux wait-for
 - Captures output and exit status
 - Cleans up session before next PRP
 
 **Windows (process-based):**
 - Each PRP runs via `Start-Process -Wait`
-- Opens in new console window for visibility
+- Default: `claude -p "/KGP:prp-execute <prp>"`
+- Isolated: `prp-orchestrator.ps1 <prp>` (fresh Claude per task)
 - Blocks until process completes
 - Captures exit code
 </architecture>
@@ -299,15 +338,14 @@ After each PRP completes (success or failure), its progress is archived:
 </resume>
 
 <comparison>
-## Comparison: Single vs Batch Execution
+## Comparison: Execution Modes
 
-| Aspect | prp-execute-isolated | prp-execute-batch |
-|--------|---------------------|-------------------|
-| **Input** | Single PRP | Multiple PRPs |
-| **Isolation** | Per-task | Per-task AND per-PRP |
-| **Monitoring** | Single progress file | Batch + individual archives |
-| **Use case** | One feature | Release pipeline |
-| **Context** | Fresh per task | Fresh per task AND per PRP |
-| **Resume** | Auto (task-level) | Auto (PRP-level + task-level) |
-| **Retry failed** | Re-run command | `--retry-failed` flag |
+| Aspect | prp-execute-batch (default) | prp-execute-batch --isolated | prp-execute-isolated |
+|--------|---------------------------|------------------------------|---------------------|
+| **Input** | Multiple PRPs | Multiple PRPs | Single PRP |
+| **Context per PRP** | Single session | Fresh per task | Fresh per task |
+| **Speed** | Fastest | Slower (process per task) | Slower (process per task) |
+| **Use case** | Most PRPs | Very large PRPs (20+) | Single large PRP |
+| **Resume** | Auto (PRP-level) | Auto (PRP + task-level) | Auto (task-level) |
+| **Retry failed** | `--retry-failed` | `--retry-failed` | Re-run command |
 </comparison>
