@@ -95,10 +95,10 @@ Display what will be executed:
 2. [path/to/prp2.md]
 3. ...
 
-**Mode:** Sequential with full isolation
+**Mode:** Sequential (same-context by default, --isolated for per-task isolation)
 **Script:** [prp-batch-runner.sh or .ps1]
 
-Each PRP will run in its own isolated session.
+Each PRP will run in its own session.
 Progress tracked in: .claude/prp-batch-progress.md
 
 Starting batch execution...

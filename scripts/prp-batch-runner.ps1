@@ -474,12 +474,17 @@ $IsolatedInfo
                 if ($TotalTasks -gt 0) {
                     Write-Host "  Tasks: $TasksSucceeded/$TotalTasks succeeded"
                 }
+                # Update IN_PROGRESS to final status
+                $content = Get-Content -Path $BatchProgress -Raw
+                $content = $content -replace "- Status: IN_PROGRESS", "- Status: SUCCESS"
+                Set-Content -Path $BatchProgress -Value $content -NoNewline
                 Add-Content -Path $BatchProgress -Value "- Completed: $EndTime"
-                Add-Content -Path $BatchProgress -Value "- Status: SUCCESS"
                 if ($TotalTasks -gt 0) {
                     Add-Content -Path $BatchProgress -Value "- Tasks: $TasksSucceeded/$TotalTasks succeeded"
                 }
-                Add-Content -Path $BatchProgress -Value "- Progress Log: $PrpArchiveFile"
+                if ($Isolated -and (Test-Path $PrpArchiveFile)) {
+                    Add-Content -Path $BatchProgress -Value "- Progress Log: $PrpArchiveFile"
+                }
                 $BatchSucceeded++
                 # Update checkbox to mark as complete
                 $content = Get-Content -Path $BatchProgress -Raw
@@ -490,12 +495,17 @@ $IsolatedInfo
                 if ($TotalTasks -gt 0) {
                     Write-Host "  Tasks: $TasksSucceeded/$TotalTasks succeeded, $TasksFailed failed"
                 }
+                # Update IN_PROGRESS to final status
+                $content = Get-Content -Path $BatchProgress -Raw
+                $content = $content -replace "- Status: IN_PROGRESS", "- Status: FAILED (exit code: $ExitCode)"
+                Set-Content -Path $BatchProgress -Value $content -NoNewline
                 Add-Content -Path $BatchProgress -Value "- Completed: $EndTime"
-                Add-Content -Path $BatchProgress -Value "- Status: FAILED (exit code: $ExitCode)"
                 if ($TotalTasks -gt 0) {
                     Add-Content -Path $BatchProgress -Value "- Tasks: $TasksSucceeded/$TotalTasks succeeded, $TasksFailed failed"
                 }
-                Add-Content -Path $BatchProgress -Value "- Progress Log: $PrpArchiveFile"
+                if ($Isolated -and (Test-Path $PrpArchiveFile)) {
+                    Add-Content -Path $BatchProgress -Value "- Progress Log: $PrpArchiveFile"
+                }
                 $BatchFailed++
                 # Update checkbox to mark as failed
                 $content = Get-Content -Path $BatchProgress -Raw

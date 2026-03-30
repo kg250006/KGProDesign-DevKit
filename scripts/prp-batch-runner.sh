@@ -652,30 +652,39 @@ for i in "${!PRP_FILES[@]}"; do
     if [[ "$TOTAL_TASKS" -gt 0 ]]; then
       echo "  Tasks: $TASKS_SUCCEEDED/$TOTAL_TASKS succeeded"
     fi
-    # Update IN_PROGRESS status to final status
-    sed -i.bak "s|- Status: IN_PROGRESS|- Completed: $END_TIME\n- Status: SUCCESS|" "$BATCH_PROGRESS" && rm -f "${BATCH_PROGRESS}.bak"
+    # Replace IN_PROGRESS with final status (macOS-compatible: no \n in sed)
+    sed -i.bak "s|- Status: IN_PROGRESS|- Status: SUCCESS|" "$BATCH_PROGRESS" && rm -f "${BATCH_PROGRESS}.bak"
+    echo "- Completed: $END_TIME" >> "$BATCH_PROGRESS"
     if [[ "$TOTAL_TASKS" -gt 0 ]]; then
       echo "- Tasks: $TASKS_SUCCEEDED/$TOTAL_TASKS succeeded" >> "$BATCH_PROGRESS"
     fi
-    echo "- Progress Log: $PRP_ARCHIVE_FILE" >> "$BATCH_PROGRESS"
+    if [[ "$ISOLATED" == "true" ]] && [[ -f "$PRP_ARCHIVE_FILE" ]]; then
+      echo "- Progress Log: $PRP_ARCHIVE_FILE" >> "$BATCH_PROGRESS"
+    fi
     BATCH_SUCCEEDED=$((BATCH_SUCCEEDED + 1))
-    # Update checkbox to mark as complete
-    sed -i.bak "s|^- \[ \] $PRP_FILE\$|- [x] $PRP_FILE|" "$BATCH_PROGRESS" && rm -f "${BATCH_PROGRESS}.bak"
+    # Update checkbox to mark as complete (use fixed-string sed with escaped path)
+    PRP_FILE_ESCAPED=$(printf '%s\n' "$PRP_FILE" | sed 's/[[\.*^$()+?{|]/\\&/g')
+    sed -i.bak "s|^- \[ \] ${PRP_FILE_ESCAPED}$|- [x] ${PRP_FILE}|" "$BATCH_PROGRESS" && rm -f "${BATCH_PROGRESS}.bak"
   else
     PRP_STATUS="FAILED"
-    echo -e "${RED}PRP $PRP_NUM: $(get_status_message $EXIT_CODE)${NC}"
+    STATUS_MSG=$(get_status_message $EXIT_CODE)
+    echo -e "${RED}PRP $PRP_NUM: $STATUS_MSG${NC}"
     if [[ "$TOTAL_TASKS" -gt 0 ]]; then
       echo "  Tasks: $TASKS_SUCCEEDED/$TOTAL_TASKS succeeded, $TASKS_FAILED failed"
     fi
-    # Update IN_PROGRESS status to final status
-    sed -i.bak "s|- Status: IN_PROGRESS|- Completed: $END_TIME\n- Status: $(get_status_message $EXIT_CODE)|" "$BATCH_PROGRESS" && rm -f "${BATCH_PROGRESS}.bak"
+    # Replace IN_PROGRESS with final status (macOS-compatible: no \n in sed)
+    sed -i.bak "s|- Status: IN_PROGRESS|- Status: $STATUS_MSG|" "$BATCH_PROGRESS" && rm -f "${BATCH_PROGRESS}.bak"
+    echo "- Completed: $END_TIME" >> "$BATCH_PROGRESS"
     if [[ "$TOTAL_TASKS" -gt 0 ]]; then
       echo "- Tasks: $TASKS_SUCCEEDED/$TOTAL_TASKS succeeded, $TASKS_FAILED failed" >> "$BATCH_PROGRESS"
     fi
-    echo "- Progress Log: $PRP_ARCHIVE_FILE" >> "$BATCH_PROGRESS"
+    if [[ "$ISOLATED" == "true" ]] && [[ -f "$PRP_ARCHIVE_FILE" ]]; then
+      echo "- Progress Log: $PRP_ARCHIVE_FILE" >> "$BATCH_PROGRESS"
+    fi
     BATCH_FAILED=$((BATCH_FAILED + 1))
-    # Update checkbox to mark as failed
-    sed -i.bak "s|^- \[ \] $PRP_FILE\$|- [~] $PRP_FILE (FAILED)|" "$BATCH_PROGRESS" && rm -f "${BATCH_PROGRESS}.bak"
+    # Update checkbox to mark as failed (use fixed-string sed with escaped path)
+    PRP_FILE_ESCAPED=$(printf '%s\n' "$PRP_FILE" | sed 's/[[\.*^$()+?{|]/\\&/g')
+    sed -i.bak "s|^- \[ \] ${PRP_FILE_ESCAPED}$|- [~] ${PRP_FILE} (FAILED)|" "$BATCH_PROGRESS" && rm -f "${BATCH_PROGRESS}.bak"
   fi
 
   echo "" >> "$BATCH_PROGRESS"
