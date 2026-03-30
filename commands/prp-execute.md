@@ -133,10 +133,28 @@ INSTRUCTIONS:
 2. For each task, consider delegating to the most appropriate agent using Task tool
 3. Work through tasks in phase order
 4. Run validation after completing each task
-5. If validation fails, fix before proceeding
-6. After all tasks complete, verify ALL success criteria
-7. ONLY output the promise when genuinely complete
-8. You can see your previous work in files and git history
+5. After each task, update .claude/prp-task-progress.md with current progress
+6. If validation fails, fix before proceeding
+7. After all tasks complete, verify ALL success criteria
+8. ONLY output the promise when genuinely complete
+9. You can see your previous work in files and git history
+
+PROGRESS TRACKING:
+After completing each task (or group of parallel tasks), update .claude/prp-task-progress.md using the Write tool:
+
+# PRP Progress: [PRP_NAME]
+- Total Tasks: [N]
+- Completed: [M]
+- Progress: [PERCENTAGE]%
+- Last Updated: [ISO_TIMESTAMP]
+
+## Tasks
+- [x] Task 1.1: [description] (COMPLETE)
+- [x] Task 1.2: [description] (COMPLETE)
+- [ ] Task 2.1: [description] (IN PROGRESS)
+- [ ] Task 2.2: [description] (PENDING)
+
+Update this file after EVERY task completion. This enables external monitoring of your progress — do not skip this step.
 ```
 </step_3_construct_prompt>
 

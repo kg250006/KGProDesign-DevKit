@@ -271,6 +271,55 @@ get_status_message() {
   esac
 }
 
+# Monitor progress for same-context PRP execution
+# Runs in background, reads task progress file every POLL_INTERVAL seconds
+monitor_progress() {
+  local prp_file="$1"
+  local poll_interval="${2:-120}"  # Default: 2 minutes
+  local task_progress_file=".claude/prp-task-progress.md"
+  local ralph_state_file=".claude/ralph-loop.local.md"
+
+  while true; do
+    sleep "$poll_interval"
+
+    local now
+    now=$(date -u +%H:%M:%S)
+    local status_line=""
+
+    # Try task-level progress first (written by Claude via prompt instruction)
+    if [[ -f "$task_progress_file" ]]; then
+      local completed total pct
+      completed=$(grep -c '^\- \[x\]' "$task_progress_file" 2>/dev/null || echo "0")
+      total=$(grep '^- Total Tasks:' "$task_progress_file" 2>/dev/null | head -1 | sed 's/.*Total Tasks: *//' | tr -d '[:space:]' || echo "0")
+      pct=$(grep '^- Progress:' "$task_progress_file" 2>/dev/null | head -1 | sed 's/.*Progress: *//' | tr -d '[:space:]%' || echo "")
+
+      if [[ -n "$total" ]] && [[ "$total" -gt 0 ]] 2>/dev/null; then
+        if [[ -z "$pct" ]]; then
+          pct=$(( (completed * 100) / total ))
+        fi
+        status_line="[$now] Tasks: $completed/$total ($pct%)"
+      fi
+    fi
+
+    # Fall back to iteration-level progress from ralph state file
+    if [[ -z "$status_line" ]] && [[ -f "$ralph_state_file" ]]; then
+      local iteration max_iter
+      iteration=$(grep '^iteration:' "$ralph_state_file" 2>/dev/null | sed 's/iteration: *//' | tr -d '[:space:]' || echo "?")
+      max_iter=$(grep '^max_iterations:' "$ralph_state_file" 2>/dev/null | sed 's/max_iterations: *//' | tr -d '[:space:]' || echo "?")
+      if [[ "$iteration" != "?" ]]; then
+        status_line="[$now] Ralph iteration: $iteration/$max_iter"
+      fi
+    fi
+
+    # Output to terminal
+    if [[ -n "$status_line" ]]; then
+      echo -e "  ${YELLOW}Progress: $status_line${NC}"
+    else
+      echo -e "  ${YELLOW}[$now] Executing... (no progress file yet)${NC}"
+    fi
+  done
+}
+
 check_prerequisites
 
 # Create .claude directory
@@ -543,6 +592,11 @@ for i in "${!PRP_FILES[@]}"; do
 
   # Cleanup function for this session
   cleanup_session() {
+    if [[ -n "${MONITOR_PID:-}" ]]; then
+      kill "$MONITOR_PID" 2>/dev/null || true
+      wait "$MONITOR_PID" 2>/dev/null || true
+      MONITOR_PID=""
+    fi
     tmux kill-session -t "$SESSION_NAME" 2>/dev/null || true
     rm -f "$EXIT_STATUS_FILE"
     # Unblock any waiting wait-for
@@ -564,10 +618,24 @@ for i in "${!PRP_FILES[@]}"; do
   echo "Waiting for PRP execution to complete..."
   echo "(You can attach to monitor: tmux attach -t $SESSION_NAME)"
 
+  # Start background progress monitor for same-context mode
+  MONITOR_PID=""
+  if [[ "$ISOLATED" != "true" ]]; then
+    monitor_progress "$PRP_FILE" 120 &
+    MONITOR_PID=$!
+  fi
+
   # Block until the tmux session signals completion via wait-for
   # This is the proper tmux pattern - no polling needed
   if ! tmux wait-for "$WAIT_SIGNAL" 2>/dev/null; then
     echo -e "${YELLOW}Warning: wait-for failed, session may have crashed${NC}"
+  fi
+
+  # Stop the progress monitor
+  if [[ -n "$MONITOR_PID" ]]; then
+    kill "$MONITOR_PID" 2>/dev/null || true
+    wait "$MONITOR_PID" 2>/dev/null || true
+    MONITOR_PID=""
   fi
 
   echo "PRP execution completed"
@@ -591,6 +659,28 @@ for i in "${!PRP_FILES[@]}"; do
   TASKS_SUCCEEDED=0
   TASKS_FAILED=0
   TOTAL_TASKS=0
+
+  # Parse task-level progress file for same-context mode
+  TASK_PROGRESS_FILE=".claude/prp-task-progress.md"
+  if [[ "$ISOLATED" != "true" ]] && [[ -f "$TASK_PROGRESS_FILE" ]]; then
+    TASKS_SUCCEEDED=$(grep -c '^\- \[x\]' "$TASK_PROGRESS_FILE" 2>/dev/null || echo "0")
+    TASKS_FAILED=$(grep -c '(FAILED)' "$TASK_PROGRESS_FILE" 2>/dev/null || echo "0")
+    TOTAL_TASKS=$(grep '^- Total Tasks:' "$TASK_PROGRESS_FILE" 2>/dev/null | head -1 | sed 's/.*Total Tasks: *//' | tr -d '[:space:]' || echo "0")
+
+    # Ensure numeric
+    TASKS_SUCCEEDED=$(echo "$TASKS_SUCCEEDED" | tr -d '[:space:]')
+    TASKS_FAILED=$(echo "$TASKS_FAILED" | tr -d '[:space:]')
+    TOTAL_TASKS=$(echo "$TOTAL_TASKS" | tr -d '[:space:]')
+    [[ -z "$TASKS_SUCCEEDED" ]] && TASKS_SUCCEEDED=0
+    [[ -z "$TASKS_FAILED" ]] && TASKS_FAILED=0
+    [[ -z "$TOTAL_TASKS" ]] && TOTAL_TASKS=0
+
+    # Archive the task progress file
+    PRP_BASENAME_TP=$(basename "$PRP_FILE" .md)
+    cp "$TASK_PROGRESS_FILE" ".claude/prp-task-progress-${PRP_BASENAME_TP}.md" 2>/dev/null || true
+    rm -f "$TASK_PROGRESS_FILE"
+    echo "  Archived task progress: .claude/prp-task-progress-${PRP_BASENAME_TP}.md"
+  fi
 
   if [[ "$ISOLATED" == "true" ]] && [[ -f "$PRP_PROGRESS_FILE" ]]; then
     # Strategy 1: Parse summary section (most accurate)

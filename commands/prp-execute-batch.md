@@ -203,27 +203,37 @@ Then execute with:
 While the batch runs, you can monitor progress:
 
 ```bash
-# View batch progress
+# View batch-level progress (which PRPs completed/failed)
 cat .claude/prp-batch-progress.md
 
-# Watch in real-time
+# View per-task progress for the currently executing PRP (same-context mode)
+cat .claude/prp-task-progress.md
+
+# Watch per-task progress in real-time
+tail -f .claude/prp-task-progress.md
+
+# Watch batch progress in real-time
 tail -f .claude/prp-batch-progress.md
 
 # On Unix, attach to current PRP's tmux session
 tmux list-sessions | grep prp-batch
 tmux attach -t <session-name>
 
-# View individual PRP progress files (archived after each PRP)
-ls .claude/prp-progress-*.md
-cat .claude/prp-progress-my-feature.md
+# View archived progress files after batch completes
+ls .claude/prp-task-progress-*.md    # Same-context mode (per-task)
+ls .claude/prp-progress-*.md         # Isolated mode (per-task)
 ```
 
-The batch progress file shows:
-- Which PRPs have completed (`[x]`) or failed (`[~]`)
-- Success/failure status per PRP
-- Timestamps for each execution
-- Links to archived per-PRP progress files
-- Final summary with totals (succeeded, failed, skipped)
+**Progress tiers:**
+
+| File | Scope | Updated By |
+|------|-------|-----------|
+| `.claude/prp-batch-progress.md` | Batch (all PRPs) | Batch runner script |
+| `.claude/prp-task-progress.md` | Current PRP tasks | Claude (during execution) |
+| `.claude/ralph-progress.md` | Ralph Loop iterations | Stop hook |
+
+The batch runner also prints progress to the terminal every ~2 minutes in same-context mode,
+showing task completion percentage or Ralph Loop iteration count.
 </monitoring>
 
 <architecture>

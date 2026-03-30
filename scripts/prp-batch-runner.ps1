@@ -345,6 +345,42 @@ $IsolatedInfo
     $BatchSucceeded = 0
     $BatchFailed = 0
 
+    # Progress monitor script block for same-context mode
+    $MonitorScript = {
+        param($PollInterval)
+        while ($true) {
+            Start-Sleep -Seconds $PollInterval
+            $now = (Get-Date).ToString("HH:mm:ss")
+            $taskFile = ".claude\prp-task-progress.md"
+            $ralphFile = ".claude\ralph-loop.local.md"
+
+            if (Test-Path $taskFile) {
+                $content = Get-Content -Path $taskFile -Raw -ErrorAction SilentlyContinue
+                $completed = ([regex]::Matches($content, '(?m)^\- \[x\]')).Count
+                $totalMatch = [regex]::Match($content, '(?m)^- Total Tasks:\s*(\d+)')
+                $pctMatch = [regex]::Match($content, '(?m)^- Progress:\s*(\d+)')
+                if ($totalMatch.Success -and [int]$totalMatch.Groups[1].Value -gt 0) {
+                    $total = [int]$totalMatch.Groups[1].Value
+                    $pct = if ($pctMatch.Success) { $pctMatch.Groups[1].Value } else { [math]::Floor(($completed * 100) / $total) }
+                    Write-Host "  Progress: [$now] Tasks: $completed/$total ($pct%)" -ForegroundColor Yellow
+                    continue
+                }
+            }
+            if (Test-Path $ralphFile) {
+                $stateContent = Get-Content -Path $ralphFile -Raw -ErrorAction SilentlyContinue
+                $iterMatch = [regex]::Match($stateContent, 'iteration:\s*(\d+)')
+                $maxMatch = [regex]::Match($stateContent, 'max_iterations:\s*(\d+)')
+                if ($iterMatch.Success) {
+                    $iter = $iterMatch.Groups[1].Value
+                    $maxIter = if ($maxMatch.Success) { $maxMatch.Groups[1].Value } else { "?" }
+                    Write-Host "  Progress: [$now] Ralph iteration: $iter/$maxIter" -ForegroundColor Yellow
+                    continue
+                }
+            }
+            Write-Host "  [$now] Executing... (no progress file yet)" -ForegroundColor Yellow
+        }
+    }
+
     # Build execution arguments
     $OrchestratorScript = Join-Path $ScriptDir "prp-orchestrator.ps1"
     $BaseArgs = @("-Iterations", $Iterations, "-MaxRetries", $MaxRetries, "-Timeout", $Timeout)
@@ -431,6 +467,12 @@ $IsolatedInfo
             }
         }
 
+        # Start background progress monitor for same-context mode
+        $monitorJob = $null
+        if (-not $Isolated) {
+            $monitorJob = Start-Job -ScriptBlock $MonitorScript -ArgumentList 120
+        }
+
         try {
             # Start the process and wait for it
             # Using -Wait ensures we block until completion
@@ -440,12 +482,35 @@ $IsolatedInfo
             $ExitCode = $process.ExitCode
             $EndTime = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
 
-            # Parse the orchestrator's progress file for accurate task counts (isolated mode only)
-            # In same-context mode, we rely on the exit code
+            # Stop the progress monitor
+            if ($monitorJob) {
+                Stop-Job -Job $monitorJob -ErrorAction SilentlyContinue
+                Remove-Job -Job $monitorJob -Force -ErrorAction SilentlyContinue
+                $monitorJob = $null
+            }
+
+            # Parse task-level progress file for same-context mode
             $PrpProgressFile = ".claude\prp-progress.md"
+            $TaskProgressFile = ".claude\prp-task-progress.md"
             $TasksSucceeded = 0
             $TasksFailed = 0
             $TotalTasks = 0
+
+            if ((-not $Isolated) -and (Test-Path $TaskProgressFile)) {
+                $taskContent = Get-Content -Path $TaskProgressFile -Raw -ErrorAction SilentlyContinue
+                $TasksSucceeded = ([regex]::Matches($taskContent, '(?m)^\- \[x\]')).Count
+                $failedMatches = ([regex]::Matches($taskContent, '\(FAILED\)')).Count
+                $TasksFailed = $failedMatches
+                $totalMatch = [regex]::Match($taskContent, '(?m)^- Total Tasks:\s*(\d+)')
+                if ($totalMatch.Success) { $TotalTasks = [int]$totalMatch.Groups[1].Value }
+
+                # Archive the task progress file
+                $tpBasename = [System.IO.Path]::GetFileNameWithoutExtension($PrpFile)
+                $tpArchive = ".claude\prp-task-progress-${tpBasename}.md"
+                Copy-Item -Path $TaskProgressFile -Destination $tpArchive -Force -ErrorAction SilentlyContinue
+                Remove-Item -Path $TaskProgressFile -Force -ErrorAction SilentlyContinue
+                Write-Host "  Archived task progress: $tpArchive"
+            }
 
             if ($Isolated -and (Test-Path $PrpProgressFile)) {
                 $progressContent = Get-Content -Path $PrpProgressFile -Raw
@@ -524,6 +589,12 @@ $IsolatedInfo
             }
         }
         catch {
+            # Stop the progress monitor on error
+            if ($monitorJob) {
+                Stop-Job -Job $monitorJob -ErrorAction SilentlyContinue
+                Remove-Job -Job $monitorJob -Force -ErrorAction SilentlyContinue
+                $monitorJob = $null
+            }
             $EndTime = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
             Write-Host "PRP $PrpNum`: ERROR - $_" -ForegroundColor Red
             Add-Content -Path $BatchProgress -Value "- Completed: $EndTime"
