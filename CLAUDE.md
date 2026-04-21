@@ -69,43 +69,76 @@ uv run scripts/prp_runner.py --prp-path PRPs/active/feature.md --output-format j
 uv run scripts/prp_runner.py --prp feature-name --output-format stream-json
 ```
 
-### Ralph Loop (Iterative Development)
+### Ralph Loop (External Plugin)
 
-Ralph Loop is an iterative self-referential development loop that feeds Claude's output back as input until completion.
+PRP execution uses a three-tier strategy inside `/$PLUGIN_NAME:prp-execute`:
 
-```bash
-# Basic usage
-/$PLUGIN_NAME:ralph-loop "Build a REST API for todos" --completion-promise 'DONE' --max-iterations 20
+- **Tier 1** — `ralph-wiggum@claude-plugins-official` installed → `/$PLUGIN_NAME:prp-execute` delegates to `/ralph-loop` for iterative retry.
+- **Tier 2** — Plugin not installed → single-pass execution with an install recommendation.
+- **Tier 3** — Detection unavailable (no `jq` or `claude` CLI) → single-pass with neutral note.
 
-# Fresh context mode (prevents context rot for long tasks)
-/$PLUGIN_NAME:ralph-loop "Complex refactoring" --fresh-context --max-iterations 30 --completion-promise 'TASK COMPLETE'
+Install the marketplace plugin once:
 
-# Resume an interrupted loop
-/$PLUGIN_NAME:ralph-loop --resume
+```
+/plugin install ralph-wiggum@claude-plugins-official
 ```
 
-**Options:**
-- `--max-iterations N` - Maximum iterations before auto-stop (default: 20)
-- `--completion-promise 'TEXT'` - Promise phrase to output when complete
-- `--max-retries N` - Max retries per task before marking blocked (default: 0/disabled)
-- `--fresh-context` - Enable session isolation mode (fresh context each iteration)
-- `--resume` - Resume from previous progress file
+Then invoke directly:
 
-**Fresh Context Mode:**
-For long-running tasks (10+ iterations), `--fresh-context` enables session isolation:
-- Each iteration ends the session cleanly with zero context
-- Progress tracked in `.claude/ralph-progress.md`
-- Use `--resume` or `ralph-auto.sh` wrapper for continuation
-- Prevents context rot for complex multi-phase tasks
-
-**Monitoring:**
 ```bash
-# View current iteration
-head -10 .claude/ralph-loop.local.md
-
-# View progress (fresh-context mode)
-cat .claude/ralph-progress.md
+/ralph-loop "<prompt>" --max-iterations 20 --completion-promise 'DONE'
 ```
+
+Or let `/$PLUGIN_NAME:prp-execute` delegate on your behalf:
+
+```bash
+/$PLUGIN_NAME:prp-execute PRPs/feature.md
+# → Tier 1: delegates to /ralph-loop automatically
+# → Tier 2/3: runs single-pass in-session
+```
+
+**Migration note (v2.0.0):** the forked `/$PLUGIN_NAME:ralph-loop` and `/$PLUGIN_NAME:cancel-ralph` commands are removed. Stale state files in existing projects can be cleaned manually:
+
+```bash
+rm -f .claude/ralph-loop.local.md .claude/KGP:ralph-loop.local.md .claude/ralph-progress.md
+```
+
+### Agent Teams (Experimental)
+
+Parallel 3–5 teammate execution with inter-teammate messaging. Enable in `settings.json`:
+
+```json
+{
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  }
+}
+```
+
+Restart Claude Code after changing settings.
+
+**Commands:**
+
+```bash
+# Spawn a one-off team (recipe auto-picked from task text)
+/$PLUGIN_NAME:team-invoke "review PR #42 for auth changes"
+/$PLUGIN_NAME:team-invoke "why does the app crash on startup?"
+/$PLUGIN_NAME:team-invoke "build a user profile page with avatar upload"
+
+# Run a PRP with auto-partitioned team
+/$PLUGIN_NAME:prp-execute PRPs/feature.md --team
+/$PLUGIN_NAME:prp-execute PRPs/feature.md --team=review   # explicit recipe
+```
+
+**Recipes:**
+- `implementation` — `frontend-engineer` + `backend-engineer` + `data-engineer`
+- `review` — `qa-engineer` + `backend-engineer` + `frontend-engineer`
+- `research` — 3 generalists (UX / architecture / devil's-advocate)
+- `hypothesis` — 3–5 teammates, one per hypothesis
+
+**Mutex:** `--team` and `--isolated` are mutually exclusive.
+
+**Skill:** `skills/agent-teams/` (`SKILL.md` router + `references/playbooks.md` with classifier + spawn templates).
 
 ---
 

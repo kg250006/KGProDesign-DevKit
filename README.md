@@ -116,8 +116,14 @@ claude
 
 ### PRP Workflow
 - `/$PLUGIN_NAME:prp-create` - Generate Product Requirement Prompt
-- `/$PLUGIN_NAME:prp-execute` - Execute PRP with validation
+- `/$PLUGIN_NAME:prp-execute` - Execute PRP with three-tier dispatch (marketplace Ralph Loop or single-pass)
+- `/$PLUGIN_NAME:prp-execute-batch` - Run multiple PRPs sequentially
+- `/$PLUGIN_NAME:prp-execute-isolated` - Execute a PRP with per-task isolation
 - `/$PLUGIN_NAME:prp-validate` - Pre-flight PRP validation
+
+### Agent Teams (Experimental)
+- `/$PLUGIN_NAME:team-invoke "<task>"` - Spawn a 3–5 teammate Agent Team (recipe auto-picked)
+- `/$PLUGIN_NAME:prp-execute <prp> --team[=<recipe>]` - Run a PRP with auto-partitioned team
 
 ### Workflow
 - `/commit` - Smart git commit
@@ -204,6 +210,37 @@ uv run scripts/prp_runner.py --prp feature-name --interactive
 # Headless with JSON output
 uv run scripts/prp_runner.py --prp-path PRPs/active/feature.md --output-format json
 ```
+
+## Ralph Loop (External Plugin)
+
+Iterative retry execution is provided by Anthropic's marketplace plugin. Install once:
+
+```
+/plugin install ralph-wiggum@claude-plugins-official
+```
+
+Then `/KGP:prp-execute` auto-delegates to `/ralph-loop` when the plugin is installed. Without it, PRPs execute single-pass in-session — still valid, just without the iterative safety net.
+
+## Agent Teams (Experimental)
+
+Parallel 3–5 teammate execution. Enable in `settings.json`:
+
+```json
+{
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  }
+}
+```
+
+Then restart Claude Code. Commands:
+
+```bash
+/KGP:team-invoke "review PR #42 for auth changes"   # auto-picks `review` recipe
+/KGP:prp-execute PRPs/feature.md --team             # auto-picks + partitions tasks
+```
+
+Recipes: `implementation`, `review`, `research`, `hypothesis`. Classifier + disambiguation rules live in `skills/agent-teams/references/playbooks.md`. `--team` is mutually exclusive with `--isolated`.
 
 ## Documentation
 

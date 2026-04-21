@@ -420,14 +420,14 @@ Provide completion report:
 /KGP:prp-execute-isolated PRPs/PRP-{feature-name}.md
 ```
 
-**Execute with Ralph Loop:**
-```bash
-/KGP:ralph-loop PRPs/PRP-{feature-name}.md
-```
-
-**Or execute directly:**
+**Execute directly (three-tier dispatch — auto-delegates to marketplace Ralph Loop if installed, else single-pass):**
 ```bash
 /KGP:prp-execute PRPs/PRP-{feature-name}.md
+```
+
+**Execute with Agent Team (experimental):**
+```bash
+/KGP:prp-execute PRPs/PRP-{feature-name}.md --team
 ```
 
 **Or validate first:**

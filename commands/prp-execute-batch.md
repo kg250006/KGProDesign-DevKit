@@ -1,6 +1,6 @@
 ---
-description: "[KGP] Execute multiple PRPs sequentially with full context per PRP"
-argument-hint: "<prp1.md> <prp2.md> ... OR --batch-file PRPs/batch.txt [--fresh] [--retry-failed] [--isolated] [--iterations N] [--timeout N]"
+description: "[KGP] Execute multiple PRPs sequentially with full context per PRP, optionally with --team"
+argument-hint: "<prp1.md> <prp2.md> ... OR --batch-file PRPs/batch.txt [--fresh] [--retry-failed] [--isolated] [--iterations N] [--timeout N] [--team[=<recipe>]]"
 allowed-tools: [Bash, Read, Glob]
 ---
 
@@ -61,6 +61,21 @@ Options:
 - `--skip-validation`: Skip acceptance criteria validation
 - `--fresh`: Start fresh - ignore previous progress (default: auto-resume)
 - `--retry-failed`: Retry PRPs that previously failed (marked with [~])
+- `--team` or `--team=<recipe>`: Run each PRP with an experimental Agent Team. Forces `--same-context` per PRP. Mutually exclusive with `--isolated`. Requires `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`.
+
+### `--team` Preflight (when set at batch level)
+
+Run BEFORE Step 5 launches the batch runner:
+
+1. **Mutex check:** if `--isolated` is also set, print:
+   ```
+   Error: --team and --isolated are mutually exclusive at the batch level. Pick one.
+   ```
+   and exit 1.
+2. **Env-flag check:** if `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` != `1`, print the activation snippet and exit 1.
+3. **Explicit-recipe validation:** if `--team=<recipe>`, validate against `implementation`, `review`, `research`, `hypothesis`. Invalid → list valid names and exit 1.
+4. **Force same-context per PRP:** `--team` implies the default (same-context) mode. Do NOT combine with `--isolated` — rejected above.
+5. **Forward the flag:** per-PRP invocation becomes `claude -p "/KGP:prp-execute <prp> --team[=<recipe>]"`. Each PRP then runs its own `--team` preflight and spawns its own team within its own session (one-team-per-session rule).
 
 **Note:** Auto-resume is enabled by default. If a previous batch run exists in
 `.claude/prp-batch-progress.md`, completed PRPs (marked [x]) will be skipped.
@@ -229,8 +244,7 @@ ls .claude/prp-progress-*.md         # Isolated mode (per-task)
 | File | Scope | Updated By |
 |------|-------|-----------|
 | `.claude/prp-batch-progress.md` | Batch (all PRPs) | Batch runner script |
-| `.claude/prp-task-progress.md` | Current PRP tasks | Claude (during execution) |
-| `.claude/ralph-progress.md` | Ralph Loop iterations | Stop hook |
+| `.claude/prp-task-progress.md` | Current PRP tasks | Claude (during execution; lead in team mode) |
 
 The batch runner also prints progress to the terminal every ~2 minutes in same-context mode,
 showing task completion percentage or Ralph Loop iteration count.

@@ -1,7 +1,7 @@
 {
   "name": "KGP",
-  "description": "KGProDesign Dev Tool Kit - Streamlined agents, essential commands (including REAL Ralph Loop), PRP workflow integration, and hooks for any project",
-  "version": "1.9.2",
+  "description": "KGProDesign Dev Tool Kit — streamlined agents, essential commands, PRP workflow with three-tier execution (marketplace Ralph Loop delegation or single-pass), experimental Agent Teams support, and hooks for any project.",
+  "version": "2.1.0",
   "author": {
     "name": "KGProDesign"
   },
@@ -19,7 +19,7 @@
     "prp",
     "meta-prompting",
     "universal",
-    "ralph-loop",
+    "agent-teams",
     "iterative-development"
   ]
 }
