@@ -216,7 +216,7 @@ uv run scripts/prp_runner.py --prp-path PRPs/active/feature.md --output-format j
 Iterative retry execution is provided by Anthropic's marketplace plugin. Install once:
 
 ```
-/plugin install ralph-wiggum@claude-plugins-official
+/plugin install ralph-loop@claude-plugins-official
 ```
 
 Then `/KGP:prp-execute` auto-delegates to `/ralph-loop` when the plugin is installed. Without it, PRPs execute single-pass in-session — still valid, just without the iterative safety net.

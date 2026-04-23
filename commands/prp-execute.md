@@ -8,7 +8,7 @@ allowed-tools: [Read, Bash, Glob, Grep, Task, Write, Edit]
 
 Execute a Product Requirement Prompt using a three-tier execution strategy:
 
-1. **Tier 1** — Marketplace plugin `ralph-wiggum@claude-plugins-official` detected → delegate to `/ralph-loop`.
+1. **Tier 1** — Marketplace plugin `ralph-loop@claude-plugins-official` detected → delegate to `/ralph-loop`.
 2. **Tier 2** — Plugin not installed → run single-pass with an install recommendation.
 3. **Tier 3** — Detection itself unavailable → run single-pass with a neutral note.
 
@@ -28,16 +28,16 @@ RALPH_TIER=""
 # Primary: claude plugin list + jq
 if command -v jq >/dev/null 2>&1 && command -v claude >/dev/null 2>&1; then
   if claude plugin list --json 2>/dev/null \
-     | jq -e '.[]? | select(.name == "ralph-wiggum" and .enabled == true)' >/dev/null 2>&1; then
+     | jq -e '.[]? | select(.name == "ralph-loop" and .enabled == true)' >/dev/null 2>&1; then
     RALPH_TIER=1
   fi
 fi
 
 # Fallback: parse enabledPlugins in settings files. Match either the bare
-# name "ralph-wiggum" or the marketplace form "ralph-wiggum@...".
+# name "ralph-loop" or the marketplace form "ralph-loop@...".
 if [ -z "${RALPH_TIER:-}" ]; then
   for f in "$HOME/.claude/settings.json" ".claude/settings.json" ".claude/settings.local.json"; do
-    if [ -f "$f" ] && grep -qE '"ralph-wiggum(@[^"]*)?"' "$f" 2>/dev/null; then
+    if [ -f "$f" ] && grep -qE '"ralph-loop(@[^"]*)?"' "$f" 2>/dev/null; then
       RALPH_TIER=1
       break
     fi
@@ -57,7 +57,7 @@ echo "RALPH_TIER=$RALPH_TIER"
 ```
 
 Tier meanings:
-- **Tier 1** — `ralph-wiggum@claude-plugins-official` installed. Step 4 delegates to `/ralph-loop`.
+- **Tier 1** — `ralph-loop@claude-plugins-official` installed. Step 4 delegates to `/ralph-loop`.
 - **Tier 2** — Plugin not installed. Step 4 runs single-pass + prints install recommendation.
 - **Tier 3** — Detection primitives missing (no `jq` or no `claude` CLI). Step 4 runs single-pass + prints neutral note.
 
@@ -227,7 +227,7 @@ Emit this invocation for Claude to execute (NOTE: `/ralph-loop` is the marketpla
 
 Print:
 ```
-Note: Install Ralph Loop for iterative execution: /plugin install ralph-wiggum@claude-plugins-official
+Note: Install Ralph Loop for iterative execution: /plugin install ralph-loop@claude-plugins-official
 Proceeding with single-pass execution.
 ```
 

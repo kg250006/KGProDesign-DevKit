@@ -130,4 +130,4 @@ Partitioning rules:
 - Agent Teams overview: https://code.claude.com/docs/en/agent-teams
 - Subagents: https://code.claude.com/docs/en/sub-agents
 - Cost model: linear in teammate count. 3–5 sweet spot.
-- Related: marketplace Ralph Loop — `ralph-wiggum@claude-plugins-official` (install via `/plugin install ralph-wiggum@claude-plugins-official`).
+- Related: marketplace Ralph Loop — `ralph-loop@claude-plugins-official` (install via `/plugin install ralph-loop@claude-plugins-official`).

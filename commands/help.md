@@ -14,14 +14,14 @@ A Claude Code plugin providing agents, commands, skills, and hooks for PRP-drive
 
 `/KGP:prp-execute` detects your environment and chooses a tier automatically:
 
-- **Tier 1** — Marketplace plugin `ralph-wiggum@claude-plugins-official` installed → delegates to `/ralph-loop` for iterative retry.
+- **Tier 1** — Marketplace plugin `ralph-loop@claude-plugins-official` installed → delegates to `/ralph-loop` for iterative retry.
 - **Tier 2** — Plugin not installed → runs single-pass in-session, prints install recommendation.
 - **Tier 3** — Detection primitives missing (no `jq` or `claude` CLI) → single-pass with neutral note.
 
 Install the marketplace Ralph Loop once:
 
 ```
-/plugin install ralph-wiggum@claude-plugins-official
+/plugin install ralph-loop@claude-plugins-official
 ```
 
 ## Available Commands
@@ -57,7 +57,7 @@ Then:
 
 ### Direct Marketplace Ralph Loop
 
-If `ralph-wiggum@claude-plugins-official` is installed, call it directly:
+If `ralph-loop@claude-plugins-official` is installed, call it directly:
 
 ```bash
 /ralph-loop "<prompt>" --max-iterations 20 --completion-promise "DONE"
@@ -94,7 +94,7 @@ rm -f .claude/ralph-loop.local.md .claude/KGP:ralph-loop.local.md .claude/ralph-
 
 ## Learn More
 
-- Marketplace Ralph Loop: `ralph-wiggum@claude-plugins-official`
+- Marketplace Ralph Loop: `ralph-loop@claude-plugins-official`
 - Agent Teams docs: https://code.claude.com/docs/en/agent-teams
 - Agent Teams skill: `skills/agent-teams/SKILL.md` (playbooks at `references/playbooks.md`)
 - Ralph Wiggum technique (original): https://ghuntley.com/ralph/

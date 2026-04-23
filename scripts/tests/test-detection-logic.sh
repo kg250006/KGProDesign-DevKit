@@ -81,19 +81,19 @@ if command -v jq >/dev/null 2>&1; then
 fi
 
 # ------------------------------------------------------------------
-section "Case 1 — Tier 1 via claude+jq (ralph-wiggum enabled)"
+section "Case 1 — Tier 1 via claude+jq (ralph-loop enabled)"
 
 if [ "$HAVE_JQ" -eq 1 ]; then
-  # claude stub emits JSON array with ralph-wiggum enabled
+  # claude stub emits JSON array with ralph-loop enabled
   make_stub claude 'cat <<JSON
-[{"name":"ralph-wiggum","enabled":true}]
+[{"name":"ralph-loop","enabled":true}]
 JSON'
   # Use real jq for this case (pass-through)
   ln -sf "$REAL_JQ" "$STUB_DIR/jq"
 
   tier=$(run_detection "$STUB_DIR:/usr/bin:/bin" "$FAKE_HOME" "$FAKE_HOME")
   if [ "$tier" = "1" ]; then
-    pass "ralph-wiggum enabled + jq present → RALPH_TIER=1"
+    pass "ralph-loop enabled + jq present → RALPH_TIER=1"
   else
     fail "expected tier 1, got '$tier'"
   fi
@@ -111,7 +111,7 @@ if [ "$HAVE_JQ" -eq 1 ]; then
 JSON'
   ln -sf "$REAL_JQ" "$STUB_DIR/jq"
 
-  # Clean fake home of any settings referencing ralph-wiggum
+  # Clean fake home of any settings referencing ralph-loop
   rm -f "$FAKE_HOME/.claude/settings.json"
 
   tier=$(run_detection "$STUB_DIR:/usr/bin:/bin" "$FAKE_HOME" "$FAKE_HOME")
@@ -180,25 +180,25 @@ else
 fi
 
 # ------------------------------------------------------------------
-section "Case 5 — Settings fallback (claude broken, settings has ralph-wiggum)"
+section "Case 5 — Settings fallback (claude broken, settings has ralph-loop)"
 
 if [ "$HAVE_JQ" -eq 1 ]; then
   # claude stub returns garbage / exits non-zero
   make_stub claude 'echo "not json" >&2; exit 1'
   ln -sf "$REAL_JQ" "$STUB_DIR/jq"
 
-  # Seed ~/.claude/settings.json with ralph-wiggum
+  # Seed ~/.claude/settings.json with ralph-loop
   cat > "$FAKE_HOME/.claude/settings.json" <<'EOF'
 {
   "enabledPlugins": {
-    "ralph-wiggum@claude-plugins-official": true
+    "ralph-loop@claude-plugins-official": true
   }
 }
 EOF
 
   tier=$(run_detection "$STUB_DIR:/usr/bin:/bin" "$FAKE_HOME" "$FAKE_HOME")
   if [ "$tier" = "1" ]; then
-    pass "settings fallback detects ralph-wiggum → RALPH_TIER=1"
+    pass "settings fallback detects ralph-loop → RALPH_TIER=1"
   else
     fail "expected tier 1 via settings fallback, got '$tier'"
   fi
@@ -235,13 +235,13 @@ if [ "$HAVE_JQ" -eq 1 ]; then
   ln -sf "$REAL_JQ" "$STUB_DIR/jq"
   rm -f "$FAKE_HOME/.claude/settings.json"
 
-  # Create a fake project dir with a .claude/settings.local.json referencing ralph-wiggum
+  # Create a fake project dir with a .claude/settings.local.json referencing ralph-loop
   PROJECT_CWD=$(mktemp -d)
   mkdir -p "$PROJECT_CWD/.claude"
   cat > "$PROJECT_CWD/.claude/settings.local.json" <<'EOF'
 {
   "enabledPlugins": {
-    "ralph-wiggum@claude-plugins-official": true
+    "ralph-loop@claude-plugins-official": true
   }
 }
 EOF

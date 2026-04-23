@@ -25,7 +25,7 @@ Full-stack feature spanning UI + API + schema?            → Teams (implementat
 
 Otherwise:
 - Single subagent (Task tool) for one-lens work
-- Marketplace Ralph Loop (ralph-wiggum@claude-plugins-official) for iterative retry
+- Marketplace Ralph Loop (ralph-loop@claude-plugins-official) for iterative retry
 - /KGP:prp-execute-isolated for very large PRPs (20+ tasks) needing hard isolation
 ```
 

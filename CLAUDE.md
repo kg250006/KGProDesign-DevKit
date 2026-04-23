@@ -73,14 +73,14 @@ uv run scripts/prp_runner.py --prp feature-name --output-format stream-json
 
 PRP execution uses a three-tier strategy inside `/$PLUGIN_NAME:prp-execute`:
 
-- **Tier 1** — `ralph-wiggum@claude-plugins-official` installed → `/$PLUGIN_NAME:prp-execute` delegates to `/ralph-loop` for iterative retry.
+- **Tier 1** — `ralph-loop@claude-plugins-official` installed → `/$PLUGIN_NAME:prp-execute` delegates to `/ralph-loop` for iterative retry.
 - **Tier 2** — Plugin not installed → single-pass execution with an install recommendation.
 - **Tier 3** — Detection unavailable (no `jq` or `claude` CLI) → single-pass with neutral note.
 
 Install the marketplace plugin once:
 
 ```
-/plugin install ralph-wiggum@claude-plugins-official
+/plugin install ralph-loop@claude-plugins-official
 ```
 
 Then invoke directly:
