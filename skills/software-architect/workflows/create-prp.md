@@ -1,7 +1,7 @@
 # Workflow: Create PRP (Product Requirement Prompt)
 
 <objective>
-Generate a codebase-specific Product Requirement Prompt (PRP) that can be executed by Ralph Loop or other implementation agents. The PRP will contain micro-tasks with acceptance criteria, agent assignments, and validation commands tailored to the existing codebase.
+Generate a codebase-specific Product Requirement Prompt (PRP) that can be executed by `/KGP:prp-execute` (native single-session) or any other PRP runner. The PRP will contain micro-tasks with acceptance criteria, agent assignments, and validation commands tailored to the existing codebase.
 </objective>
 
 <required_reading>
@@ -417,7 +417,7 @@ Report completion with confidence score and sizing summary.
 
 **Execute with:**
 ```bash
-/$PLUGIN_NAME:ralph-loop PRPs/PRP-{feature-name}.md
+/$PLUGIN_NAME:prp-execute PRPs/PRP-{feature-name}.md
 ```
 
 **Or validate first:**
@@ -428,8 +428,8 @@ Report completion with confidence score and sizing summary.
 
 <success_criteria>
 - **All tasks are S or M effort only — no L or XL tasks in any PRP**
-- **Task count within limits per PRP (20 S / 15 M / 15-20 mixed)**
-- **No PRP exceeds 2,400 lines**
+- **Task count within recommended envelope (up to 40 S / up to 30 M / 30–40 mixed)**
+- **No PRP exceeds 5,000 lines (recommended; honor explicit user override)**
 - **Sizing assessment was performed before generation**
 - All tasks have agent assignments
 - All tasks have effort/value rankings
@@ -437,7 +437,7 @@ Report completion with confidence score and sizing summary.
 - Pseudocode references actual codebase patterns
 - File paths are specific and accurate
 - Validation commands use project's actual tools
-- Document can be executed by Ralph Loop without clarification
+- Document can be executed by `/KGP:prp-execute` (native single-session) without clarification
 - Multi-PRP features have sequential execution order documented
 </success_criteria>
 

@@ -25,8 +25,7 @@ Full-stack feature spanning UI + API + schema?            → Teams (implementat
 
 Otherwise:
 - Single subagent (Task tool) for one-lens work
-- Marketplace Ralph Loop (ralph-loop@claude-plugins-official) for iterative retry
-- /KGP:prp-execute-isolated for very large PRPs (20+ tasks) needing hard isolation
+- /KGP:prp-execute (native single-session) for any PRP, single or multi
 ```
 
 ## Recipes (at a glance)
@@ -62,7 +61,6 @@ Optional: `tmux` or `iTerm2` for split-pane monitoring when the lead spawns a te
 
 - **Linear token cost.** 3–5 teammates is the cost/benefit sweet spot.
 - **No nested teams.** A teammate cannot spawn its own team.
-- **Mutex:** `--team` and `--isolated` are mutually exclusive on `/KGP:prp-execute` and `/KGP:prp-execute-batch`.
 - **Single-team-per-session.** Finish or cancel a team before starting another.
 
 ## Eyeball-comparison workflow
@@ -76,5 +74,4 @@ Formal benchmarking (`team-evaluate`) is deferred. For now:
 ## Related commands
 
 - `/KGP:team-invoke "<task>" [--recipe <name>] [--force]` — spawn a one-off team with auto-picked recipe.
-- `/KGP:prp-execute <prp> --team[=<recipe>]` — run a PRP with an auto-partitioned team.
-- `/KGP:prp-execute-batch ... --team` — forces `--same-context` per PRP.
+- `/KGP:prp-execute <prp> [<prp2> ...] --team[=<recipe>]` — run one or more PRPs with an auto-partitioned team.

@@ -1,7 +1,7 @@
 # Workflow: Convert PRD to PRP
 
 <objective>
-Transform a codebase-agnostic PRD into a codebase-specific PRP that can be executed by Ralph Loop. This bridges the gap between specification and implementation by mapping abstract requirements to concrete tasks in the current codebase.
+Transform a codebase-agnostic PRD into a codebase-specific PRP that can be executed by `/KGP:prp-execute` (native single-session). This bridges the gap between specification and implementation by mapping abstract requirements to concrete tasks in the current codebase.
 </objective>
 
 <required_reading>
@@ -338,7 +338,7 @@ Report conversion summary with traceability coverage.
 
 **Execute with:**
 ```bash
-/$PLUGIN_NAME:ralph-loop PRPs/PRP-{feature-name}.md
+/$PLUGIN_NAME:prp-execute PRPs/PRP-{feature-name}.md
 ```
 </output_format>
 

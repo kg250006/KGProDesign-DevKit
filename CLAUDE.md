@@ -69,38 +69,37 @@ uv run scripts/prp_runner.py --prp-path PRPs/active/feature.md --output-format j
 uv run scripts/prp_runner.py --prp feature-name --output-format stream-json
 ```
 
-### Ralph Loop (External Plugin)
+### Native Long-Run Execution
 
-PRP execution uses a three-tier strategy inside `/$PLUGIN_NAME:prp-execute`:
+`/$PLUGIN_NAME:prp-execute` runs PRPs end-to-end in a single Claude Code session. With the 1M-token context window (Opus 4.7 / Sonnet 4.6 on a plan tier that supports it) and Auto mode, multi-thousand-line PRPs (or several PRPs at once) execute without external orchestration, scripts, or iteration loops.
 
-- **Tier 1** — `ralph-loop@claude-plugins-official` installed → `/$PLUGIN_NAME:prp-execute` delegates to `/ralph-loop` for iterative retry.
-- **Tier 2** — Plugin not installed → single-pass execution with an install recommendation.
-- **Tier 3** — Detection unavailable (no `jq` or `claude` CLI) → single-pass with neutral note.
-
-Install the marketplace plugin once:
-
-```
-/plugin install ralph-loop@claude-plugins-official
-```
-
-Then invoke directly:
+Recommended invocation:
 
 ```bash
-/ralph-loop "<prompt>" --max-iterations 20 --completion-promise 'DONE'
+/$PLUGIN_NAME:prp-execute PRPs/PRP-feature.md
+/$PLUGIN_NAME:prp-execute PRPs/PRP-foundation.md PRPs/PRP-core.md PRPs/PRP-polish.md
+/$PLUGIN_NAME:prp-execute PRPs/PRP-feature.md --team
 ```
 
-Or let `/$PLUGIN_NAME:prp-execute` delegate on your behalf:
+Tips:
+
+- Auto mode (`Shift+Tab` to cycle, or `autoMode` in `settings.json`) eliminates per-tool prompts during long runs.
+- Auto-compaction handles context pressure; for very long sessions, delegate verbose tasks to subagents via the Task tool.
+- See https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents for Anthropic's harness design guidance.
+
+**Migration from v2.x:**
+
+- **v2.0.0** removed the forked `/$PLUGIN_NAME:ralph-loop` and `/$PLUGIN_NAME:cancel-ralph` commands.
+- **v2.2.0** removed `/$PLUGIN_NAME:prp-execute-batch` and `/$PLUGIN_NAME:prp-execute-isolated`. Their use cases are absorbed by `/$PLUGIN_NAME:prp-execute` accepting multiple PRP paths and by Claude Code's native auto-compaction + subagent delegation.
+
+Stale state files in existing projects can be cleaned manually:
 
 ```bash
-/$PLUGIN_NAME:prp-execute PRPs/feature.md
-# → Tier 1: delegates to /ralph-loop automatically
-# → Tier 2/3: runs single-pass in-session
-```
-
-**Migration note (v2.0.0):** the forked `/$PLUGIN_NAME:ralph-loop` and `/$PLUGIN_NAME:cancel-ralph` commands are removed. Stale state files in existing projects can be cleaned manually:
-
-```bash
+# v2.0.0 cleanup
 rm -f .claude/ralph-loop.local.md .claude/KGP:ralph-loop.local.md .claude/ralph-progress.md
+
+# v2.2.0 cleanup
+rm -f .claude/prp-orchestrator-state.log .claude/current-task.md .claude/prp-progress.md .claude/prp-batch-progress.md
 ```
 
 ### Agent Teams (Experimental)
@@ -322,54 +321,14 @@ Pre-flight PRP validation.
 /$PLUGIN_NAME:prp-validate <path-to-prp.md>
 ```
 
-#### /$PLUGIN_NAME:prp-execute-isolated
-Execute PRP with hard session isolation - each task runs in a fresh Claude session.
+#### /$PLUGIN_NAME:prp-execute (multi-PRP)
+Execute multiple PRPs sequentially in a single native Claude Code session.
 
 ```bash
-# Basic usage
-/$PLUGIN_NAME:prp-execute-isolated PRPs/feature.md
-
-# With iteration configuration (Ralph Loop philosophy)
-/$PLUGIN_NAME:prp-execute-isolated PRPs/quality-feature.md --iterations 3
-
-# With retry configuration
-/$PLUGIN_NAME:prp-execute-isolated PRPs/feature.md --max-retries 5
-
-# With longer timeout
-/$PLUGIN_NAME:prp-execute-isolated PRPs/feature.md --timeout 600
-
-# Combined options for maximum quality
-/$PLUGIN_NAME:prp-execute-isolated PRPs/critical-feature.md --iterations 3 --max-retries 5
+/$PLUGIN_NAME:prp-execute PRPs/PRP-foundation.md PRPs/PRP-core.md PRPs/PRP-polish.md
 ```
 
-**Options:**
-- `--iterations N` - Minimum successful iterations per task (default: 1). Each iteration runs in a fresh context, allowing fresh perspectives to enhance the work.
-- `--max-retries N` - Max retries per task before marking blocked (default: 3)
-- `--timeout N` - Timeout in seconds per task (default: 300)
-
-**When to use:**
-- Very large PRPs (20+ tasks) where context pressure is a concern
-- When deterministic per-task execution is strictly required
-- When previous runs showed Claude "optimizing" by combining tasks
-- When you want compounding quality through multiple fresh perspectives
-
-**How it works:**
-1. External shell script orchestrates (not Claude)
-2. Each task written to `.claude/current-task.md`
-3. Fresh Claude session spawned per task
-4. Claude sees ONLY current task (not full PRP)
-5. Progress logged to `.claude/prp-progress.md`
-6. With `--iterations N`, each task runs N successful iterations before moving on
-
-**Comparison:**
-
-| Aspect | prp-execute (default) | prp-execute-isolated |
-|--------|----------------------|---------------------|
-| **Context** | Single session (all tasks) | Isolated (fresh per task) |
-| **Control** | Claude decides | Script controls |
-| **Task visibility** | Claude sees all tasks | Claude sees only current |
-| **Use case** | Most PRPs | Very large PRPs needing isolation |
-| **Iterations** | N/A | Configurable (default: 1) |
+All PRPs run in one context window. No external scripts. No iteration loops. See the "Native Long-Run Execution" section above for the underlying philosophy and Anthropic harness-design references.
 
 ### Workflow Commands
 
@@ -541,42 +500,17 @@ Git conflict resolution.
 
 ### Execution Philosophy
 
-With larger context windows, full PRPs can be executed in a single Claude session. **Same-context execution is the default** for both `prp-execute` and `prp-execute-batch`. Per-task isolation is available via `prp-execute-isolated` or the `--isolated` flag on batch execution for edge cases.
+With 1M-context windows and auto-compaction, full PRPs (or several PRPs at once) execute in a single native Claude Code session. There is no "isolation mode," no batch runner, no iteration loop. The single command handles all cases.
 
 **Commands comparison:**
 
 | Command | Context | Best For |
 |---------|---------|----------|
-| `prp-execute` | Single session (all tasks) | Most PRPs |
-| `prp-execute-batch` | Single session per PRP | Multiple PRPs in sequence |
-| `prp-execute-batch --isolated` | Fresh session per task | Very large PRPs (20+ tasks) |
-| `prp-execute-isolated` | Fresh session per task | Single large PRP needing isolation |
+| `prp-execute <prp.md>` | Single session | Most PRPs |
+| `prp-execute <prp1.md> <prp2.md> ...` | Single session | Multiple related PRPs in sequence |
+| `prp-execute <prp.md> --team` | Single session, parallel teammates | Tasks with independent tracks |
 
-**When to use isolation (`--isolated`):**
-- PRPs with 20+ tasks where context pressure becomes noticeable
-- When previous runs showed Claude "optimizing" by combining tasks
-- When deterministic per-task execution is strictly required
-
-### Success Iteration System (Isolated Mode Only)
-
-When using `--isolated`, every task runs N successful iterations (default: 1) before moving to the next task.
-
-**Why this matters:**
-- **Fresh context produces fresh perspectives** - Each iteration approaches the task without preconceptions from previous attempts
-- **Each iteration can enhance what previous ones built** - Later iterations review and improve upon earlier work
-- **Compounds quality without human intervention** - Multiple passes naturally catch edge cases and improve robustness
-
-**Configuring iterations:**
-```bash
-# Isolated mode with default 1 iteration per task
-/$PLUGIN_NAME:prp-execute-isolated PRPs/feature.md
-
-# High quality: 3 iterations per task
-/$PLUGIN_NAME:prp-execute-isolated PRPs/critical-feature.md --iterations 3
-
-# Batch with isolation and iterations
-/$PLUGIN_NAME:prp-execute-batch --batch-file PRPs/release.txt --isolated --iterations 3
-```
+If a single PRP is so large that auto-compaction starts erroring, the right move is to delegate verbose-output tasks to subagents via the Task tool, NOT to spin up external orchestration.
 
 ### For Code Review
 

@@ -1,6 +1,6 @@
 ---
 name: software-architect
-description: Expert guidance for creating PRPs (Product Requirement Prompts) and PRDs (Product Requirement Documents). PRPs are codebase-specific implementation plans with micro-tasks for Ralph Loop execution. PRDs are codebase-agnostic specifications portable to any project or team.
+description: Expert guidance for creating PRPs (Product Requirement Prompts) and PRDs (Product Requirement Documents). PRPs are codebase-specific implementation plans with micro-tasks for native /KGP:prp-execute single-session execution. PRDs are codebase-agnostic specifications portable to any project or team.
 ---
 
 <essential_principles>
@@ -18,7 +18,7 @@ PRPs are **implementation blueprints** tailored to your specific codebase. They 
 - Effort vs. value rankings for prioritization
 - Validation commands using your project's toolchain
 
-**Purpose:** Feed directly into `/$PLUGIN_NAME:ralph-loop` for iterative autonomous implementation.
+**Purpose:** Feed directly into `/$PLUGIN_NAME:prp-execute` for native single-session autonomous implementation.
 
 ### 2. PRDs - Product Requirement Documents (Codebase-Agnostic)
 
@@ -34,7 +34,7 @@ PRDs are **portable specifications** that describe what to build without how:
 ### Core Principles
 
 **1. XML Structure for Machine Parsing**
-All tasks, features, and requirements use XML tags for reliable parsing by Ralph Loop and other tools.
+All tasks, features, and requirements use XML tags for reliable parsing by `/KGP:prp-execute` and other PRP runners.
 
 **2. Progressive Disclosure**
 Start with overview, then drill into details. Phases before tasks, tasks before subtasks.
@@ -50,16 +50,17 @@ Every PRP includes executable validation commands. Every PRD includes measurable
 
 **6. Right-Sized Documents**
 - Every PRP is automatically assessed for sizing before generation
-- Hard limits per PRP: max 20 tasks (all S), max 15 tasks (all M), 15-20 mixed, max 2,400 lines
+- Recommended envelope: up to 40 tasks (all S), up to 30 tasks (all M), 30–40 mixed, up to 5,000 lines
+- These are recommendations, not hard caps — honor explicit user override
 - Only S and M effort tasks allowed — L/XL must be decomposed
-- Split into multiple PRPs when constraints require it — never force-fit
-- A single PRP is perfectly fine when the feature is small enough
+- Split into multiple PRPs when it improves human reviewability or aligns with logical milestones
+- A single PRP is perfectly fine even at large size with modern 1M-context models
 </essential_principles>
 
 <intake>
 What would you like to create?
 
-1. **PRP** - Implementation plan for THIS codebase (feeds Ralph Loop)
+1. **PRP** - Implementation plan for THIS codebase (feeds `/KGP:prp-execute`)
 2. **PRD** - Portable specification (codebase-agnostic)
 3. **PRP from PRD** - Convert existing PRD to codebase-specific PRP
 4. **Guidance** - Help deciding which document type to create
@@ -70,7 +71,7 @@ What would you like to create?
 <routing>
 | Response | Next Action | Workflow |
 |----------|-------------|----------|
-| 1, "PRP", "implementation", "ralph" | Ask: "What feature/requirement?" | workflows/create-prp.md |
+| 1, "PRP", "implementation" | Ask: "What feature/requirement?" | workflows/create-prp.md |
 | 2, "PRD", "specification", "document" | Ask: "What feature/requirement?" | workflows/create-prd.md |
 | 3, "convert", "from PRD" | Ask: "Path to PRD file?" | workflows/prp-from-prd.md |
 | 4, "guidance", "help", "which" | Guide decision | workflows/guidance.md |
@@ -246,7 +247,7 @@ All in `references/`:
 
 | Reference | Content |
 |-----------|---------|
-| prp-best-practices.md | PRP structure, micro-task design, ralph-loop integration |
+| prp-best-practices.md | PRP structure, micro-task design, native execution integration |
 | prd-best-practices.md | PRD structure, requirements writing, stakeholder communication |
 | effort-estimation.md | T-shirt sizing, complexity factors, scope management |
 | xml-structure-guide.md | XML tag conventions for machine-readable documents |
@@ -271,7 +272,7 @@ A well-crafted PRP:
 - Includes effort/value rankings for prioritization
 - Contains executable validation commands
 - References specific files and patterns from the codebase
-- Can be executed by Ralph Loop without clarification
+- Can be executed by `/KGP:prp-execute` (native single-session) without clarification
 
 A well-crafted PRD:
 - Is understandable without codebase access

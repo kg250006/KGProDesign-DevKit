@@ -9,7 +9,7 @@ Guidelines for using XML tags in PRPs and PRDs to enable machine parsing and mai
 ## Why XML Structure?
 
 ### 1. Machine Parseable
-Ralph Loop and other tools can reliably extract:
+`/KGP:prp-execute` and other PRP runners can reliably extract:
 - Task lists with IDs
 - Agent assignments
 - Acceptance criteria
@@ -152,7 +152,11 @@ Tag names describe content: `<acceptance-criteria>` is clearer than `"ac": []`
 <prp name="feature-name" version="1.0">
   <metadata>...</metadata>
   <goal>...</goal>
-  <context>...</context>
+  <intent-anchors>...</intent-anchors>          <!-- new in v2.2.0 -->
+  <context>
+    <decisions>...</decisions>                  <!-- new in v2.2.0 -->
+    ...
+  </context>
   <codebase-analysis>...</codebase-analysis>
   <phases>
     <phase id="N" name="Phase Name">
@@ -170,6 +174,39 @@ Tag names describe content: `<acceptance-criteria>` is clearer than `"ac": []`
   <validation>...</validation>
   <success-criteria>...</success-criteria>
 </prp>
+```
+
+### `<intent-anchors>` (new in v2.2.0)
+
+Captures the locked user intent from the prp-create intent-lock step (B1). Read by `/KGP:prp-execute` when it encounters ambiguous task instructions; the anchors take precedence over inferred behavior.
+
+```xml
+<intent-anchors>
+  <what>The deliverable, in one sentence.</what>
+  <who>The user / role this serves.</who>
+  <why>The motivating outcome.</why>
+  <out-of-scope>
+    <item>Anything explicitly NOT in this PRP.</item>
+  </out-of-scope>
+  <success-signal>The single observation that proves it works.</success-signal>
+</intent-anchors>
+```
+
+### `<context><decisions>` (new in v2.2.0)
+
+Captures locked architectural decisions from the prp-create decision-log step (B2). Each decision tells executor Claude that a path was deliberately chosen, not assumed.
+
+```xml
+<context>
+  <decisions>
+    <decision id="D1">
+      <topic>Library X vs library Y</topic>
+      <choice>Library X</choice>
+      <rationale>Active maintenance, smaller bundle, matches existing project dep on Z.</rationale>
+    </decision>
+  </decisions>
+  ...
+</context>
 ```
 
 ### Required Attributes

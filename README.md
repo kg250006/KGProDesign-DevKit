@@ -115,10 +115,8 @@ claude
 - `/debug [issue]` - Expert debugging
 
 ### PRP Workflow
-- `/$PLUGIN_NAME:prp-create` - Generate Product Requirement Prompt
-- `/$PLUGIN_NAME:prp-execute` - Execute PRP with three-tier dispatch (marketplace Ralph Loop or single-pass)
-- `/$PLUGIN_NAME:prp-execute-batch` - Run multiple PRPs sequentially
-- `/$PLUGIN_NAME:prp-execute-isolated` - Execute a PRP with per-task isolation
+- `/$PLUGIN_NAME:prp-create` - Generate Product Requirement Prompt with intent-lock + decision-log
+- `/$PLUGIN_NAME:prp-execute <prp.md> [<prp2.md> ...]` - Execute one or more PRPs end-to-end in a single native Claude Code session
 - `/$PLUGIN_NAME:prp-validate` - Pre-flight PRP validation
 
 ### Agent Teams (Experimental)
@@ -171,7 +169,7 @@ claude
 │       ├── CLAUDE-JAVA-GRADLE.md
 │       └── CLAUDE-JAVA-MAVEN.md
 ├── scripts/
-│   └── prp_runner.py     # Programmatic PRP execution
+│   └── tests/             # Static-validation suite
 ├── CLAUDE.md         # Reference guide
 ├── README.md         # This file
 ├── QUICKSTART.md     # Extended tutorial
@@ -199,27 +197,16 @@ Available templates:
 - **CLAUDE-JAVA-GRADLE.md** - Java 21 + Spring Boot + Gradle
 - **CLAUDE-JAVA-MAVEN.md** - Java 21 + Spring Boot + Maven
 
-## Programmatic PRP Execution
+## Native Long-Run Execution
 
-Use `scripts/prp_runner.py` for CI/CD or batch processing:
+`/KGP:prp-execute` runs PRPs end-to-end in a single native Claude Code session. With 1M-context-capable models (Opus 4.7, Sonnet 4.6 on a plan tier that supports it) and Auto mode, multi-thousand-line PRPs and multi-PRP queues execute without external orchestration.
 
 ```bash
-# Interactive mode
-uv run scripts/prp_runner.py --prp feature-name --interactive
-
-# Headless with JSON output
-uv run scripts/prp_runner.py --prp-path PRPs/active/feature.md --output-format json
+/KGP:prp-execute PRPs/PRP-feature.md
+/KGP:prp-execute PRPs/PRP-foundation.md PRPs/PRP-core.md
 ```
 
-## Ralph Loop (External Plugin)
-
-Iterative retry execution is provided by Anthropic's marketplace plugin. Install once:
-
-```
-/plugin install ralph-loop@claude-plugins-official
-```
-
-Then `/KGP:prp-execute` auto-delegates to `/ralph-loop` when the plugin is installed. Without it, PRPs execute single-pass in-session — still valid, just without the iterative safety net.
+See https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents for Anthropic's harness design guidance.
 
 ## Agent Teams (Experimental)
 

@@ -32,7 +32,7 @@ For each agent file found, extract the name and core competencies. Standard agen
 <objective>
 Generate a complete PRP (Product Requirement Prompt) for: $ARGUMENTS
 
-A PRP provides ALL context needed for Ralph Loop to execute implementation autonomously. The goal is comprehensive XML-structured micro-tasks that an agent can implement without ambiguity.
+A PRP provides ALL context needed for `/KGP:prp-execute` (native single-session execution) to implement the feature autonomously. The goal is comprehensive XML-structured micro-tasks that executor Claude can implement without ambiguity.
 
 This command detects whether input needs expansion and routes through the appropriate workflow.
 </objective>
@@ -105,7 +105,19 @@ Task tool invocation:
     6. **Integration Points**: What existing code does this touch?
 
     Use AskUserQuestion tool to gather information through structured questions.
-    Limit to 3-5 focused questions (you can ask follow-ups based on answers).
+
+    **Hard limit: 5 questions total (3 mandatory + up to 2 optional follow-ups).**
+
+    **Mandatory (always ask):**
+    1. Who is the primary user / role for this feature, and what triggers them to use it?
+    2. What is the single most important success signal — the one observation that proves the feature works?
+    3. What's explicitly OUT of scope for this version?
+
+    **Optional (only ask if a mandatory answer was vague):**
+    4. [If technical context is missing] What framework / database / external service is involved?
+    5. [If acceptance criteria are vague] What's an example input and expected output?
+
+    Do NOT ask more than 5 questions. If the user's answers are still insufficient after 5, surface that to the parent command — don't keep probing.
 
     After gathering sufficient context, output an expanded feature description in this format:
 
@@ -146,30 +158,106 @@ After receiving expanded requirements from the sub-agent:
 
 1. Confirm the expansion is sufficient (50+ words, has acceptance criteria)
 2. If still insufficient, ask ONE direct follow-up question using AskUserQuestion
-3. Proceed to step_3_sizing_assessment with the expanded requirements
+3. Proceed to step_2.5_intent_lock with the expanded requirements (or directly from step_1 if input was DETAILED)
 </post_expansion>
 </step_2_expand>
 
-<step_3_sizing_assessment>
-**PRP Sizing Assessment (MANDATORY - runs automatically)**
+<step_2.5_intent_lock>
+**Intent Lock (B1) — confirm interpretation before generating**
 
-Before generating any PRP files, perform a sizing assessment to determine whether the feature fits in a single PRP or requires splitting into multiple PRPs.
+After expansion (or directly after a DETAILED classification), restate the feature using exactly these 5 anchors and ask the user to confirm. This catches scope drift BEFORE the long architect workflow runs.
+
+<restate>
+Print:
+```
+## Intent Restatement
+
+**What** (the deliverable, in one sentence): [...]
+**Who** (the user / role): [...]
+**Why** (the motivating outcome): [...]
+**Out of scope** (explicitly NOT in this PRP):
+  - [...]
+  - [...]
+**Success signal** (the one observation that proves it works): [...]
+```
+</restate>
+
+<confirm>
+Use AskUserQuestion with question: "Does this restatement match your intent?"
+Options:
+  1. "Matches — proceed to sizing." (Recommended)
+  2. "Close, but adjust [free text]." → apply user's adjustment text and re-print restatement; max 2 adjustment rounds.
+  3. "Significantly off — let me restart with more detail." → loop back to step_2_expand.
+</confirm>
+
+<output>
+Persist the locked anchors in conversation context. They will be written verbatim into the generated PRP's `<intent-anchors>` element (see step_4 / B5).
+</output>
+</step_2.5_intent_lock>
+
+<step_2.7_decision_log>
+**Decision Log (B2) — surface architectural choices before encoding**
+
+During codebase analysis (step_2_analyze_codebase) and research (step_2b_research_existing_solutions), identify every "decision point" — a place where you're choosing between alternatives that the user hasn't explicitly specified. Examples:
+- Library X vs library Y for some capability
+- File location: `src/feature/` vs `src/lib/feature/`
+- Reuse existing component vs write a new one
+- REST vs GraphQL for a new endpoint
+- Sync vs async API style
+- Database column vs separate table for a relationship
+
+<surface_decisions>
+Print:
+```
+## Architectural Decisions Identified
+
+The PRP will encode the following choices unless you override:
+
+| # | Decision | Recommended | Alternative(s) | Rationale |
+|---|----------|-------------|----------------|-----------|
+| 1 | [name]   | [choice]    | [alts]         | [why]     |
+| 2 | ...      | ...         | ...            | ...       |
+```
+</surface_decisions>
+
+<confirm>
+Use AskUserQuestion with multiSelect=true:
+  Question: "Override any of these decisions? (Select to override; leave unchecked to accept recommendation.)"
+  Options: one per decision, label = "Override #N: <decision name>", description = "Currently: <recommended>. Selecting opens free-text for your alternative."
+
+For each option the user selects, prompt with AskUserQuestion (free-text via 'Other') for the user's preferred alternative.
+</confirm>
+
+<output>
+Persist the final decision set (recommended + user-overridden) in conversation context. They will be written into the generated PRP's `<context><decisions>` sub-element so executor Claude knows the path was chosen, not assumed.
+
+**Skip this step entirely if zero non-trivial decisions exist** (a purely mechanical PRP — e.g., "rename function X to Y everywhere" — has no architectural decisions to log).
+</output>
+</step_2.7_decision_log>
+
+<step_3_sizing_assessment>
+**PRP Sizing Assessment (automatic — splitting is a recommendation, not a requirement)**
+
+Before generating any PRP files, perform a sizing assessment. The assessment recommends whether to split the feature across multiple PRPs based on the recommended envelope. The recommendation is informational — if the user has explicitly directed a single PRP regardless of size, honor that directive.
 
 <prp_constraints>
-**Hard Constraints for Every PRP:**
+**Recommended Sizing Envelope (soft — honor explicit user override):**
 
-| Constraint | Limit |
-|------------|-------|
-| Max tasks (all small effort) | 20 |
-| Max tasks (all medium effort) | 15 |
-| Max tasks (mixed small + medium) | 15–20 (weighted toward task complexity) |
-| Max lines per PRP file | 2,400 |
+| Constraint | Recommended Limit |
+|------------|-------------------|
+| Tasks (all small effort) | up to 40 |
+| Tasks (all medium effort) | up to 30 |
+| Tasks (mixed small + medium) | 30–40 (scaled toward complexity) |
+| Lines per PRP file | up to 5,000 |
 | Allowed task effort sizes | Small (S) and Medium (M) only |
 
-**Key Rules:**
-- L and XL tasks MUST be decomposed into S or M tasks before counting
-- Each PRP should contain ONLY small or medium effort tasks
-- If a PRD has significant pseudocode or detailed specifications, account for the line count impact — verbose tasks may push a PRP past 2,400 lines even with fewer tasks
+**Why these are recommendations, not hard caps:**
+Modern Claude Code (1M context Opus 4.7 / Sonnet 4.6) ingests a 5,000-line PRP in one Read with ~98% of the window free for execution. The binding constraint is now human reviewability, which is preference-driven. If the user explicitly says "one PRP, even if big", honor it.
+
+**Key Rules (still apply):**
+- L and XL effort tasks must be decomposed into S or M before counting.
+- Each PRP should contain only S or M effort tasks.
+- Verbose pseudocode pushes line count faster than task count — sanity-check both numbers before recommending a split.
 </prp_constraints>
 
 <assessment_process>
@@ -196,23 +284,21 @@ total_tasks = count of all S + M tasks
 small_count = count of S tasks
 medium_count = count of M tasks
 
-# Task count check
+# Task count check (new envelope)
 if medium_count == 0:
-    max_tasks_per_prp = 20
+    max_tasks_per_prp = 40        # was 20
 elif small_count == 0:
-    max_tasks_per_prp = 15
+    max_tasks_per_prp = 30        # was 15
 else:
-    # Mixed: scale between 15-20 based on medium ratio
     medium_ratio = medium_count / total_tasks
-    max_tasks_per_prp = round(20 - (5 * medium_ratio))
+    max_tasks_per_prp = round(40 - (10 * medium_ratio))   # scales 30–40 by ratio
 
 prps_needed_by_count = ceil(total_tasks / max_tasks_per_prp)
 
-# Line count check (estimate ~80-150 lines per task depending on pseudocode detail)
-estimated_lines = (small_count * 80) + (medium_count * 120) + 200  # 200 for metadata/headers
-prps_needed_by_lines = ceil(estimated_lines / 2400)
+# Line count check (per-task estimates unchanged; budget doubled)
+estimated_lines = (small_count * 80) + (medium_count * 120) + 200
+prps_needed_by_lines = ceil(estimated_lines / 5000)        # was 2400
 
-# Final count
 prps_needed = max(prps_needed_by_count, prps_needed_by_lines)
 ```
 
@@ -301,6 +387,44 @@ Follow the create-prp.md workflow EXACTLY with these inputs:
 **For multi-PRP features:** Repeat steps 4-10 for each PRP, using the task groupings from the sizing assessment.
 </execute_workflow>
 
+<critique_pass>
+**Devil's-Advocate Critique (B3) — internal QA before save**
+
+After the architect skill produces the task list, run this critique pass IN THE SAME CONTEXT (no extra user prompt). For each of the four checks below, flag any task / phase that fails. After the pass, surface flagged items to the user via AskUserQuestion before save.
+
+**Check 1 — Verifiability:** For each task, is the acceptance criterion executable? (Could you write a Bash one-liner that returns 0 on success and non-zero on failure?) "Works correctly", "looks good", "is clean" → flag.
+
+**Check 2 — Phase boundaries:** For each phase boundary, could the next phase actually start before this phase finishes? If yes, the phase boundary is artificial — note it; the user may want to merge phases or reorder.
+
+**Check 3 — Agent fit:** For each agent assignment, does the agent have the tools listed in its agents/<name>.md frontmatter to actually perform this task? Or is the agent assigned for "shape" only? Flag obvious mismatches (e.g., `data-engineer` assigned a UI styling task).
+
+**Check 4 — Handoff integrity:** For each `<handoff><expects>X</expects>`, does some upstream `<handoff><produces>X</produces>` actually exist? Flag dangling expectations.
+
+<flag_format>
+Print, after the critique pass, a single block:
+```
+## Critique Pass Results
+
+| Check | Task / Phase | Issue |
+|-------|--------------|-------|
+| Verifiability | task 2.3 | Acceptance criterion is "works correctly" — replace with executable check |
+| Phase boundary | phase 2 → 3 | Tasks 2.4 and 3.1 have no dependency; consider merging |
+| ... | ... | ... |
+```
+
+If all checks pass on all tasks, print: `Critique pass: clean. Proceeding to save.`
+</flag_format>
+
+<user_confirm_if_flagged>
+If any flags exist, use AskUserQuestion:
+  Question: "Critique pass found N issue(s). How to proceed?"
+  Options:
+    1. "Auto-fix verifiability issues (replace vague criteria with executable checks where possible) and proceed." (Recommended)
+    2. "I'll review the PRP after save and fix manually."
+    3. "Stop — let me adjust the input and regenerate."
+</user_confirm_if_flagged>
+</critique_pass>
+
 <xml_structure_requirements>
 The generated PRP MUST use the full XML structure from templates/prp-template.md:
 
@@ -308,7 +432,25 @@ The generated PRP MUST use the full XML structure from templates/prp-template.md
 <prp name="[feature-name]" version="1.0">
   <metadata>...</metadata>
   <goal>...</goal>
-  <context>...</context>
+  <intent-anchors>
+    <what>...</what>
+    <who>...</who>
+    <why>...</why>
+    <out-of-scope>
+      <item>...</item>
+    </out-of-scope>
+    <success-signal>...</success-signal>
+  </intent-anchors>
+  <context>
+    <decisions>
+      <decision id="D1">
+        <topic>...</topic>
+        <choice>...</choice>
+        <rationale>...</rationale>
+      </decision>
+    </decisions>
+    ...
+  </context>
   <codebase-analysis>
     <existing-patterns>...</existing-patterns>
     <affected-files>...</affected-files>
@@ -350,7 +492,7 @@ The generated PRP MUST use the full XML structure from templates/prp-template.md
 </prp>
 ```
 
-DO NOT use simplified markdown PRP format. Use full XML structure for Ralph Loop compatibility.
+Use the full XML structure. Executor Claude (`/KGP:prp-execute`) reads `<intent-anchors>` to disambiguate execution decisions, `<context><decisions>` to honor locked architectural choices, and `<task agent=...>` / `<acceptance-criteria>` / `<handoff>` to drive the per-task loop. Simplified markdown PRPs miss this structure and execute less accurately.
 </xml_structure_requirements>
 </step_4_invoke_software_architect>
 
@@ -362,10 +504,18 @@ DO NOT use simplified markdown PRP format. Use full XML structure for Ralph Loop
 Save to: `PRPs/PRP-{feature-name}.md`
 
 **Multiple PRPs:**
-Save to:
-- `PRPs/PRP-{feature-name}-part-1.md`
-- `PRPs/PRP-{feature-name}-part-2.md`
-- etc.
+
+Default naming: `PRPs/PRP-{feature-name}-part-1.md`, `-part-2.md`, etc.
+
+**Before saving, offer human-named filenames** via AskUserQuestion:
+  Question: "Multiple PRPs are recommended. Use generic `-part-N` filenames or provide your own?"
+  Options:
+    1. "Use my own names (better for readability)." → for each part, AskUserQuestion (free-text via 'Other') for the suffix. Result: `PRP-{feature-name}-{user-suffix}.md`. (Recommended)
+    2. "Use default `-part-N` filenames." → proceed with the defaults above.
+
+Examples of human-named filenames the user might provide:
+  - `PRP-auth-foundation.md` + `PRP-auth-oauth.md` (instead of `PRP-auth-part-1.md` + `-part-2.md`)
+  - `PRP-payments-stripe-setup.md` + `PRP-payments-checkout-flow.md`
 
 Where {feature-name} is kebab-case derived from the feature (e.g., "user-authentication", "payment-integration").
 
@@ -382,8 +532,8 @@ After saving, verify EACH PRP:
 - [ ] All tasks have agent assignments
 - [ ] All tasks have effort/value rankings (S or M effort only)
 - [ ] Validation commands are project-specific
-- [ ] Task count within limits (max 20 for all-S, max 15 for all-M, 15-20 for mixed)
-- [ ] File does NOT exceed 2,400 lines
+- [ ] Task count within recommended envelope (up to 40 all-S, up to 30 all-M, 30–40 mixed)
+- [ ] File does NOT exceed 5,000 lines (recommended; honor explicit user override for larger PRPs)
 - [ ] No L or XL effort tasks remain (all decomposed to S/M)
 </verification>
 
@@ -412,30 +562,38 @@ Provide completion report:
 - Agents: [list of assigned agents]
 - Estimated scope: [S|M|L|XL]
 
-**Confidence Score:** [X]/10
-[Explanation: Why this score? What might need clarification?]
+**Confidence Rationale:**
 
-**Execute with task isolation (recommended):**
-```bash
-/KGP:prp-execute-isolated PRPs/PRP-{feature-name}.md
-```
+| Dimension | Score | Notes |
+|-----------|-------|-------|
+| Requirement clarity | X/10 | [reason] |
+| Codebase fit | X/10 | [reason] |
+| Library/dependency choices | X/10 | [reason] |
+| Task verifiability | X/10 | [reason — based on critique pass results] |
+| Risk of intent drift | X/10 | [reason — was step 2.5 intent-lock a tight match?] |
+| **Overall** | **X/10** | (geometric mean of above) |
 
-**Execute directly (three-tier dispatch — auto-delegates to marketplace Ralph Loop if installed, else single-pass):**
+**Lowest-confidence dimension:** [name] — recommend addressing before execution: [specific actionable suggestion]
+
+**Execute (single PRP):**
 ```bash
 /KGP:prp-execute PRPs/PRP-{feature-name}.md
 ```
 
-**Execute with Agent Team (experimental):**
+**Execute (multiple related PRPs in one session):**
+```bash
+/KGP:prp-execute PRPs/PRP-{feature-name}-foundation.md PRPs/PRP-{feature-name}-core.md
+```
+
+**Execute with Agent Teams (experimental):**
 ```bash
 /KGP:prp-execute PRPs/PRP-{feature-name}.md --team
 ```
 
-**Or validate first:**
+**Validate first (recommended for new PRP authors):**
 ```bash
 /KGP:prp-validate PRPs/PRP-{feature-name}.md
 ```
-
-[For multi-PRP features, list execution commands for each PRP in order]
 ```
 </report_output>
 </step_5_save_and_report>
@@ -445,12 +603,12 @@ Provide completion report:
 <quality_checklist>
 Before saving, verify EACH PRP meets these criteria:
 
-**Sizing Constraints (MANDATORY):**
+**Sizing Envelope (recommended):**
 - [ ] Sizing assessment was performed before PRP generation
 - [ ] All tasks are Small (S) or Medium (M) effort — no L or XL tasks
-- [ ] Task count within limits: max 20 (all S), max 15 (all M), 15-20 (mixed)
-- [ ] File does NOT exceed 2,400 lines
-- [ ] If multiple PRPs needed, each is independently executable
+- [ ] Task count within recommended envelope: up to 40 (all S), up to 30 (all M), 30–40 (mixed)
+- [ ] File does NOT exceed 5,000 lines (recommended; honor explicit user override)
+- [ ] If multiple PRPs are saved, each is independently executable AND has a meaningful filename (per B7)
 
 **Structure:**
 - [ ] Uses full XML structure (not simplified markdown)
@@ -484,13 +642,13 @@ Avoid these common mistakes:
 - Don't make up requirements not mentioned by user
 
 **PRP Generation:**
-- Don't skip the sizing assessment — it is mandatory and automatic
-- Don't cram an oversized feature into a single PRP — split when constraints require it
+- Don't skip the sizing assessment — it runs automatically and produces a recommendation
+- Don't auto-split unless the feature genuinely benefits from milestone separation; honor explicit single-PRP user requests even at large size
 - Don't leave L or XL effort tasks — decompose them into S/M
-- Don't use simplified markdown format - use full XML
 - Don't use placeholder file paths like "src/feature/index.ts"
 - Don't generate vague acceptance criteria like "works correctly"
 - Don't skip codebase analysis phase
+- Don't skip the intent-lock step — drift is cheaper to catch before generation than after
 - Don't forget validation commands
 
 **Agent Assignment:**
@@ -505,9 +663,12 @@ Avoid these common mistakes:
 - Short inputs expanded through sub-agent questioning
 - **Sizing assessment performed automatically before PRP generation**
 - **All tasks classified as Small (S) or Medium (M) effort only**
-- **Task count within PRP limits (20 S / 15 M / 15-20 mixed)**
-- **No single PRP exceeds 2,400 lines**
-- **Multi-PRP splitting applied when constraints require it**
+- **Task count within recommended envelope (up to 40 S / up to 30 M / 30–40 mixed)**
+- **No single PRP exceeds 5,000 lines (recommended)**
+- **Multi-PRP splitting applied when it improves human reviewability or aligns with logical milestones**
+- **Intent-lock confirmed with user before generation (B1)**
+- **Architectural decisions logged in `<context><decisions>` (B2)**
+- **Devil's-advocate critique pass run before save (B3)**
 - Software-architect workflow executed completely
 - PRP uses full XML structure with micro-tasks
 - All tasks have agent assignments and effort/value rankings

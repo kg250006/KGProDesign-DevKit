@@ -1,7 +1,7 @@
 # PRP Best Practices
 
 <purpose>
-Guidelines for creating high-quality PRPs that execute successfully in Ralph Loop and minimize implementation friction.
+Guidelines for creating high-quality PRPs that execute successfully in `/KGP:prp-execute` (native single-session) and minimize implementation friction.
 </purpose>
 
 <core_principles>
@@ -111,15 +111,15 @@ This prevents:
 
 </core_principles>
 
-<ralph_loop_integration>
+<native_execution_integration>
 
-## Ralph Loop Compatibility
+## Native `/KGP:prp-execute` Compatibility
 
-PRPs are designed for Ralph Loop execution. Ensure:
+PRPs are designed for native single-session execution. Ensure:
 
 ### 1. XML Structure for Parsing
 
-Ralph Loop parses XML to extract tasks. Use consistent structure:
+`/KGP:prp-execute` parses XML to extract tasks. Use consistent structure:
 - `<phases>` contains `<phase>` elements
 - `<phase>` contains `<tasks>`
 - `<task>` has predictable attributes and children
@@ -133,7 +133,7 @@ Each task needs an agent assignment for routing:
 
 ### 3. Validation Commands
 
-Include project-specific commands that Ralph Loop can execute:
+Include project-specific commands that executor Claude can run via Bash:
 ```xml
 <validation>
   <level name="syntax" run-after="each-task">
@@ -149,7 +149,7 @@ Tasks should have clear completion indicators:
 - Validation commands that exit cleanly
 - File existence checks
 
-</ralph_loop_integration>
+</native_execution_integration>
 
 <effort_estimation>
 

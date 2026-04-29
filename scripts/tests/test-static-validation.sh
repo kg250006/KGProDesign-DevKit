@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# Tier 1 — Static validation for KGProDesign-DevKit v2.0.0 changes.
-# Validates YAML frontmatter, JSON manifests, stale references, hooks shape,
-# and argument-hint parity. No Claude CLI or plugin installation required.
+# Static validation for KGProDesign-DevKit v2.2.0 native PRP execution.
+# Validates YAML frontmatter, JSON manifests, deletions of obsolete files,
+# absence of obsolete language, and structural elements introduced in v2.2.0.
+# No Claude CLI or plugin installation required.
 
 set -u
 
@@ -18,12 +19,12 @@ fail() { FAIL=$((FAIL + 1)); FAILURES+=("$1"); printf "  \033[31mFAIL\033[0m %s\
 section() { printf "\n\033[1m== %s ==\033[0m\n" "$1"; }
 
 # --------------------------------------------------------------------
-section "1. YAML frontmatter parse — changed commands + new skill"
+section "1. YAML frontmatter parse — surviving commands + skills"
 
 YAML_TARGETS=(
   "commands/prp-execute.md"
-  "commands/prp-execute-batch.md"
   "commands/prp-create.md"
+  "commands/prp-validate.md"
   "commands/help.md"
   "commands/team-invoke.md"
   "skills/agent-teams/SKILL.md"
@@ -39,13 +40,11 @@ for f in "${YAML_TARGETS[@]}"; do
     fail "$f — missing opening frontmatter delimiter"
     continue
   fi
-  # Extract between first two "---" lines and validate it parses
   fm=$(awk '/^---$/{c++; next} c==1{print} c==2{exit}' "$f")
   if [ -z "$fm" ]; then
     fail "$f — empty or malformed frontmatter"
     continue
   fi
-  # Check required key: description
   if ! printf "%s\n" "$fm" | grep -qE '^description:'; then
     fail "$f — frontmatter missing 'description:' key"
     continue
@@ -54,7 +53,7 @@ for f in "${YAML_TARGETS[@]}"; do
 done
 
 # --------------------------------------------------------------------
-section "2. JSON validity — plugin.json + hooks.json"
+section "2. JSON validity — plugin.json + hooks.json + marketplace.json"
 
 validate_json() {
   local path="$1"
@@ -80,37 +79,49 @@ validate_json() {
 }
 
 validate_json ".claude-plugin/plugin.json"
+validate_json ".claude-plugin/marketplace.json"
 validate_json "hooks/hooks.json"
 
-# Plugin version bump check — post-Ralph removal requires major >= 2
+# v2.2.0 version invariants
 if command -v jq >/dev/null 2>&1; then
   ver=$(jq -r '.version' .claude-plugin/plugin.json 2>/dev/null)
-  major="${ver%%.*}"
-  if [ "$major" -ge 2 ] 2>/dev/null; then
-    pass "plugin.json version is $ver (major >= 2)"
+  if [ "$ver" = "2.2.0" ]; then
+    pass "plugin.json version is 2.2.0"
   else
-    fail "plugin.json version is '$ver' (expected major >= 2 for v2.x)"
+    fail "plugin.json version is '$ver' (expected 2.2.0)"
   fi
 
-  # marketplace.json version should match plugin.json
   mkt_ver=$(jq -r '.metadata.version' .claude-plugin/marketplace.json 2>/dev/null)
   if [ "$mkt_ver" = "$ver" ]; then
-    pass "marketplace.json version ($mkt_ver) matches plugin.json"
+    pass "marketplace.json metadata.version ($mkt_ver) matches plugin.json"
   else
-    fail "marketplace.json version ($mkt_ver) does not match plugin.json ($ver)"
+    fail "marketplace.json metadata.version ($mkt_ver) does not match plugin.json ($ver)"
   fi
 
-  # Keyword swap check
+  mkt_plugin_ver=$(jq -r '.plugins[0].version' .claude-plugin/marketplace.json 2>/dev/null)
+  if [ "$mkt_plugin_ver" = "$ver" ]; then
+    pass "marketplace.json plugins[0].version ($mkt_plugin_ver) matches plugin.json"
+  else
+    fail "marketplace.json plugins[0].version ($mkt_plugin_ver) does not match plugin.json ($ver)"
+  fi
+
   if jq -e '.keywords | index("agent-teams")' .claude-plugin/plugin.json >/dev/null 2>&1; then
     pass "plugin.json keywords include 'agent-teams'"
   else
     fail "plugin.json keywords missing 'agent-teams'"
   fi
 
-  if jq -e '.keywords | index("ralph-loop")' .claude-plugin/plugin.json >/dev/null 2>&1; then
-    fail "plugin.json keywords still include 'ralph-loop' (should have been removed)"
+  if jq -e '.keywords | index("iterative-development")' .claude-plugin/plugin.json >/dev/null 2>&1; then
+    fail "plugin.json keywords still include 'iterative-development' (should have been removed in v2.2.0)"
   else
-    pass "plugin.json keywords do NOT include 'ralph-loop'"
+    pass "plugin.json keywords do NOT include 'iterative-development'"
+  fi
+
+  desc=$(jq -r '.description' .claude-plugin/plugin.json 2>/dev/null)
+  if printf "%s" "$desc" | grep -qiE 'three-tier|ralph loop|marketplace'; then
+    fail "plugin.json description still contains obsolete language: $desc"
+  else
+    pass "plugin.json description has no obsolete language"
   fi
 fi
 
@@ -118,48 +129,55 @@ fi
 if command -v jq >/dev/null 2>&1; then
   hook_count=$(jq '.hooks | length' hooks/hooks.json 2>/dev/null)
   if [ "$hook_count" = "0" ]; then
-    pass "hooks.json hooks object is empty (as expected post-Ralph removal)"
+    pass "hooks.json hooks object is empty"
   else
     fail "hooks.json has $hook_count hooks registered (expected 0)"
   fi
 fi
 
 # --------------------------------------------------------------------
-section "3. Deleted files — confirm removal"
+section "3. v2.2.0 deletions — confirm removal"
 
 DELETED=(
-  "commands/ralph-loop.md"
-  "commands/cancel-ralph.md"
-  "scripts/setup-ralph-loop.sh"
-  "scripts/setup-ralph-loop.ps1"
-  "scripts/ralph-auto.sh"
-  "scripts/ralph-auto.ps1"
-  "hooks/stop-hook.sh"
-  "hooks/stop-hook.js"
-  "hooks/stop-hook.ps1"
-  "hooks/session-start-hook.sh"
-  "hooks/session-start-hook.js"
-  "hooks/session-start-hook.ps1"
+  "commands/prp-execute-batch.md"
+  "commands/prp-execute-isolated.md"
+  "scripts/prp-orchestrator.sh"
+  "scripts/prp-orchestrator.ps1"
+  "scripts/prp-batch-runner.sh"
+  "scripts/prp-batch-runner.ps1"
+  "scripts/prp-to-tasks.js"
+  "scripts/tests/test-detection-logic.sh"
+  "hooks/prp-safety-hook.sh"
+  "hooks/prp-safety-hook.ps1"
+  "hooks/prp-safety-hook.js"
+  "templates/current-task.md.template"
 )
 
 for f in "${DELETED[@]}"; do
   if [ -e "$f" ]; then
-    fail "$f — still exists (should have been deleted)"
+    fail "$f — still exists (should have been deleted in v2.2.0)"
   else
     pass "$f — confirmed deleted"
   fi
 done
 
 # --------------------------------------------------------------------
-section "4. New files — confirm presence"
+section "4. Surviving structural files — confirm presence"
 
-NEW_FILES=(
+REQUIRED=(
+  "commands/prp-execute.md"
+  "commands/prp-create.md"
+  "commands/prp-validate.md"
   "commands/team-invoke.md"
+  "hooks/hooks.json"
   "skills/agent-teams/SKILL.md"
   "skills/agent-teams/references/playbooks.md"
+  "skills/software-architect/SKILL.md"
+  "templates/prp_base.md"
+  "templates/prp_planning.md"
 )
 
-for f in "${NEW_FILES[@]}"; do
+for f in "${REQUIRED[@]}"; do
   if [ -f "$f" ]; then
     pass "$f — present"
   else
@@ -168,111 +186,103 @@ for f in "${NEW_FILES[@]}"; do
 done
 
 # --------------------------------------------------------------------
-section "5. Stale-reference sweep (docs that users will read)"
+section "5. Obsolete-language sweep — repo-wide grep"
 
-# Look for references to deleted commands in docs (ignoring migration notes
-# that are SUPPOSED to mention the removed commands). We only flag cases
-# that treat them as CURRENT rather than HISTORICAL.
+# Strings that should NOT appear in surviving docs (except documented exceptions
+# in CLAUDE.md migration block and PRPs/ historical files).
+OBSOLETE_PATTERN='ralph-loop|RALPH_TIER|prp-orchestrator|prp-batch-runner|prp-to-tasks|prp-safety-hook|prp-execute-isolated|prp-execute-batch|current-task\.md\.template'
 
-DOC_TARGETS=(
-  "README.md"
+# Targets to grep — surviving commands + top-level user docs + skills.
+SURVEY_TARGETS=(
+  "commands"
+  "skills"
+  "agents"
   "CLAUDE.md"
-  "commands/help.md"
-  "commands/prp-create.md"
-  "commands/prp-execute.md"
-  "commands/prp-execute-batch.md"
-  "commands/prp-execute-isolated.md"
+  "README.md"
+  "INSTALL.md"
 )
 
-# Look for /KGP:ralph-loop or /KGP:cancel-ralph used as active syntax
-# (not prefixed with "removed" / "deprecated" / "migration" context)
-for f in "${DOC_TARGETS[@]}"; do
-  [ -f "$f" ] || continue
-  # Grep for /KGP:ralph-loop in a code fence line (common usage pattern)
-  if grep -nE '^\s*/KGP:ralph-loop[[:space:]]' "$f" >/dev/null 2>&1; then
-    fail "$f — appears to document /KGP:ralph-loop as active syntax"
-  fi
-  if grep -nE '^\s*/KGP:cancel-ralph[[:space:]]*$' "$f" >/dev/null 2>&1; then
-    fail "$f — appears to document /KGP:cancel-ralph as active syntax"
-  fi
-done
-
-# Make sure marketplace form `/ralph-loop` IS referenced in user-facing docs
-if grep -qE '/ralph-loop' README.md; then
-  pass "README.md references marketplace '/ralph-loop'"
-else
-  fail "README.md does not mention marketplace '/ralph-loop'"
-fi
-
-if grep -qE '/ralph-loop' commands/help.md; then
-  pass "help.md references marketplace '/ralph-loop'"
-else
-  fail "help.md does not mention marketplace '/ralph-loop'"
-fi
-
-if grep -qE '/ralph-loop' commands/prp-execute.md; then
-  pass "prp-execute.md emits marketplace '/ralph-loop' (not /KGP:ralph-loop)"
-else
-  fail "prp-execute.md does not mention '/ralph-loop'"
-fi
-
-# Sanity check: prp-execute.md must NOT emit /KGP:ralph-loop as active syntax.
-# Allow references in negation context (e.g. "NOT /KGP:ralph-loop") since those
-# are warning the reader away from the old form.
-bad_hits=$(grep -nE '/KGP:ralph-loop' commands/prp-execute.md \
-  | grep -viE '(NOT[[:space:]]*`?/KGP:ralph-loop|never[[:space:]]*`?/KGP:ralph-loop|not[[:space:]]*`?/KGP:ralph-loop)' \
+obsolete_hits=$(grep -rEn "$OBSOLETE_PATTERN" "${SURVEY_TARGETS[@]}" 2>/dev/null \
+  | grep -vE 'rm -f' \
+  | grep -vE 'removed (the forked|in v2|/KGP:|/\$PLUGIN_NAME:)' \
+  | grep -vE '\*\*v2\.[02]\.0\*\*' \
   || true)
-if [ -n "$bad_hits" ]; then
-  fail "prp-execute.md references /KGP:ralph-loop outside negation context"
-  printf "%s\n" "$bad_hits" | sed 's/^/    /'
+
+if [ -z "$obsolete_hits" ]; then
+  pass "No obsolete-string hits in surviving docs (migration cleanup commands excluded)"
 else
-  pass "prp-execute.md /KGP:ralph-loop mentions are only in negation context"
+  fail "Obsolete strings found in surviving docs:"
+  printf "%s\n" "$obsolete_hits" | head -20 | sed 's/^/    /'
+fi
+
+# Old sizing constants (2,400 lines / max 20 / max 15) should be gone from prp-create
+# EXCEPT in code-comment context that documents the version bump (e.g. "# was 2400").
+if grep -E '2,?400' commands/prp-create.md | grep -vE '#\s*was\s*2400|#\s*was\s*2,?400' >/dev/null 2>&1; then
+  fail "commands/prp-create.md still references old line cap (2400) outside 'was N' comment context"
+else
+  pass "commands/prp-create.md old line-cap references are only in 'was N' comments"
 fi
 
 # --------------------------------------------------------------------
-section "6. --team / --isolated mutex documented consistently"
+section "6. v2.2.0 prp-execute.md structural invariants"
 
-MUTEX_TARGETS=(
-  "commands/prp-execute.md"
-  "commands/prp-execute-batch.md"
-  "CLAUDE.md"
-  "README.md"
-  "commands/help.md"
-  "skills/agent-teams/SKILL.md"
-)
-
-for f in "${MUTEX_TARGETS[@]}"; do
-  [ -f "$f" ] || { fail "$f — missing"; continue; }
-  if grep -qiE '(mutually exclusive|mutex|not both)' "$f"; then
-    pass "$f — mentions mutex"
-  else
-    fail "$f — does NOT mention --team/--isolated mutex"
-  fi
-done
+PE="commands/prp-execute.md"
+if [ -f "$PE" ]; then
+  # Should NOT contain three-tier dispatch internals OR active references to removed flags.
+  # Allow mentions in "are removed" / "no longer" negation context (the doc tells users
+  # those flags are gone — that's correct, not a bug).
+  for s in 'RALPH_TIER' 'Tier 1' 'Tier 2' 'Tier 3' 'marketplace'; do
+    if grep -q "$s" "$PE"; then
+      fail "prp-execute.md still contains '$s' (should be removed in v2.2.0)"
+    else
+      pass "prp-execute.md does not contain '$s'"
+    fi
+  done
+  # Removed-flags references must only appear in negation context.
+  for s in '--max-iterations' '--completion-promise' '--isolated'; do
+    bad=$(grep -n -- "$s" "$PE" | grep -viE 'are removed|no longer|removed in|v2\.2\.0|prior versions' || true)
+    if [ -n "$bad" ]; then
+      fail "prp-execute.md references '$s' outside negation context"
+      printf "%s\n" "$bad" | sed 's/^/    /'
+    else
+      pass "prp-execute.md '$s' mentions are only in negation context"
+    fi
+  done
+  # Should contain new structural blocks
+  for s in 'execution_discipline' 'operating_mode' 'ALL PRPs COMPLETE'; do
+    if grep -q "$s" "$PE"; then
+      pass "prp-execute.md contains '$s'"
+    else
+      fail "prp-execute.md missing '$s'"
+    fi
+  done
+else
+  fail "$PE — missing"
+fi
 
 # --------------------------------------------------------------------
-section "7. Bash syntax check — RALPH_TIER detection block"
+section "7. v2.2.0 prp-create.md structural invariants"
 
-# Extract the detection bash block from prp-execute.md and parse it.
-tmpfile=$(mktemp)
-trap 'rm -f "$tmpfile"' EXIT
-
-# Pull out the first ```bash ... ``` fence from prp-execute.md
-awk '
-  /^```bash$/ { inblock=1; next }
-  /^```$/ && inblock { exit }
-  inblock { print }
-' commands/prp-execute.md > "$tmpfile"
-
-if [ ! -s "$tmpfile" ]; then
-  fail "Could not extract bash block from prp-execute.md"
+PC="commands/prp-create.md"
+if [ -f "$PC" ]; then
+  # New sizing constants (use proper regex alternation in -E mode)
+  for s in '5,?000' 'up to 40' 'up to 30'; do
+    if grep -qE "$s" "$PC"; then
+      pass "prp-create.md contains new sizing '$s'"
+    else
+      fail "prp-create.md missing new sizing '$s'"
+    fi
+  done
+  # New structural blocks (B1, B2, B3, B5)
+  for s in 'intent-anchors|intent_lock' 'decision_log|<decisions>' 'critique_pass' '[Cc]onfidence [Rr]ationale'; do
+    if grep -qiE "$s" "$PC"; then
+      pass "prp-create.md contains new block '$s'"
+    else
+      fail "prp-create.md missing new block '$s'"
+    fi
+  done
 else
-  if bash -n "$tmpfile" 2>/dev/null; then
-    pass "prp-execute.md detection bash block parses cleanly"
-  else
-    fail "prp-execute.md detection bash block has syntax errors"
-    bash -n "$tmpfile" 2>&1 | sed 's/^/    /'
-  fi
+  fail "$PC — missing"
 fi
 
 # --------------------------------------------------------------------

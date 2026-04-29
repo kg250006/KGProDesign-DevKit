@@ -196,7 +196,7 @@ When your work involves specialized methodologies, invoke the appropriate skill 
 - **Purpose**: Create PRPs (codebase-specific implementation blueprints) or PRDs (portable specifications) with proper XML structure
 - **When to use**:
   - Creating Product Requirement Documents (PRDs)
-  - Creating Product Requirement Prompts (PRPs) for Ralph Loop
+  - Creating Product Requirement Prompts (PRPs) for `/KGP:prp-execute`
   - Converting PRDs to codebase-specific PRPs
   - Documenting technical architectures with structured requirements
   - Writing specifications that need machine-parseable format

@@ -83,9 +83,9 @@ You should see: `Successfully added marketplace: KGP`
 | Component | Count | Description |
 |-----------|-------|-------------|
 | Agents | 8 | Frontend, Backend, Data, QA, DevOps, Docs, Project Coordinator, Config Auditor |
-| Commands | 26 | Including Ralph Loop, PRP workflow, debugging, and creation toolkit |
+| Commands | 23 | PRP workflow (create/validate/execute), debugging, creation toolkit, Agent Teams |
 | Skills | 16 | Reusable knowledge modules for development tasks |
-| Hooks | 2 | Event-driven automation |
+| Hooks | 0 | Plugin manifest retains an empty hook map for future use |
 
 ---
 

@@ -1,5 +1,5 @@
 ---
-description: "[KGP] Validate PRP for Ralph Loop compatibility and auto-fix issues using software-architect skill"
+description: "[KGP] Validate PRP for native /KGP:prp-execute compatibility and auto-fix issues using software-architect skill"
 argument-hint: <path-to-prp.md> [--fix] [--strict]
 allowed-tools: [Read, Write, Edit, Bash, Glob, Grep, WebFetch, AskUserQuestion]
 ---
@@ -27,7 +27,7 @@ Use this registry in step_3_task_validation to verify agent assignments are vali
 </agent_discovery>
 
 <objective>
-Validate PRP at $ARGUMENTS for Ralph Loop compatibility. Detect issues, categorize by severity, and automatically fix problems using pattern-based fixes or the software-architect skill.
+Validate PRP at $ARGUMENTS for native `/KGP:prp-execute` compatibility. Detect issues, categorize by severity, and automatically fix problems using pattern-based fixes or the software-architect skill.
 
 This ensures PRPs can be executed by `/$PLUGIN_NAME:prp-execute` without errors.
 </objective>

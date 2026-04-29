@@ -8,33 +8,24 @@ Please explain the following to the user:
 
 ## What is KGProDesign-DevKit?
 
-A Claude Code plugin providing agents, commands, skills, and hooks for PRP-driven development. v2.0.0 replaces the forked Ralph Loop with a three-tier execution strategy and adds experimental Agent Teams.
+A Claude Code plugin providing agents, commands, skills, and hooks for PRP-driven development. v2.2.0 simplifies PRP execution into a single native single-session command with no external scripts or iteration loops.
 
-## Execution Model — Three-Tier PRP Dispatch
+## Execution Model — Native Single-Session
 
-`/KGP:prp-execute` detects your environment and chooses a tier automatically:
+`/KGP:prp-execute` runs one or more PRPs end-to-end in this Claude Code session. With 1M-context-capable models (Opus 4.7, Sonnet 4.6 on a plan tier that supports it) and Auto mode, multi-thousand-line PRPs and multi-PRP queues execute without external orchestration.
 
-- **Tier 1** — Marketplace plugin `ralph-loop@claude-plugins-official` installed → delegates to `/ralph-loop` for iterative retry.
-- **Tier 2** — Plugin not installed → runs single-pass in-session, prints install recommendation.
-- **Tier 3** — Detection primitives missing (no `jq` or `claude` CLI) → single-pass with neutral note.
-
-Install the marketplace Ralph Loop once:
-
-```
-/plugin install ralph-loop@claude-plugins-official
-```
+See https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents for Anthropic's harness design guidance.
 
 ## Available Commands
 
 ### PRP Workflow
 
 ```bash
-/KGP:prp-create "feature description"              # Generate a PRP
+/KGP:prp-create "feature description"              # Generate a PRP (with intent-lock + decision-log)
 /KGP:prp-validate PRPs/feature.md                  # Pre-flight validation
-/KGP:prp-execute PRPs/feature.md                   # Execute via three-tier dispatch
+/KGP:prp-execute PRPs/feature.md                   # Execute one PRP, native single session
+/KGP:prp-execute PRPs/a.md PRPs/b.md PRPs/c.md     # Execute multiple PRPs in one session
 /KGP:prp-execute PRPs/feature.md --team            # Execute with Agent Team (experimental)
-/KGP:prp-execute-batch <prp1> <prp2> ...           # Run multiple PRPs sequentially
-/KGP:prp-execute-isolated PRPs/feature.md          # Hard per-task isolation (large PRPs)
 ```
 
 ### Agent Teams (Experimental)
@@ -53,16 +44,7 @@ Then:
 /KGP:prp-execute <prp> --team                      # Auto-partition PRP across team
 ```
 
-**Recipes:** `implementation`, `review`, `research`, `hypothesis`. Mutex: `--team` and `--isolated` cannot both be set.
-
-### Direct Marketplace Ralph Loop
-
-If `ralph-loop@claude-plugins-official` is installed, call it directly:
-
-```bash
-/ralph-loop "<prompt>" --max-iterations 20 --completion-promise "DONE"
-/cancel-ralph
-```
+**Recipes:** `implementation`, `review`, `research`, `hypothesis`.
 
 ## Available Agents
 
@@ -82,19 +64,24 @@ Use the `Task` tool with `subagent_type` to delegate work:
 | `slash-command-auditor` | Slash command audits |
 | `subagent-auditor` | Subagent audits |
 
-## Migration from v1.x
+## Migration
 
-The forked `/KGP:ralph-loop` and `/KGP:cancel-ralph` commands are removed in v2.0.0. To preserve iterative execution, install the marketplace plugin above — `/KGP:prp-execute` will auto-delegate.
+- **v2.0.0** removed the forked `/KGP:ralph-loop` and `/KGP:cancel-ralph` commands.
+- **v2.2.0** removed `/KGP:prp-execute-batch` and `/KGP:prp-execute-isolated`. Their use cases are absorbed by `/KGP:prp-execute` accepting multiple PRP paths and by Claude Code's native auto-compaction + subagent delegation.
 
 Clean stale state files from existing projects:
 
 ```bash
+# v2.0.0 cleanup
 rm -f .claude/ralph-loop.local.md .claude/KGP:ralph-loop.local.md .claude/ralph-progress.md
+
+# v2.2.0 cleanup
+rm -f .claude/prp-orchestrator-state.log .claude/current-task.md .claude/prp-progress.md .claude/prp-batch-progress.md
 ```
 
 ## Learn More
 
-- Marketplace Ralph Loop: `ralph-loop@claude-plugins-official`
-- Agent Teams docs: https://code.claude.com/docs/en/agent-teams
+- Anthropic harness design: https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents
+- Auto mode: https://code.claude.com/docs/en/permissions#permission-modes
+- Subagents: https://code.claude.com/docs/en/sub-agents
 - Agent Teams skill: `skills/agent-teams/SKILL.md` (playbooks at `references/playbooks.md`)
-- Ralph Wiggum technique (original): https://ghuntley.com/ralph/

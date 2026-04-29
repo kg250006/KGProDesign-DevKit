@@ -27,7 +27,7 @@ Help decide whether to create a PRP, PRD, or both based on the current situation
 | Aspect | PRP (Product Requirement Prompt) | PRD (Product Requirement Document) |
 |--------|----------------------------------|-----------------------------------|
 | **Purpose** | Implementation blueprint | Stakeholder specification |
-| **Audience** | Claude/Ralph Loop, developers | Product team, stakeholders, any team |
+| **Audience** | `/KGP:prp-execute` (Claude), developers | Product team, stakeholders, any team |
 | **Specificity** | Codebase-specific | Codebase-agnostic |
 | **Content** | File paths, pseudocode, agent assignments | User stories, requirements, API contracts |
 | **Output** | Executable tasks | Transferable specification |
@@ -56,7 +56,7 @@ Why:
 - Skip unnecessary documentation overhead
 - Get to implementation faster
 - Still have structured task breakdown
-- Works directly with Ralph Loop
+- Works directly with `/KGP:prp-execute`
 
 ### Scenario 3: "This feature will be used in multiple projects"
 **Recommendation:** Create **PRD** only
