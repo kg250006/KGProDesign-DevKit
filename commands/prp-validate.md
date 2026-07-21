@@ -29,7 +29,7 @@ Use this registry in step_3_task_validation to verify agent assignments are vali
 <objective>
 Validate PRP at $ARGUMENTS for native `/KGP:prp-execute` compatibility. Detect issues, categorize by severity, and automatically fix problems using pattern-based fixes or the software-architect skill.
 
-This ensures PRPs can be executed by `/$PLUGIN_NAME:prp-execute` without errors.
+This ensures PRPs can be executed by `/KGP:prp-execute` without errors.
 </objective>
 
 <options>
@@ -188,6 +188,28 @@ For each placeholder found:
 ```
 </step_5_placeholder_check>
 
+<step_5.5_sizing_and_design_check>
+**Sizing & Design Advisory Checks (WARNING severity only)**
+
+**Sizing check** — count tasks and file lines:
+```
+task_count = number of <task> elements
+line_count = wc -l on the PRP file
+```
+
+| Condition | Advisory |
+|-----------|----------|
+| line_count > 5,000 | **WARNING**: "PRP exceeds the recommended 5,000-line envelope ([N] lines). Long runs risk mid-execution context compaction. Recommend splitting via /KGP:prp-create's sizing assessment — unless the user explicitly requested a single large PRP." |
+| task_count > 40 | **WARNING**: "Task count ([N]) exceeds the recommended envelope (≤40 all-S / ≤30 all-M / 30–40 mixed). Recommend splitting." |
+| Any task with effort="L" or effort="XL" | **FIXABLE**: L/XL tasks must be decomposed into S/M. |
+
+**Design-phase check** — if any task is assigned `agent="frontend-engineer"` OR task descriptions mention pages/components/UI:
+- If no `<phase name="Design Foundation">` (or equivalent phase-0 token/design tasks) exists → **WARNING**: "UI-bearing PRP has no Design Foundation phase. Recommend adding design-token setup and a component inventory before implementation tasks (see /KGP:prp-create design_first_frontend)."
+- If `<validation level="integration">` has no `verify="visual"` criterion → **WARNING**: "No visual QA gate. Recommend adding a screenshot-critique-refine criterion (ui-visual-testing skill)."
+
+These advisories never block execution — they inform the readiness report.
+</step_5.5_sizing_and_design_check>
+
 <step_6_categorize_issues>
 **Categorize All Issues**
 
@@ -271,7 +293,7 @@ ELSE:
 **Complex Fixes (invoke software-architect skill):**
 
 For issues requiring context or decisions:
-1. Invoke `/$PLUGIN_NAME:software-architect`
+1. Invoke the `KGP:software-architect` skill via the Skill tool
 2. Describe the specific issue
 3. Let the skill regenerate the section with proper structure
 4. The skill will:
@@ -411,19 +433,19 @@ ELSE:
 [If READY:]
 PRP is ready for execution. Run:
 ```
-/$PLUGIN_NAME:prp-execute [path-to-prp]
+/KGP:prp-execute [path-to-prp]
 ```
 
 [If FIXED:]
 Issues were auto-fixed. Review changes and run:
 ```
-/$PLUGIN_NAME:prp-execute [path-to-prp]
+/KGP:prp-execute [path-to-prp]
 ```
 
 [If NEEDS_FIXES:]
 Address remaining issues manually or run with --fix flag:
 ```
-/$PLUGIN_NAME:prp-validate [path-to-prp] --fix
+/KGP:prp-validate [path-to-prp] --fix
 ```
 
 [If BLOCKED:]
@@ -432,14 +454,14 @@ Critical issues prevent execution. Address these first:
 
 Consider regenerating with software-architect skill:
 ```
-/$PLUGIN_NAME:prp-create "[feature description]"
+/KGP:prp-create "[feature description]"
 ```
 </output_format>
 
 <software_architect_integration>
 When invoking the software-architect skill for complex fixes:
 
-1. Invoke `/$PLUGIN_NAME:software-architect`
+1. Invoke the `KGP:software-architect` skill via the Skill tool
 2. Signal intent: "Fix PRP issues" or "Regenerate section"
 3. Provide context:
    - Current PRP content

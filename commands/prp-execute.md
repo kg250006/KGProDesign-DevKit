@@ -16,13 +16,16 @@ Read every PRP path provided in $ARGUMENTS, then execute every task across all P
 
 **Recommended (not required):**
 
-- Run on a Claude Code model with 1M-token context where your plan tier supports it (Opus 4.7, Sonnet 4.6). A 5,000-line PRP fits comfortably with room for execution; multiple PRPs in one invocation also fit.
+- Run on a Claude Code model with 1M-token context where your plan tier supports it (Sonnet 5, Opus 4.8, or Fable 5). A 5,000-line PRP fits comfortably with room for execution; multiple PRPs in one invocation also fit.
 - Enable Auto mode (`Shift+Tab` to cycle, or `autoMode` block in `settings.json`) for unattended runs. See https://code.claude.com/docs/en/permissions#permission-modes.
-- Auto-compaction is on by default and will preserve user requests + key code while summarizing tool noise. See https://code.claude.com/docs/en/how-claude-code-works#the-context-window.
+- **Context hygiene beats compaction reliance.** Delegate verbose-output tasks (large test runs, exploratory research, builds) to subagents via the Task tool so their noise never enters the main context. Auto-compaction is a safety net, not a strategy.
+- Checkpoints are automatic at each user prompt; `/rewind` recovers from a bad mid-run state without restarting the whole queue.
+
+**Remote monitoring:** for multi-hour runs, start the run locally, then attach to this live session from claude.ai/code or the mobile app (remote control). Halt-condition questions (e.g., a destructive-action approval) can be answered from anywhere — the session keeps running on the local machine.
 
 **Trade-off — read this once:**
 
-Anthropic's engineering writing on long-running tasks (https://www.anthropic.com/engineering/harness-design-long-running-apps, https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents) notes that some long-running scenarios benefit from full context resets between phases rather than relying on auto-compaction alone. This command intentionally trades that off for simplicity: one session, end-to-end. If a single PRP is so large that auto-compaction starts erroring (Claude Code halts auto-compaction when summaries refill immediately), delegate verbose-output tasks to subagents via the Task tool — that gives you fresh context per subagent without splitting the run.
+Anthropic's engineering writing on long-running tasks (https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents) notes that some long-running scenarios benefit from full context resets between phases rather than relying on compaction alone. This command intentionally trades that off for simplicity: one session, end-to-end. If a single PRP is so large that context pressure becomes a problem, delegate verbose-output tasks to subagents via the Task tool — that gives you fresh context per subagent without splitting the run. (And next time, split the PRP: `/KGP:prp-validate` warns about oversized PRPs before execution.)
 
 **Default permission mode also works.** If Auto mode isn't available, the command will pause for user approval at tool boundaries; once approved, execution discipline (below) applies.
 
@@ -50,7 +53,7 @@ Do none of those things. The user already approved the entire run by invoking th
 
 **Forbidden halt reasons:**
 
-- "Context is getting large." Auto-compaction handles it. If compaction is failing, delegate the next verbose task to a subagent via the Task tool.
+- "Context is getting large." Delegate the next verbose task to a subagent via the Task tool and keep going. Auto-compaction is the fallback, not a reason to stop.
 - "I should check in with the user." No, you shouldn't. Continue.
 - "This is taking a while." Yes. Continue.
 - "I've completed phase 1, want to confirm before phase 2?" No, continue to phase 2.
@@ -60,6 +63,7 @@ Do none of those things. The user already approved the entire run by invoking th
 
 - The subagent's main-context return is a summary, not the full work. That's fine — the work itself happened in the subagent's isolated context.
 - Don't delegate every task by default; delegate when a task's output would be verbose (large file reads, exploratory grep, multi-file research) and you want to preserve main-context budget for later tasks.
+- **Deterministic fan-out → Workflow tool.** If a phase is the same mechanical operation across many independent items (apply one pattern to N files, verify N success criteria independently), and the Workflow tool is available in this session, prefer it over ad-hoc subagent spawning — it runs the fan-out deterministically with parallel agents and returns structured results.
 
 </execution_discipline>
 
@@ -154,7 +158,13 @@ After every task in a `<phase>` has been processed (status = done OR blocked), r
 
 ### 4.C — Per-PRP integration
 
-After ALL phases of the current PRP complete, run `<validation level="integration" run-after="all">`. If it passes, verify every `<success-criterion>` is met by reading the relevant artifacts. Emit:
+After ALL phases of the current PRP complete, run `<validation level="integration" run-after="all">`. If it passes, verify every `<success-criterion>` is met by reading the relevant artifacts.
+
+**Adversarial verification (when the PRP marks criteria `verify="adversarial"`, or the PRP touches security/payments/data-integrity):** for each such criterion, spawn an independent verifier subagent (qa-engineer) prompted to REFUTE the claim that the criterion is met — it must look for the failure case, not confirm the happy path. A criterion counts as met only if the verifier fails to refute it. Log refutations as blockers.
+
+**Visual QA gate (when the PRP includes a Design Foundation phase or user-facing UI tasks):** before emitting the completion promise, run the screenshot-iterate loop from the `ui-visual-testing` skill on every changed page/view — render, screenshot, critique against the project's style guide or brand tokens, refine once. Treat a page that was never screenshotted as an unverified criterion.
+
+Then emit:
 ```
 <promise>PRP <name> COMPLETE</promise>
 ```

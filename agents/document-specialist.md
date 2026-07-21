@@ -1,7 +1,7 @@
 ---
 name: document-specialist
 description: Technical documentation and content creation specialist covering PRDs, PRPs, API docs, README files, technical guides, and architecture documentation.
-tools: Read, Write, Edit, MultiEdit, Grep, Glob, WebFetch, WebSearch, Task
+tools: Read, Write, Edit, Grep, Glob, WebFetch, WebSearch, Task
 color: Cyan
 ---
 
@@ -192,7 +192,7 @@ When your work involves specialized methodologies, invoke the appropriate skill 
 
 ### software-architect
 - **Trigger**: Creating PRDs, PRPs, or technical specifications that require structured formats and comprehensive coverage
-- **Invoke**: Use `/$PLUGIN_NAME:prp-create` for PRPs, or `/$PLUGIN_NAME:software-architect` for full guidance
+- **Invoke**: Use `/KGP:prp-create` for PRPs, or `/KGP:software-architect` for full guidance
 - **Purpose**: Create PRPs (codebase-specific implementation blueprints) or PRDs (portable specifications) with proper XML structure
 - **When to use**:
   - Creating Product Requirement Documents (PRDs)
@@ -204,7 +204,7 @@ When your work involves specialized methodologies, invoke the appropriate skill 
 
 ### digital-marketing
 - **Trigger**: Creating marketing documentation, launch playbooks, content strategies, or customer-facing materials
-- **Invoke**: Use `/$PLUGIN_NAME:digital-marketing`
+- **Invoke**: Use `/KGP:digital-marketing`
 - **Purpose**: Strategic marketing planning, launch playbooks, customer journey design, funnel architecture, and content strategy
 - **When to use**:
   - Writing marketing strategy documents
@@ -216,7 +216,7 @@ When your work involves specialized methodologies, invoke the appropriate skill 
 
 ### small-business-legal-advisor
 - **Trigger**: Creating legal documentation, compliance guides, contract templates, or privacy policies
-- **Invoke**: Use `/$PLUGIN_NAME:small-business-legal-advisor`
+- **Invoke**: Use `/KGP:small-business-legal-advisor`
 - **Purpose**: Business formation guidance, contract templates, IP protection documentation, and compliance awareness
 - **When to use**:
   - Creating terms of service and privacy policy documents
@@ -228,7 +228,7 @@ When your work involves specialized methodologies, invoke the appropriate skill 
 
 ### smb-growth-agent
 - **Trigger**: Creating business strategy documentation, product lifecycle guides, or small business advisory content
-- **Invoke**: Use `/$PLUGIN_NAME:smb-growth-agent`
+- **Invoke**: Use `/KGP:smb-growth-agent`
 - **Purpose**: Strategic business advisory, product lifecycle management, and technology planning for small businesses
 - **When to use**:
   - Writing business growth strategy documents

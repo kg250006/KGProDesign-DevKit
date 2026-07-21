@@ -82,13 +82,13 @@ validate_json ".claude-plugin/plugin.json"
 validate_json ".claude-plugin/marketplace.json"
 validate_json "hooks/hooks.json"
 
-# v2.2.0 version invariants
+# v2.3.0 version invariants
 if command -v jq >/dev/null 2>&1; then
   ver=$(jq -r '.version' .claude-plugin/plugin.json 2>/dev/null)
-  if [ "$ver" = "2.2.0" ]; then
-    pass "plugin.json version is 2.2.0"
+  if [ "$ver" = "2.3.0" ]; then
+    pass "plugin.json version is 2.3.0"
   else
-    fail "plugin.json version is '$ver' (expected 2.2.0)"
+    fail "plugin.json version is '$ver' (expected 2.3.0)"
   fi
 
   mkt_ver=$(jq -r '.metadata.version' .claude-plugin/marketplace.json 2>/dev/null)
@@ -125,15 +125,42 @@ if command -v jq >/dev/null 2>&1; then
   fi
 fi
 
-# hooks.json shape — empty hooks object
+# hooks.json shape — v2.3.0 auto-invocation hooks registered
 if command -v jq >/dev/null 2>&1; then
   hook_count=$(jq '.hooks | length' hooks/hooks.json 2>/dev/null)
-  if [ "$hook_count" = "0" ]; then
-    pass "hooks.json hooks object is empty"
+  if [ "$hook_count" = "3" ]; then
+    pass "hooks.json registers 3 hook events"
   else
-    fail "hooks.json has $hook_count hooks registered (expected 0)"
+    fail "hooks.json has $hook_count hook events registered (expected 3: UserPromptSubmit, SessionStart, PostToolUse)"
   fi
+
+  for evt in UserPromptSubmit SessionStart PostToolUse; do
+    if jq -e ".hooks.${evt}" hooks/hooks.json >/dev/null 2>&1; then
+      pass "hooks.json registers ${evt}"
+    else
+      fail "hooks.json missing ${evt}"
+    fi
+  done
 fi
+
+# hook scripts exist and are executable
+for hs in scripts/hooks/suggest-skill.sh scripts/hooks/session-start.sh scripts/hooks/suggest-auditor.sh; do
+  if [ -x "$hs" ]; then
+    pass "$hs — present and executable"
+  else
+    fail "$hs — missing or not executable"
+  fi
+done
+
+# hook scripts never fail and stay silent on malformed input
+for hs in scripts/hooks/suggest-skill.sh scripts/hooks/suggest-auditor.sh; do
+  out=$(echo 'not json' | "./$hs" 2>/dev/null); rc=$?
+  if [ $rc -eq 0 ] && [ -z "$out" ]; then
+    pass "$hs — exit 0 and silent on malformed input"
+  else
+    fail "$hs — rc=$rc output='$out' on malformed input (expected silent exit 0)"
+  fi
+done
 
 # --------------------------------------------------------------------
 section "3. v2.2.0 deletions — confirm removal"
@@ -151,6 +178,7 @@ DELETED=(
   "hooks/prp-safety-hook.ps1"
   "hooks/prp-safety-hook.js"
   "templates/current-task.md.template"
+  "commands/toolkit"
 )
 
 for f in "${DELETED[@]}"; do
@@ -204,8 +232,9 @@ SURVEY_TARGETS=(
 
 obsolete_hits=$(grep -rEn "$OBSOLETE_PATTERN" "${SURVEY_TARGETS[@]}" 2>/dev/null \
   | grep -vE 'rm -f' \
+  | grep -vE ':[0-9]+: +\.claude/' \
   | grep -vE 'removed (the forked|in v2|/KGP:|/\$PLUGIN_NAME:)' \
-  | grep -vE '\*\*v2\.[02]\.0\*\*' \
+  | grep -vE '\*\*v2\.[023]\.0\*\*' \
   || true)
 
 if [ -z "$obsolete_hits" ]; then

@@ -1,5 +1,5 @@
 ---
-name: build-iphone-apps
+name: iphone-apps
 description: Build professional native iPhone apps in Swift with SwiftUI and UIKit. Full lifecycle - build, debug, test, optimize, ship. CLI-only, no Xcode. Targets iOS 26 with iOS 18 compatibility.
 ---
 

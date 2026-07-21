@@ -17,18 +17,35 @@ Use this template structure when generating PRPs. Copy and fill in all sections.
 [Specific, measurable end state. What exists when this PRP is complete?]
 </goal>
 
+<intent-anchors>
+  <!-- Locked during /KGP:prp-create intent-lock (B1). Authoritative for
+       disambiguating execution decisions. -->
+  <what>[The deliverable, one sentence]</what>
+  <who>[The user / role]</who>
+  <why>[The motivating outcome]</why>
+  <out-of-scope>
+    <item>[Explicitly excluded functionality]</item>
+  </out-of-scope>
+  <success-signal>[The one observation that proves it works]</success-signal>
+</intent-anchors>
+
 <context>
   <business-value>
     [Why this matters. Business impact, user benefit, problems solved.]
   </business-value>
 
+  <decisions>
+    <!-- Architectural choices the user approved (B2) — locked, not assumed. -->
+    <decision id="D1">
+      <topic>[e.g., library choice, file location, API style]</topic>
+      <choice>[The locked choice]</choice>
+      <rationale>[Why]</rationale>
+    </decision>
+  </decisions>
+
   <prerequisites>
     <prerequisite>[Dependency or setup required before starting]</prerequisite>
   </prerequisites>
-
-  <out-of-scope>
-    <item>[Explicitly excluded functionality]</item>
-  </out-of-scope>
 </context>
 
 <codebase-analysis>
@@ -163,7 +180,12 @@ Use this template structure when generating PRPs. Copy and fill in all sections.
 
 <success-criteria>
   <criterion priority="P0">[Must be true for completion]</criterion>
-  <criterion priority="P0">[Another must-have]</criterion>
+  <!-- verify="adversarial": executor spawns an independent qa-engineer verifier
+       prompted to REFUTE the claim (security/payments/data-integrity). -->
+  <criterion priority="P0" verify="adversarial">[Security-critical claim]</criterion>
+  <!-- verify="visual": executor runs the screenshot-critique-refine loop
+       (ui-visual-testing skill) on changed pages. UI-bearing PRPs need one. -->
+  <criterion priority="P0" verify="visual">[Changed pages passed one visual QA iteration]</criterion>
   <criterion priority="P1">[Should be true]</criterion>
 </success-criteria>
 

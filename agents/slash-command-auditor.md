@@ -34,7 +34,7 @@ During audits, prioritize evaluation of:
 <critical_workflow>
 **MANDATORY**: Read best practices FIRST, before auditing:
 
-1. Invoke `/$PLUGIN_NAME:create-slash-commands` to load skill overview and best practices
+1. Invoke `/KGP:create-slash-commands` to load skill overview and best practices
 2. The skill provides guidance on:
    - Argument patterns
    - Command patterns

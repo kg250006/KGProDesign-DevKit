@@ -417,12 +417,12 @@ Report completion with confidence score and sizing summary.
 
 **Execute with:**
 ```bash
-/$PLUGIN_NAME:prp-execute PRPs/PRP-{feature-name}.md
+/KGP:prp-execute PRPs/PRP-{feature-name}.md
 ```
 
 **Or validate first:**
 ```bash
-/$PLUGIN_NAME:prp-validate PRPs/PRP-{feature-name}.md
+/KGP:prp-validate PRPs/PRP-{feature-name}.md
 ```
 </output_format>
 

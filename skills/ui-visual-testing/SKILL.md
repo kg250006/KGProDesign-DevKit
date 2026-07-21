@@ -1,40 +1,64 @@
 ---
 name: ui-visual-testing
-description: Expert UI testing skill for visual validation, DOM inspection, console monitoring, and browser automation using Puppeteer. Routes to optimal testing strategy based on validation needs. Use when QA agent needs to validate frontend applications.
+description: Expert UI testing skill for visual validation, DOM inspection, console monitoring, browser automation, and screenshot-iterate design QA. Prefers Chrome DevTools MCP / claude-in-chrome when connected; falls back to Puppeteer for headless CI. Use when validating frontend applications, running visual QA on changed pages, checking console errors, or verifying a PRP's verify="visual" criteria.
 ---
 
 <essential_principles>
+## Tool Selection (check FIRST, before any workflow)
+
+Two execution paths — pick by what's available in the session:
+
+**Path A — Chrome DevTools MCP / claude-in-chrome (PREFERRED).**
+If `mcp__chrome-devtools__*` or `mcp__claude-in-chrome__*` tools are available (or loadable via ToolSearch), use them. No installation, no scripts, and richer signals:
+
+| Need | Chrome DevTools MCP tool |
+|------|--------------------------|
+| DOM inspection | `take_snapshot` (a11y tree with element UIDs) |
+| Console errors | `list_console_messages` / `get_console_message` |
+| Network failures | `list_network_requests` / `get_network_request` |
+| Screenshots | `take_screenshot` (viewport, full-page, or element) |
+| Interactions | `click`, `fill`, `fill_form`, `hover`, `press_key` |
+| Performance | `performance_start_trace` / `performance_analyze_insight` |
+| Audits | `lighthouse_audit` (perf, a11y, SEO in one call) |
+| Responsive checks | `resize_page` / `emulate` |
+
+`claude-in-chrome` additionally drives the user's real Chrome session (logged-in state, extensions) — prefer it when the test needs authenticated state; prefer `chrome-devtools` for clean-profile testing and performance traces.
+
+**Path B — Puppeteer (FALLBACK).**
+Use only when no browser MCP is connected (headless CI, scripted regression suites). All `references/` and `scripts/` files support this path.
+
 ## Testing Hierarchy (least to most resource-intensive)
 
 **ALWAYS start at level 1 and escalate only when needed.**
 
-1. **DOM Inspection** - Check element existence, attributes, structure
-   - When: Element presence, form state, text content, accessibility
-   - Cost: Low (no screenshots, no video)
-   - Tools: `page.$()`, `page.$$()`, `page.$eval()`, `waitForSelector()`
-
-2. **Console Monitoring** - Capture errors, warnings, network failures
-   - When: JavaScript errors, failed requests, CORS issues, React hydration
-   - Cost: Low (text capture only)
-   - Tools: `page.on('console')`, `page.on('pageerror')`, `page.on('requestfailed')`
-
+1. **DOM Inspection** - Element existence, attributes, structure
+   - Path A: `take_snapshot`; Path B: `page.$()`, `page.$eval()`, `waitForSelector()`
+2. **Console Monitoring** - Errors, warnings, network failures
+   - Path A: `list_console_messages`; Path B: `page.on('console')`, `page.on('pageerror')`
 3. **Screenshots** - Visual state capture
-   - When: Layout verification, visual bugs, regression comparison
-   - Cost: Medium (file I/O, storage)
-   - Tools: `page.screenshot()`, element-level captures, full-page captures
+   - Path A: `take_screenshot`; Path B: `page.screenshot()`
+4. **Performance/Audit** - Traces, Lighthouse (Path A only), video recording (Path B)
 
-4. **Video Recording** - Full interaction capture
-   - When: Complex timing bugs, animations, race conditions
-   - Cost: High (10-50MB/minute, CPU intensive)
-   - Tools: puppeteer-screen-recorder, manual frame capture
+## Screenshot-Iterate Design QA Loop
+
+The standard gate for design-forward work (websites, landing pages, dashboards). Run on EVERY changed page/view before calling UI work done:
+
+1. **Render** the page at desktop (1440px) and mobile (390px) widths.
+2. **Screenshot** both.
+3. **Critique** against the project's style guide / design tokens (`kgprodesign-branding` for KGP properties): spacing rhythm, type hierarchy, color usage, alignment, contrast (WCAG AA), hover/focus states, empty states.
+4. **Refine** — fix the top issues found.
+5. **Re-screenshot** to confirm. One full iteration minimum; two for hero/landing surfaces.
+
+This loop satisfies `verify="visual"` criteria in PRPs executed by `/KGP:prp-execute`.
 
 ## Browser Automation Principles
 
-- **Always close browsers** in finally blocks to prevent memory leaks
+- **Always close browsers** (Path B) in finally blocks to prevent memory leaks
 - **Wait for network idle** before assertions to avoid race conditions
 - **Use semantic selectors** (data-testid > aria > semantic > text > class)
 - **Set explicit timeouts** to fail fast on broken pages
 - **Capture evidence** for failures (screenshots, console logs)
+- **Never trigger browser modal dialogs** (alert/confirm) via MCP paths — they block the extension
 
 ## Error Severity Classification
 
@@ -52,8 +76,9 @@ What would you like to validate?
 1. **Quick health check** - Console errors, critical elements (30 seconds)
 2. **User interaction test** - Login, checkout, form submission flows
 3. **Visual regression** - Compare screenshots against baseline
-4. **Debug UI issue** - Investigate a specific problem
-5. **Full UI audit** - Comprehensive check (console, DOM, accessibility, performance)
+4. **Design QA loop** - Screenshot-critique-refine against style guide
+5. **Debug UI issue** - Investigate a specific problem
+6. **Full UI audit** - Comprehensive check (console, DOM, accessibility, performance)
 
 **Describe the URL and what you're testing, or select a number.**
 </intake>
@@ -64,18 +89,30 @@ What would you like to validate?
 | 1, "quick", "health", "console errors", "smoke" | Fast validation | workflows/quick-validation.md |
 | 2, "interaction", "login", "click", "form", "user flow", "checkout", "navigate" | Test interactions | workflows/interaction-testing.md |
 | 3, "visual", "screenshot", "regression", "compare", "baseline", "diff" | Visual comparison | workflows/visual-regression.md |
-| 4, "debug", "investigate", "broken", "issue", "bug", "why", "diagnose" | Debug mode | workflows/debug-ui-issue.md |
-| 5, "full", "audit", "comprehensive", "everything", "complete" | Complete audit | workflows/full-audit.md |
+| 4, "design QA", "style guide", "critique", "polish", "verify visual" | Design QA loop | Run the Screenshot-Iterate loop from essential_principles (no separate workflow file) |
+| 5, "debug", "investigate", "broken", "issue", "bug", "why", "diagnose" | Debug mode | workflows/debug-ui-issue.md |
+| 6, "full", "audit", "comprehensive", "everything", "complete" | Complete audit | workflows/full-audit.md |
 
-**After selecting a workflow, read its required references before proceeding.**
+**Workflows are written Puppeteer-first; when on Path A, translate each step to the equivalent MCP tool from the table in essential_principles. After selecting a workflow, read its required references before proceeding.**
 </routing>
 
 <quick_reference>
-## Common Puppeteer Patterns
+## Path A: Chrome DevTools MCP Quick Patterns
+
+```
+# Load tools (one ToolSearch call):
+ToolSearch "select:mcp__chrome-devtools__new_page,mcp__chrome-devtools__navigate_page,mcp__chrome-devtools__take_snapshot,mcp__chrome-devtools__take_screenshot,mcp__chrome-devtools__list_console_messages"
+
+# Health check: navigate → list_console_messages (filter errors) → take_snapshot (verify key elements)
+# Visual QA: navigate → resize_page 1440w → take_screenshot → resize_page 390w → take_screenshot → critique
+# Audit: lighthouse_audit for perf/a11y/SEO scores in one call
+```
+
+## Path B: Common Puppeteer Patterns
 
 **Launch browser:**
 ```typescript
-const browser = await puppeteer.launch({ headless: 'new' });
+const browser = await puppeteer.launch({ headless: true });
 const page = await browser.newPage();
 ```
 
@@ -117,16 +154,16 @@ try {
 </quick_reference>
 
 <reference_index>
-## Reference Files
+## Reference Files (Path B / Puppeteer fallback)
 
 All in `references/`:
 
 | File | Purpose |
 |------|---------|
-| console-error-patterns.md | 50+ error patterns with regex, severity, fixes |
+| console-error-patterns.md | 50+ error patterns with regex, severity, fixes (applies to both paths) |
 | dom-inspection-patterns.md | Selector strategies, waiting, form validation |
 | puppeteer-setup.md | Installation, TypeScript config, browser options |
-| screenshot-strategies.md | When/how to capture, storage, naming |
+| screenshot-strategies.md | When/how to capture, storage, naming (applies to both paths) |
 | video-recording-guide.md | Complex timing issues, recorder setup |
 </reference_index>
 
@@ -156,7 +193,7 @@ All in `templates/`:
 </templates_index>
 
 <scripts_index>
-## Scripts
+## Scripts (Path B only)
 
 All in `scripts/`:
 
@@ -168,9 +205,11 @@ All in `scripts/`:
 
 <success_criteria>
 A successful UI test:
+- Used Path A (browser MCP) when available; fell back to Puppeteer only when not
 - Runs at appropriate testing level (DOM first, escalate if needed)
 - Captures and classifies all console output
 - Provides clear pass/fail with evidence
-- Cleans up browser resources
+- Design-forward changes passed at least one screenshot-critique-refine iteration
+- Cleans up browser resources (Path B)
 - Generates actionable report with fix recommendations
 </success_criteria>

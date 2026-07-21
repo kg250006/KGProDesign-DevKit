@@ -58,7 +58,7 @@ async function quickValidation(url: string, options: {
   const startTime = Date.now();
 
   try {
-    browser = await puppeteer.launch({ headless: 'new' });
+    browser = await puppeteer.launch({ headless: true });
     const page = await browser.newPage();
     await page.setViewport({ width: 1280, height: 720 });
 
@@ -205,7 +205,7 @@ Use the test-report.md template format:
    node -e "
    const puppeteer = require('puppeteer');
    (async () => {
-     const browser = await puppeteer.launch({headless: 'new'});
+     const browser = await puppeteer.launch({headless: true});
      const page = await browser.newPage();
      const logs = [];
      page.on('console', m => logs.push({type: m.type(), text: m.text()}));

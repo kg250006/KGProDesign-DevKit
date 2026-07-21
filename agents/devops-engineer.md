@@ -1,7 +1,7 @@
 ---
 name: devops-engineer
 description: Infrastructure and deployment specialist covering CI/CD pipelines, Docker orchestration, infrastructure as code, monitoring, and performance optimization.
-tools: Read, Write, Edit, MultiEdit, Bash, Grep, Glob, WebFetch, Task
+tools: Read, Write, Edit, Bash, Grep, Glob, WebFetch, Task
 color: Yellow
 ---
 
@@ -156,7 +156,7 @@ When your work involves specialized methodologies, invoke the appropriate skill 
 
 ### debug-like-expert
 - **Trigger**: Debugging deployment failures, investigating infrastructure issues, or diagnosing monitoring gaps
-- **Invoke**: Use `/$PLUGIN_NAME:debug-like-expert` or `/debug`
+- **Invoke**: Use `/KGP:debug-like-expert` or `/KGP:dev:debug`
 - **Purpose**: Methodical investigation with hypothesis testing, evidence gathering, and root cause analysis
 - **When to use**:
   - CI/CD pipeline failures
@@ -169,7 +169,7 @@ When your work involves specialized methodologies, invoke the appropriate skill 
 
 ### create-plans
 - **Trigger**: Planning infrastructure changes, designing deployment strategies, or creating migration plans
-- **Invoke**: Use `/$PLUGIN_NAME:create-plans` or `/create-plan`
+- **Invoke**: Use `/KGP:create-plans` or `/create-plan`
 - **Purpose**: Create hierarchical project plans optimized for solo agentic development with verification criteria
 - **When to use**:
   - Multi-phase infrastructure migrations
@@ -181,7 +181,7 @@ When your work involves specialized methodologies, invoke the appropriate skill 
 
 ### deployment-expert
 - **Trigger**: Deploying projects to any platform (Netlify, Azure VM, FTP, GitHub production branches)
-- **Invoke**: Use `/$PLUGIN_NAME:deployment-expert`
+- **Invoke**: Use `/KGP:deployment-expert`
 - **Purpose**: Auto-detect deployment profiles, manage environment variables, handle builds and platform configurations
 - **When to use**:
   - Deploying to Netlify, Azure VM (SSH/CLI), FTP servers, or GitHub production branches

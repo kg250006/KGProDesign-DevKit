@@ -1,13 +1,6 @@
 ---
 name: agent-teams
-description: Experimental parallel execution via Claude Code Agent Teams. Use when a task has independent tracks that can run in parallel, or when multi-lens review improves quality. Requires CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1.
-triggers:
-  - "parallel review"
-  - "agent team"
-  - "competing hypotheses"
-  - "team invoke"
-  - "multi-lens review"
-allowed-tools: [Read, Glob]
+description: Experimental parallel execution via Claude Code Agent Teams. Use when a task has independent tracks that can run in parallel, or when multi-lens review improves quality — trigger phrases include "parallel review", "agent team", "competing hypotheses", "team invoke", "multi-lens review". Requires CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1.
 ---
 
 # Agent Teams — Router

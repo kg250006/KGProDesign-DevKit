@@ -8,11 +8,13 @@ Please explain the following to the user:
 
 ## What is KGProDesign-DevKit?
 
-A Claude Code plugin providing agents, commands, skills, and hooks for PRP-driven development. v2.2.0 simplifies PRP execution into a single native single-session command with no external scripts or iteration loops.
+A Claude Code plugin providing agents, commands, skills, and hooks for PRP-driven development. PRP execution is a single native single-session command with no external scripts or iteration loops.
 
 ## Execution Model — Native Single-Session
 
-`/KGP:prp-execute` runs one or more PRPs end-to-end in this Claude Code session. With 1M-context-capable models (Opus 4.7, Sonnet 4.6 on a plan tier that supports it) and Auto mode, multi-thousand-line PRPs and multi-PRP queues execute without external orchestration.
+`/KGP:prp-execute` runs one or more PRPs end-to-end in this Claude Code session. With 1M-context-capable models (Sonnet 5, Opus 4.8, or Fable 5 on a plan tier that supports it) and Auto mode, multi-thousand-line PRPs and multi-PRP queues execute without external orchestration.
+
+For multi-hour runs: start locally, then attach from claude.ai/code or the mobile app (remote control) to monitor progress or answer halt-condition questions from anywhere.
 
 See https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents for Anthropic's harness design guidance.
 
@@ -64,19 +66,22 @@ Use the `Task` tool with `subagent_type` to delegate work:
 | `slash-command-auditor` | Slash command audits |
 | `subagent-auditor` | Subagent audits |
 
+## Design Workflow
+
+For website/UI work: `kgprodesign-branding` skill holds brand tokens, `ui-visual-testing` runs the screenshot-iterate visual QA loop (Chrome DevTools MCP), and frontend PRPs from `/KGP:prp-create` include a "Phase 0: Design Foundation". If the official `frontend-design` plugin is installed, it is invoked for component generation; `dataviz` covers charts and dashboards.
+
 ## Migration
 
 - **v2.0.0** removed the forked `/KGP:ralph-loop` and `/KGP:cancel-ralph` commands.
-- **v2.2.0** removed `/KGP:prp-execute-batch` and `/KGP:prp-execute-isolated`. Their use cases are absorbed by `/KGP:prp-execute` accepting multiple PRP paths and by Claude Code's native auto-compaction + subagent delegation.
+- **v2.2.0** removed `/KGP:prp-execute-batch` and `/KGP:prp-execute-isolated`. Their use cases are absorbed by `/KGP:prp-execute` accepting multiple PRP paths and native subagent delegation.
+- **v2.3.0** removed the duplicate `toolkit/` create-* commands (use `/KGP:core:create-*`), modernized visual testing to Chrome DevTools MCP, and added auto-invocation hooks. See CHANGELOG.md.
 
 Clean stale state files from existing projects:
 
 ```bash
-# v2.0.0 cleanup
-rm -f .claude/ralph-loop.local.md .claude/KGP:ralph-loop.local.md .claude/ralph-progress.md
-
-# v2.2.0 cleanup
-rm -f .claude/prp-orchestrator-state.log .claude/current-task.md .claude/prp-progress.md .claude/prp-batch-progress.md
+rm -f .claude/ralph-loop.local.md .claude/KGP:ralph-loop.local.md .claude/ralph-progress.md \
+      .claude/prp-orchestrator-state.log .claude/current-task.md .claude/prp-progress.md \
+      .claude/prp-batch-progress.md
 ```
 
 ## Learn More

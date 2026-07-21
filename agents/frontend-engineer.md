@@ -1,7 +1,7 @@
 ---
 name: frontend-engineer
 description: Full-stack frontend development specialist covering UI implementation, component architecture, responsive design, accessibility, and performance optimization. Framework-agnostic for multi-project compatibility.
-tools: Read, Write, Edit, MultiEdit, Grep, Glob, Bash, WebFetch, WebSearch, Task
+tools: Read, Write, Edit, Grep, Glob, Bash, WebFetch, WebSearch, Task
 color: Blue
 ---
 
@@ -203,7 +203,7 @@ When your work involves specialized methodologies, invoke the appropriate skill 
 
 ### debug-like-expert
 - **Trigger**: Debugging complex UI issues where standard troubleshooting fails, investigating rendering bugs, or debugging code you wrote (cognitive bias risk)
-- **Invoke**: Use `/$PLUGIN_NAME:debug-like-expert` or `/debug`
+- **Invoke**: Use `/KGP:debug-like-expert` or `/KGP:dev:debug`
 - **Purpose**: Methodical investigation with hypothesis testing, evidence gathering, and root cause analysis
 - **When to use**:
   - State management bugs
@@ -214,7 +214,7 @@ When your work involves specialized methodologies, invoke the appropriate skill 
 
 ### ui-visual-testing
 - **Trigger**: Validating UI implementation, visual regression testing, or investigating visual bugs
-- **Invoke**: Use `/$PLUGIN_NAME:ui-visual-testing`
+- **Invoke**: Use `/KGP:ui-visual-testing`
 - **Purpose**: Puppeteer-based UI validation with DOM inspection, console monitoring, and screenshots
 - **When to use**:
   - Verifying component appearance matches design
@@ -225,7 +225,7 @@ When your work involves specialized methodologies, invoke the appropriate skill 
 
 ### software-architect
 - **Trigger**: Planning complex UI features, designing component architectures, or creating implementation specifications
-- **Invoke**: Use `/$PLUGIN_NAME:prp-create` for codebase-specific plans or `/$PLUGIN_NAME:software-architect`
+- **Invoke**: Use `/KGP:prp-create` for codebase-specific plans or `/KGP:software-architect`
 - **Purpose**: Create PRPs (codebase-specific implementation blueprints) or PRDs (portable specifications)
 - **When to use**:
   - Designing component library architecture
@@ -235,7 +235,7 @@ When your work involves specialized methodologies, invoke the appropriate skill 
 
 ### deployment-expert
 - **Trigger**: Deploying frontend applications to production or staging environments
-- **Invoke**: Use `/$PLUGIN_NAME:deployment-expert`
+- **Invoke**: Use `/KGP:deployment-expert`
 - **Purpose**: Deploy to Netlify, Azure VM, FTP, or GitHub production branches with build optimization and environment variables
 - **When to use**:
   - Deploying static sites or SPAs to production

@@ -338,7 +338,7 @@ Report conversion summary with traceability coverage.
 
 **Execute with:**
 ```bash
-/$PLUGIN_NAME:prp-execute PRPs/PRP-{feature-name}.md
+/KGP:prp-execute PRPs/PRP-{feature-name}.md
 ```
 </output_format>
 

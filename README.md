@@ -5,8 +5,10 @@ Universal Claude Code development toolkit for any project.
 ## Why Use This Plugin
 
 - **Unified Foundation** - Every developer starts with identical tools, workflows, and guidelines
-- **Streamlined Agents** - 8 focused agents (reduced from 40) covering all development categories
-- **Essential Commands** - 23 commands (reduced from 59) for efficient workflows
+- **Focused Agents** - 11 agents (7 engineering + 4 auditors) covering all development categories
+- **Essential Commands** - 25 commands for efficient workflows
+- **Native PRP Execution** - Spec-driven development in a single long-running session, no external scripts
+- **Design-First Frontend** - Website PRPs include design-token phases and visual QA gates
 
 ## Installation
 
@@ -15,26 +17,18 @@ Universal Claude Code development toolkit for any project.
 - **Claude Code CLI** installed and configured
 - **GitHub Access** - Clone or download the repository
 
-### Step 1: Clone the Repository
+### Recommended: Plugin Manager Install
 
-First, clone this repository to a local directory:
+```bash
+claude
+/plugin marketplace add kg250006/KGProDesign-DevKit
+/plugin install KGP@KGP
+```
 
-**HTTPS:**
+### Alternative: Manual Install
+
 ```bash
 git clone https://github.com/kg250006/KGProDesign-DevKit.git
-```
-
-**SSH (If configured):**
-```bash
-git clone git@github.com:kg250006/KGProDesign-DevKit.git
-```
-
-### Step 2: Copy to Claude Plugins Directory
-
-After cloning, copy the repository to your Claude Code plugins directory:
-
-**macOS / Linux:**
-```bash
 mkdir -p ~/.claude/plugins
 cp -r KGProDesign-DevKit ~/.claude/plugins/
 ```
@@ -45,35 +39,19 @@ New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.claude\plugins"
 Copy-Item -Recurse KGProDesign-DevKit "$env:USERPROFILE\.claude\plugins\"
 ```
 
-**Windows (Command Prompt):**
-```cmd
-mkdir %USERPROFILE%\.claude\plugins
-xcopy /E /I KGProDesign-DevKit "%USERPROFILE%\.claude\plugins\KGProDesign-DevKit"
-```
-
-### Per-Project Install (Alternative)
-
-If you prefer project-specific installation:
-
-```bash
-cp -r KGProDesign-DevKit/.claude/* /your/project/.claude/
-```
-
 ### Verification
 
 ```bash
 claude
-/help  # Should show KGProDesign-DevKit commands
+/KGP:help  # Should explain the plugin and its commands
 ```
 
 ### Updating the Plugin
 
-To get the latest version, pull from your cloned repository and re-copy:
-
 ```bash
 cd /path/to/your/KGProDesign-DevKit
 git pull origin main
-# Then repeat Step 2 to copy updated files
+# Then re-copy (manual install) or /plugin update (plugin manager)
 ```
 
 ## Quick Start (5 Minutes)
@@ -81,20 +59,23 @@ git pull origin main
 ### 1. Initialize Context
 ```bash
 claude
-/context-prime
+/KGP:context-prime
 ```
 
 ### 2. Create Your First PRP
 ```bash
-/$PLUGIN_NAME:prp-create "Add user authentication"
+/KGP:prp-create "Add user authentication"
 ```
 
-### 3. Execute the PRP
+### 3. Validate & Execute the PRP
 ```bash
-/$PLUGIN_NAME:prp-execute PRPs/active/user-auth/prp.md
+/KGP:prp-validate PRPs/PRP-user-auth.md
+/KGP:prp-execute PRPs/PRP-user-auth.md
 ```
 
 ## Available Agents
+
+### Engineering (7)
 
 | Agent | Purpose | When to Use |
 |-------|---------|-------------|
@@ -105,48 +86,49 @@ claude
 | `project-coordinator` | Project management | Sprint planning, task breakdown |
 | `document-specialist` | Documentation | PRDs, PRPs, technical docs |
 | `devops-engineer` | Infrastructure | CI/CD, Docker, deployment |
-| `config-auditor` | Plugin validation | Audit skills, commands, agents |
+
+### Auditors (4)
+
+| Agent | Purpose |
+|-------|---------|
+| `config-auditor` | Plugin config validation |
+| `skill-auditor` | Skill audits |
+| `slash-command-auditor` | Slash command audits |
+| `subagent-auditor` | Subagent audits |
 
 ## Available Commands
 
-### Core
-- `/context-prime` - Initialize project context
-- `/create <type> [name]` - Universal scaffolding
-- `/debug [issue]` - Expert debugging
-
 ### PRP Workflow
-- `/$PLUGIN_NAME:prp-create` - Generate Product Requirement Prompt with intent-lock + decision-log
-- `/$PLUGIN_NAME:prp-execute <prp.md> [<prp2.md> ...]` - Execute one or more PRPs end-to-end in a single native Claude Code session
-- `/$PLUGIN_NAME:prp-validate` - Pre-flight PRP validation
+- `/KGP:prp-create` - Generate Product Requirement Prompt with intent-lock + decision-log
+- `/KGP:prp-validate` - Pre-flight PRP validation with auto-fix
+- `/KGP:prp-execute <prp.md> [<prp2.md> ...]` - Execute one or more PRPs end-to-end in a single native Claude Code session
 
 ### Agent Teams (Experimental)
-- `/$PLUGIN_NAME:team-invoke "<task>"` - Spawn a 3–5 teammate Agent Team (recipe auto-picked)
-- `/$PLUGIN_NAME:prp-execute <prp> --team[=<recipe>]` - Run a PRP with auto-partitioned team
+- `/KGP:team-invoke "<task>"` - Spawn a 3–5 teammate Agent Team (recipe auto-picked)
+- `/KGP:prp-execute <prp> --team[=<recipe>]` - Run a PRP with auto-partitioned team
 
-### Workflow
-- `/commit` - Smart git commit
-- `/pr` - Create pull request
-- `/review` - Code review
+### Project & Deployment
+- `/KGP:context-prime` - Initialize project context
+- `/KGP:deploy` - Deploy via deployment-expert skill (Netlify, Azure VM, FTP, GitHub)
+- `/KGP:run-regression` - Automated regression testing
+- `/KGP:help` - Plugin overview
 
-### Meta-Prompting
-- `/create-prompt` - Create prompts for other Claudes
-- `/run-prompt` - Delegate to fresh contexts
+### Plugin Authoring & Audits (core/)
+- `/KGP:core:create-hook` - Configure Claude Code hooks
+- `/KGP:core:create-subagent` - Create specialized subagents
+- `/KGP:core:create-slash-command` - Create slash commands
+- `/KGP:core:create-agent-skill` - Create Claude Code skills
+- `/KGP:core:create-meta-prompt` - Create multi-stage prompts
+- `/KGP:core:audit-skill` / `audit-slash-command` / `audit-subagent` - Best-practice audits
+- `/KGP:core:heal-skill` - Apply corrections discovered during execution
 
-### Creation Toolkit
-- `/create-hook` - Configure Claude Code hooks
-- `/create-subagent` - Create specialized subagents
-- `/create-slash-command` - Create slash commands
-- `/create-agent-skill` - Create Claude Code skills
-- `/create-plan` - Create project plans
-- `/create-meta-prompt` - Create multi-stage prompts
-
-### Analysis
-- `/consider <framework>` - Decision frameworks (12 available)
-- `/onboard` - Project onboarding
-
-### Utility
-- `/handoff` - Context handoff document
-- `/resolve-conflicts` - Git conflict resolution
+### Daily Workflow (dev/)
+- `/KGP:dev:debug` - Expert debugging
+- `/KGP:dev:create-plan` - Hierarchical project plans
+- `/KGP:dev:run-plan` - Execute a PLAN.md
+- `/KGP:dev:create-prompt` / `run-prompt` - Meta-prompting to fresh contexts
+- `/KGP:dev:add-to-todos` / `check-todos` - Todo management
+- `/KGP:dev:whats-next` - Context handoff document
 
 ## Directory Structure
 
@@ -155,25 +137,20 @@ claude
 ├── .claude-plugin/
 │   ├── plugin.json
 │   └── marketplace.json
-├── agents/           # 8 specialized agents
-├── commands/         # 23 streamlined commands
+├── agents/           # 11 specialized agents
+├── commands/         # 25 commands (top-level + core/ + dev/)
+├── hooks/            # Auto-invocation hooks (hooks.json)
+├── skills/           # 18 skills (PRP, design, deployment, testing, business)
+├── scripts/
+│   ├── hooks/            # Hook scripts
+│   └── tests/            # Static-validation suite
 ├── templates/
-│   ├── prp_base.md       # Context-rich PRP template
+│   ├── prp_base.md       # XML PRP template
 │   ├── prp_planning.md   # PRD generation template
 │   └── frameworks/       # Tech stack CLAUDE.md templates
-│       ├── CLAUDE-NEXTJS-15.md
-│       ├── CLAUDE-REACT.md
-│       ├── CLAUDE-ASTRO.md
-│       ├── CLAUDE-NODE.md
-│       ├── CLAUDE-PYTHON-BASIC.md
-│       ├── CLAUDE-JAVA-GRADLE.md
-│       └── CLAUDE-JAVA-MAVEN.md
-├── scripts/
-│   └── tests/             # Static-validation suite
 ├── CLAUDE.md         # Reference guide
-├── README.md         # This file
-├── QUICKSTART.md     # Extended tutorial
-└── VERSION_MANIFEST.md
+├── CHANGELOG.md      # Version history
+└── README.md         # This file
 ```
 
 ## Framework Templates
@@ -199,12 +176,14 @@ Available templates:
 
 ## Native Long-Run Execution
 
-`/KGP:prp-execute` runs PRPs end-to-end in a single native Claude Code session. With 1M-context-capable models (Opus 4.7, Sonnet 4.6 on a plan tier that supports it) and Auto mode, multi-thousand-line PRPs and multi-PRP queues execute without external orchestration.
+`/KGP:prp-execute` runs PRPs end-to-end in a single native Claude Code session. With 1M-context-capable models (Sonnet 5, Opus 4.8, or Fable 5 on a plan tier that supports it) and Auto mode, multi-thousand-line PRPs and multi-PRP queues execute without external orchestration.
 
 ```bash
 /KGP:prp-execute PRPs/PRP-feature.md
 /KGP:prp-execute PRPs/PRP-foundation.md PRPs/PRP-core.md
 ```
+
+For multi-hour runs: start locally, then monitor from claude.ai/code or the mobile app via remote control.
 
 See https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents for Anthropic's harness design guidance.
 
@@ -227,12 +206,13 @@ Then restart Claude Code. Commands:
 /KGP:prp-execute PRPs/feature.md --team             # auto-picks + partitions tasks
 ```
 
-Recipes: `implementation`, `review`, `research`, `hypothesis`. Classifier + disambiguation rules live in `skills/agent-teams/references/playbooks.md`. `--team` is mutually exclusive with `--isolated`.
+Recipes: `implementation`, `review`, `research`, `hypothesis`. Classifier + disambiguation rules live in `skills/agent-teams/references/playbooks.md`.
 
 ## Documentation
 
 - [CLAUDE.md](./CLAUDE.md) - Complete reference guide
-- [QUICKSTART.md](./QUICKSTART.md) - Extended onboarding tutorial
+- [CHANGELOG.md](./CHANGELOG.md) - Version history
+- [INSTALL.md](./INSTALL.md) - Detailed install options
 
 ## Core Principles
 
@@ -245,4 +225,4 @@ Recipes: `implementation`, `review`, `research`, `hypothesis`. Classifier + disa
 - Issues: GitHub Issues
 
 ---
-Universal development toolkit | v1.0.0
+Universal development toolkit | v2.3.0

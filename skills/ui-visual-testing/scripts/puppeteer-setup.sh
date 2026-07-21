@@ -163,7 +163,7 @@ const puppeteer = require('puppeteer');
 
 async function test() {
   console.log('Launching browser...');
-  const browser = await puppeteer.launch({ headless: 'new' });
+  const browser = await puppeteer.launch({ headless: true });
   const page = await browser.newPage();
 
   console.log('Navigating to example.com...');
@@ -222,7 +222,7 @@ echo "Puppeteer is ready for UI testing."
 echo ""
 echo "Quick start:"
 echo "  const puppeteer = require('puppeteer');"
-echo "  const browser = await puppeteer.launch({ headless: 'new' });"
+echo "  const browser = await puppeteer.launch({ headless: true });"
 echo "  const page = await browser.newPage();"
 echo "  await page.goto('https://your-app.com');"
 echo ""

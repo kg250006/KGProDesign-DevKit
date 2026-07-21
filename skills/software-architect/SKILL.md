@@ -18,7 +18,7 @@ PRPs are **implementation blueprints** tailored to your specific codebase. They 
 - Effort vs. value rankings for prioritization
 - Validation commands using your project's toolchain
 
-**Purpose:** Feed directly into `/$PLUGIN_NAME:prp-execute` for native single-session autonomous implementation.
+**Purpose:** Feed directly into `/KGP:prp-execute` for native single-session autonomous implementation.
 
 ### 2. PRDs - Product Requirement Documents (Codebase-Agnostic)
 
@@ -48,7 +48,10 @@ Search for proven libraries, patterns, and best practices before designing imple
 **5. Validation Built-In**
 Every PRP includes executable validation commands. Every PRD includes measurable acceptance criteria.
 
-**6. Right-Sized Documents**
+**6. Design-First for User-Facing UI**
+PRPs that include websites, pages, components, or dashboards start with a `<phase id="0" name="Design Foundation">`: design tokens confirmed first (project design system → `kgprodesign-branding` skill for KGP properties → synced Claude Design system), a component inventory, and a visual QA criterion (`verify="visual"`) in integration validation. Implementation tasks note that the `frontend-design` skill (if installed) generates components and `dataviz` covers charts.
+
+**7. Right-Sized Documents**
 - Every PRP is automatically assessed for sizing before generation
 - Recommended envelope: up to 40 tasks (all S), up to 30 tasks (all M), 30–40 mixed, up to 5,000 lines
 - These are recommendations, not hard caps — honor explicit user override

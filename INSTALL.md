@@ -56,25 +56,17 @@ Windows (WSL):
 You should see: `Successfully added marketplace: KGP`
 
 #### Step 3: Install the Plugin
-   ```
-   /plugin marketplace add /path/to/KGProDesign-DevKit
-   ```
 
-   Example:
-   ```
-   /plugin marketplace add /Users/username/PROJECTS/KGProDesign-DevKit
-   ```
+1. Run `/plugin` to open the plugin manager
+2. Navigate to the **Discover** tab
+3. Find **KGP** and install it
 
-3. **Install the plugin**:
-   - Run `/plugin` to open the plugin manager
-   - Navigate to the **Discover** tab
-   - Find **KGP** and install it
+#### Step 4: Verify Installation
 
-4. **Verify installation**:
-   ```
-   /plugin
-   ```
-   Navigate to the **Installed** tab to confirm KGP is listed and enabled.
+```
+/plugin
+```
+Navigate to the **Installed** tab to confirm KGP is listed and enabled.
 
 ---
 
@@ -82,10 +74,10 @@ You should see: `Successfully added marketplace: KGP`
 
 | Component | Count | Description |
 |-----------|-------|-------------|
-| Agents | 8 | Frontend, Backend, Data, QA, DevOps, Docs, Project Coordinator, Config Auditor |
-| Commands | 23 | PRP workflow (create/validate/execute), debugging, creation toolkit, Agent Teams |
-| Skills | 16 | Reusable knowledge modules for development tasks |
-| Hooks | 0 | Plugin manifest retains an empty hook map for future use |
+| Agents | 11 | Frontend, Backend, Data, QA, DevOps, Docs, Project Coordinator + 4 auditors |
+| Commands | 25 | PRP workflow (create/validate/execute), debugging, plugin authoring, Agent Teams |
+| Skills | 18 | Reusable knowledge modules for development, design, deployment, and business tasks |
+| Hooks | 3 | Auto-invocation hooks (UserPromptSubmit, SessionStart, PostToolUse) |
 
 ---
 
@@ -93,12 +85,12 @@ You should see: `Successfully added marketplace: KGP`
 
 After installation, prime your context:
 ```
-/SG-STAC:context-prime
+/KGP:context-prime
 ```
 
 Or start with the help command:
 ```
-/SG-STAC:help
+/KGP:help
 ```
 
 ---
@@ -140,7 +132,7 @@ To remove the marketplace:
 ### Commands not working
 - Confirm the plugin is enabled in the **Installed** tab
 - Restart Claude Code session
-- Run `/SG-STAC:help` to verify available commands
+- Run `/KGP:help` to verify available commands
 
 ### Permission errors
 - Ensure you have read access to the plugin directory

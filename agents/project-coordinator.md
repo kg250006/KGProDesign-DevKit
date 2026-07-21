@@ -1,7 +1,7 @@
 ---
 name: project-coordinator
 description: Project management and Agile specialist covering sprint planning, task breakdown, capacity management, risk assessment, progress tracking, and stakeholder communication.
-tools: Read, Write, Edit, MultiEdit, Grep, Glob, WebFetch, Task, TodoWrite
+tools: Read, Write, Edit, Grep, Glob, WebFetch, Task, TodoWrite
 color: Orange
 ---
 
@@ -160,7 +160,7 @@ When your work involves specialized methodologies, invoke the appropriate skill 
 
 ### create-plans
 - **Trigger**: Creating project plans, phase planning, roadmap development, or task breakdown for complex initiatives
-- **Invoke**: Use `/$PLUGIN_NAME:create-plans` or `/create-plan`
+- **Invoke**: Use `/KGP:create-plans` or `/create-plan`
 - **Purpose**: Create hierarchical project plans optimized for solo agentic development with verification criteria
 - **When to use**:
   - Creating project briefs and roadmaps
@@ -172,7 +172,7 @@ When your work involves specialized methodologies, invoke the appropriate skill 
 
 ### software-architect
 - **Trigger**: Creating technical requirements documentation, feature specifications, or implementation planning
-- **Invoke**: Use `/$PLUGIN_NAME:prp-create` for PRPs, or `/$PLUGIN_NAME:software-architect`
+- **Invoke**: Use `/KGP:prp-create` for PRPs, or `/KGP:software-architect`
 - **Purpose**: Create PRPs (codebase-specific implementation blueprints) or PRDs (portable specifications)
 - **When to use**:
   - Creating technical specifications for features
@@ -183,7 +183,7 @@ When your work involves specialized methodologies, invoke the appropriate skill 
 
 ### digital-marketing
 - **Trigger**: Planning marketing initiatives, product launches, or coordinating marketing campaigns
-- **Invoke**: Use `/$PLUGIN_NAME:digital-marketing`
+- **Invoke**: Use `/KGP:digital-marketing`
 - **Purpose**: Strategic marketing planning, launch coordination, and campaign management
 - **When to use**:
   - Coordinating product or business launch timelines
@@ -195,7 +195,7 @@ When your work involves specialized methodologies, invoke the appropriate skill 
 
 ### small-business-legal-advisor
 - **Trigger**: Planning compliance initiatives, contract reviews, or legal documentation projects
-- **Invoke**: Use `/$PLUGIN_NAME:small-business-legal-advisor`
+- **Invoke**: Use `/KGP:small-business-legal-advisor`
 - **Purpose**: Legal guidance for business operations, compliance planning, and risk assessment
 - **When to use**:
   - Planning compliance audit timelines
@@ -207,7 +207,7 @@ When your work involves specialized methodologies, invoke the appropriate skill 
 
 ### smb-growth-agent
 - **Trigger**: Planning business growth initiatives, product lifecycle management, or technology projects for small businesses
-- **Invoke**: Use `/$PLUGIN_NAME:smb-growth-agent`
+- **Invoke**: Use `/KGP:smb-growth-agent`
 - **Purpose**: Strategic business advisory and product lifecycle planning for small businesses
 - **When to use**:
   - Planning digital product development for SMB clients

@@ -71,7 +71,7 @@ tsconfig.json:
 ```typescript
 const browser = await puppeteer.launch({
   // Headless mode
-  headless: 'new',           // New headless (recommended)
+  headless: true,            // Headless mode
   // headless: true,         // Legacy headless
   // headless: false,        // Show browser window (debugging)
 
@@ -112,7 +112,7 @@ const browser = await puppeteer.launch({
 **CI/CD (GitHub Actions, Docker):**
 ```typescript
 const browser = await puppeteer.launch({
-  headless: 'new',
+  headless: true,
   args: [
     '--no-sandbox',
     '--disable-setuid-sandbox',

@@ -252,7 +252,7 @@ Before generating any PRP files, perform a sizing assessment. The assessment rec
 | Allowed task effort sizes | Small (S) and Medium (M) only |
 
 **Why these are recommendations, not hard caps:**
-Modern Claude Code (1M context Opus 4.7 / Sonnet 4.6) ingests a 5,000-line PRP in one Read with ~98% of the window free for execution. The binding constraint is now human reviewability, which is preference-driven. If the user explicitly says "one PRP, even if big", honor it.
+Modern Claude Code (1M-context models: Sonnet 5, Opus 4.8, Fable 5) ingests a 5,000-line PRP in one Read with ~98% of the window free for execution. The binding constraint is now human reviewability, which is preference-driven. If the user explicitly says "one PRP, even if big", honor it.
 
 **Key Rules (still apply):**
 - L and XL effort tasks must be decomposed into S or M before counting.
@@ -351,7 +351,7 @@ Now generate the PRP(s) using the software-architect skill's workflow. If the si
 Invoke the software-architect skill for PRP creation guidance:
 
 ```
-Invoke: /$PLUGIN_NAME:software-architect
+Invoke the KGP:software-architect skill via the Skill tool
 ```
 
 The skill provides:
@@ -386,6 +386,23 @@ Follow the create-prp.md workflow EXACTLY with these inputs:
 
 **For multi-PRP features:** Repeat steps 4-10 for each PRP, using the task groupings from the sizing assessment.
 </execute_workflow>
+
+<design_first_frontend>
+**Design Foundation Phase (websites & user-facing UI only)**
+
+If the feature includes user-facing UI (website, page, component, dashboard, app screen), the FIRST phase of the PRP must be `<phase id="0" name="Design Foundation">` containing:
+
+1. **Token task** — establish or confirm design tokens (colors, typography, spacing) BEFORE any component work. Sources in priority order: (a) the project's existing design system / CSS variables, (b) the `kgprodesign-branding` skill for KG ProDesign-owned properties, (c) a synced Claude Design system if the project uses claude.ai/design.
+2. **Component inventory task** — list the components/pages to build and which existing components are reused vs created.
+3. **Design skill directive** — implementation tasks for components/pages must note: "If the `frontend-design` skill is available, invoke it for generation (avoids generic AI aesthetics). Use the `dataviz` skill for any chart/dashboard/visualization."
+
+Additionally, add to `<validation level="integration">` a visual QA gate:
+```xml
+<criterion verify="visual">Every changed page/view passed one screenshot-critique-refine iteration (ui-visual-testing skill, Chrome DevTools MCP) against the project style guide</criterion>
+```
+
+Skip this block entirely for backend-only, CLI, or data-layer PRPs.
+</design_first_frontend>
 
 <critique_pass>
 **Devil's-Advocate Critique (B3) — internal QA before save**
@@ -575,6 +592,8 @@ Provide completion report:
 
 **Lowest-confidence dimension:** [name] — recommend addressing before execution: [specific actionable suggestion]
 
+**Recommended execution model:** [Sonnet 5 or Opus 4.8 (1M context) for the run; Fable 5 if the PRP has high-ambiguity architectural tasks. Mechanical agents (auditors, doc updates) can pin `model: haiku` in their frontmatter.]
+
 **Execute (single PRP):**
 ```bash
 /KGP:prp-execute PRPs/PRP-{feature-name}.md
@@ -669,6 +688,7 @@ Avoid these common mistakes:
 - **Intent-lock confirmed with user before generation (B1)**
 - **Architectural decisions logged in `<context><decisions>` (B2)**
 - **Devil's-advocate critique pass run before save (B3)**
+- **UI-bearing PRPs include a Design Foundation phase and visual QA integration criterion**
 - Software-architect workflow executed completely
 - PRP uses full XML structure with micro-tasks
 - All tasks have agent assignments and effort/value rankings

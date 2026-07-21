@@ -52,7 +52,7 @@ async function auditPage(url: string): Promise<AuditResult> {
   let browser: Browser | null = null;
 
   try {
-    browser = await puppeteer.launch({ headless: 'new' });
+    browser = await puppeteer.launch({ headless: true });
     const page = await browser.newPage();
     await page.setViewport({ width: 1280, height: 720 });
 

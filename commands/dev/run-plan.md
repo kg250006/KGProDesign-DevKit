@@ -1,14 +1,10 @@
 ---
-type: prompt
-description: Execute a PLAN.md file directly without loading planning skill context
-arguments:
-  - name: plan_path
-    description: Path to PLAN.md file (e.g., .planning/phases/07-sidebar-reorganization/07-01-PLAN.md)
-    required: true
+description: "[KGP] Execute a PLAN.md file directly without loading planning skill context"
+argument-hint: "<path-to-PLAN.md>"
 allowed-tools: [Read, Write, Edit, Bash, Glob, Grep, Task]
 ---
 
-Execute the plan at {{plan_path}} using **intelligent segmentation** for optimal quality.
+Execute the plan at $ARGUMENTS using **intelligent segmentation** for optimal quality.
 
 **Step 0: Discover Available Agents**
 
@@ -34,14 +30,14 @@ When spawning subagents via Task tool, use the most appropriate `subagent_type` 
 **Process:**
 
 1. **Verify plan exists and is unexecuted:**
-   - Read {{plan_path}}
+   - Read $ARGUMENTS
    - Check if corresponding SUMMARY.md exists in same directory
    - If SUMMARY exists: inform user plan already executed, ask if they want to re-run
    - If plan doesn't exist: error and exit
 
 2. **Parse plan and determine execution strategy:**
    - Extract `<objective>`, `<execution_context>`, `<context>`, `<tasks>`, `<verification>`, `<success_criteria>` sections
-   - Analyze checkpoint structure: `grep "type=\"checkpoint" {{plan_path}}`
+   - Analyze checkpoint structure: `grep "type=\"checkpoint" $ARGUMENTS`
    - Determine routing strategy:
 
    **Strategy A: Fully Autonomous (no checkpoints)**
@@ -74,7 +70,7 @@ When spawning subagents via Task tool, use the most appropriate `subagent_type` 
 
    Spawn Task tool with selected subagent_type:
 
-   Prompt: "Execute plan at {{plan_path}}
+   Prompt: "Execute plan at $ARGUMENTS
 
    This is a fully autonomous plan (no checkpoints).
 
@@ -103,7 +99,7 @@ When spawning subagents via Task tool, use the most appropriate `subagent_type` 
        - Mixed/general → subagent_type="general-purpose"
 
        Spawn subagent with selected type:
-         "Execute tasks [X-Y] from {{plan_path}}
+         "Execute tasks [X-Y] from $ARGUMENTS
           Read plan for context and deviation rules.
           DO NOT create SUMMARY or commit.
           Report: tasks done, files modified, deviations"

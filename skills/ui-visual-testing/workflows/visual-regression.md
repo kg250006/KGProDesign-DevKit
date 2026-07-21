@@ -89,7 +89,7 @@ async function captureBaselines(
   const screenshots: string[] = [];
 
   try {
-    browser = await puppeteer.launch({ headless: 'new' });
+    browser = await puppeteer.launch({ headless: true });
     const page = await browser.newPage();
 
     // Ensure directory exists

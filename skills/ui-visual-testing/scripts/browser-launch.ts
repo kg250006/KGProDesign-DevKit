@@ -18,8 +18,8 @@ import puppeteer, {
 // ============================================================================
 
 export interface LaunchOptions {
-  /** Run browser with visible UI (default: 'new' headless) */
-  headless?: boolean | 'new';
+  /** Run browser with visible UI (default: headless) */
+  headless?: boolean;
   /** Slow down operations by N milliseconds */
   slowMo?: number;
   /** Open DevTools on launch */
@@ -90,7 +90,7 @@ export interface ConsoleAnalysis {
 // ============================================================================
 
 const DEFAULT_LAUNCH_OPTIONS: Required<LaunchOptions> = {
-  headless: 'new',
+  headless: true,
   slowMo: 0,
   devtools: false,
   viewport: { width: 1280, height: 720 },

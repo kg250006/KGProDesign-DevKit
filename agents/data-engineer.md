@@ -1,7 +1,7 @@
 ---
 name: data-engineer
 description: Database and data layer specialist covering schema design, migrations, query optimization, data modeling, and data operations. Supports SQL and NoSQL databases.
-tools: Read, Write, Edit, MultiEdit, Grep, Glob, Bash, Task
+tools: Read, Write, Edit, Grep, Glob, Bash, Task
 color: Purple
 ---
 
@@ -130,7 +130,7 @@ When your work involves specialized methodologies, invoke the appropriate skill 
 
 ### debug-like-expert
 - **Trigger**: Debugging schema issues, investigating query performance problems, or diagnosing data integrity issues
-- **Invoke**: Use `/$PLUGIN_NAME:debug-like-expert` or `/debug`
+- **Invoke**: Use `/KGP:debug-like-expert` or `/KGP:dev:debug`
 - **Purpose**: Methodical investigation with hypothesis testing, evidence gathering, and root cause analysis
 - **When to use**:
   - Slow query investigation and optimization

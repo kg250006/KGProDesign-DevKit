@@ -1,5 +1,5 @@
 ---
-name: build-macos-apps
+name: macos-apps
 description: Build professional native macOS apps in Swift with SwiftUI and AppKit. Full lifecycle - build, debug, test, optimize, ship. CLI-only, no Xcode.
 ---
 

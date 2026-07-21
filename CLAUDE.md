@@ -28,26 +28,26 @@ Product Requirement Prompt - A structured specification that Claude executes to 
 
 ### PRP Lifecycle
 ```
-1. Create PRP    → /$PLUGIN_NAME:prp-create (gather requirements)
-2. Validate PRP  → /$PLUGIN_NAME:prp-validate (pre-flight checks)
-3. Execute PRP   → /$PLUGIN_NAME:prp-execute (Claude implements)
-4. Verify        → Run tests, review changes
-5. Commit        → /$PLUGIN_NAME:commit
+1. Create PRP    → /KGP:prp-create (gather requirements)
+2. Validate PRP  → /KGP:prp-validate (pre-flight checks)
+3. Execute PRP   → /KGP:prp-execute (Claude implements)
+4. Verify        → Run tests, review changes (qa-engineer agent)
+5. Commit        → git commit with conventional format
 ```
 
 ### PRP Creation
 ```bash
-/$PLUGIN_NAME:prp-create "Add user authentication with OAuth2"
+/KGP:prp-create "Add user authentication with OAuth2"
 ```
 Claude will:
 1. Ask clarifying questions
 2. Research existing patterns in codebase
 3. Generate structured PRP document
-4. Save to PRPs/active/ directory
+4. Save to PRPs/ directory
 
 ### PRP Execution
 ```bash
-/$PLUGIN_NAME:prp-execute PRPs/active/auth-oauth2/prp.md
+/KGP:prp-execute PRPs/PRP-auth-oauth2.md
 ```
 Claude will:
 1. Parse the PRP specification
@@ -55,51 +55,50 @@ Claude will:
 3. Run validation at each step
 4. Report completion status
 
-### Programmatic PRP Execution
-For CI/CD or batch processing, use the `prp_runner.py` script:
-
-```bash
-# Interactive mode
-uv run scripts/prp_runner.py --prp feature-name --interactive
-
-# Headless mode with JSON output
-uv run scripts/prp_runner.py --prp-path PRPs/active/feature.md --output-format json
-
-# Stream JSON for real-time progress
-uv run scripts/prp_runner.py --prp feature-name --output-format stream-json
-```
-
 ### Native Long-Run Execution
 
-`/$PLUGIN_NAME:prp-execute` runs PRPs end-to-end in a single Claude Code session. With the 1M-token context window (Opus 4.7 / Sonnet 4.6 on a plan tier that supports it) and Auto mode, multi-thousand-line PRPs (or several PRPs at once) execute without external orchestration, scripts, or iteration loops.
+`/KGP:prp-execute` runs PRPs end-to-end in a single Claude Code session. With a 1M-token-context model (Sonnet 5, Opus 4.8, or Fable 5 on a plan tier that supports it) and Auto mode, multi-thousand-line PRPs (or several PRPs at once) execute without external orchestration, scripts, or iteration loops.
 
 Recommended invocation:
 
 ```bash
-/$PLUGIN_NAME:prp-execute PRPs/PRP-feature.md
-/$PLUGIN_NAME:prp-execute PRPs/PRP-foundation.md PRPs/PRP-core.md PRPs/PRP-polish.md
-/$PLUGIN_NAME:prp-execute PRPs/PRP-feature.md --team
+/KGP:prp-execute PRPs/PRP-feature.md
+/KGP:prp-execute PRPs/PRP-foundation.md PRPs/PRP-core.md PRPs/PRP-polish.md
+/KGP:prp-execute PRPs/PRP-feature.md --team
 ```
 
 Tips:
 
 - Auto mode (`Shift+Tab` to cycle, or `autoMode` in `settings.json`) eliminates per-tool prompts during long runs.
-- Auto-compaction handles context pressure; for very long sessions, delegate verbose tasks to subagents via the Task tool.
+- Delegate verbose-output tasks (large test runs, exploratory research, builds) to subagents via the Task tool so their noise never enters the main context. This matters more than relying on auto-compaction.
+- Checkpoints are automatic at each user prompt; `/rewind` recovers from a bad mid-run state without restarting the whole PRP.
 - See https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents for Anthropic's harness design guidance.
 
-**Migration from v2.x:**
+### Model Strategy
 
-- **v2.0.0** removed the forked `/$PLUGIN_NAME:ralph-loop` and `/$PLUGIN_NAME:cancel-ralph` commands.
-- **v2.2.0** removed `/$PLUGIN_NAME:prp-execute-batch` and `/$PLUGIN_NAME:prp-execute-isolated`. Their use cases are absorbed by `/$PLUGIN_NAME:prp-execute` accepting multiple PRP paths and by Claude Code's native auto-compaction + subagent delegation.
+| Phase | Recommended model | Why |
+|-------|-------------------|-----|
+| PRP creation / architecture | Opus 4.8 or Fable 5 | Deepest reasoning for planning and decomposition |
+| PRP execution (long runs) | Sonnet 5 or Opus 4.8 (1M context) | Capability + context headroom for multi-PRP sessions |
+| Mechanical subagent work | Haiku 4.5 | Cheap, fast; set `model: haiku` in agent frontmatter |
+| Time-critical output | Opus 4.8 + `/fast` | Fast mode: faster output on the same model |
+
+### Remote Monitoring for Long Runs
+
+For multi-hour PRP executions, start the run locally, then attach to the live session from claude.ai/code or the mobile app (remote control). You can answer halt-condition questions or check progress from anywhere — the session keeps running on your machine. This is the recommended pattern for any run you won't be sitting in front of.
+
+**Migration notes:**
+
+- **v2.0.0** removed the forked `/KGP:ralph-loop` and `/KGP:cancel-ralph` commands.
+- **v2.2.0** removed `/KGP:prp-execute-batch` and `/KGP:prp-execute-isolated`. Their use cases are absorbed by `/KGP:prp-execute` accepting multiple PRP paths and native subagent delegation.
+- **v2.3.0** removed the duplicate `toolkit/` create-* commands (use the `core/` equivalents), modernized visual testing to Chrome DevTools MCP, and added auto-invocation hooks. See CHANGELOG.md.
 
 Stale state files in existing projects can be cleaned manually:
 
 ```bash
-# v2.0.0 cleanup
-rm -f .claude/ralph-loop.local.md .claude/KGP:ralph-loop.local.md .claude/ralph-progress.md
-
-# v2.2.0 cleanup
-rm -f .claude/prp-orchestrator-state.log .claude/current-task.md .claude/prp-progress.md .claude/prp-batch-progress.md
+rm -f .claude/ralph-loop.local.md .claude/KGP:ralph-loop.local.md .claude/ralph-progress.md \
+      .claude/prp-orchestrator-state.log .claude/current-task.md .claude/prp-progress.md \
+      .claude/prp-batch-progress.md
 ```
 
 ### Agent Teams (Experimental)
@@ -120,13 +119,13 @@ Restart Claude Code after changing settings.
 
 ```bash
 # Spawn a one-off team (recipe auto-picked from task text)
-/$PLUGIN_NAME:team-invoke "review PR #42 for auth changes"
-/$PLUGIN_NAME:team-invoke "why does the app crash on startup?"
-/$PLUGIN_NAME:team-invoke "build a user profile page with avatar upload"
+/KGP:team-invoke "review PR #42 for auth changes"
+/KGP:team-invoke "why does the app crash on startup?"
+/KGP:team-invoke "build a user profile page with avatar upload"
 
 # Run a PRP with auto-partitioned team
-/$PLUGIN_NAME:prp-execute PRPs/feature.md --team
-/$PLUGIN_NAME:prp-execute PRPs/feature.md --team=review   # explicit recipe
+/KGP:prp-execute PRPs/feature.md --team
+/KGP:prp-execute PRPs/feature.md --team=review   # explicit recipe
 ```
 
 **Recipes:**
@@ -135,9 +134,20 @@ Restart Claude Code after changing settings.
 - `research` — 3 generalists (UX / architecture / devil's-advocate)
 - `hypothesis` — 3–5 teammates, one per hypothesis
 
-**Mutex:** `--team` and `--isolated` are mutually exclusive.
+**When NOT to use `--team`:** if a phase is deterministic fan-out (apply the same change across N files, verify N criteria independently), Claude Code's native Workflow tool is cheaper and more reliable than a team. Reserve `--team` for genuinely independent tracks that benefit from peer messaging.
 
 **Skill:** `skills/agent-teams/` (`SKILL.md` router + `references/playbooks.md` with classifier + spawn templates).
+
+---
+
+## Design Workflow (Websites & UI)
+
+Most KGProDesign projects are design-forward websites. The design pipeline:
+
+1. **Tokens first.** Before implementing UI, establish design tokens. For KG ProDesign-owned properties, the `kgprodesign-branding` skill is the source of truth (colors, logos, typography). If the project syncs with Claude Design (claude.ai/design), pull the design system before generating components.
+2. **Generate with design skills.** When the official `frontend-design` plugin/skill is installed, invoke it for component and page generation — it avoids generic AI aesthetics. Use the `dataviz` skill for any chart, dashboard, or data visualization.
+3. **Visual QA loop.** After implementing UI, run the screenshot-iterate loop from the `ui-visual-testing` skill: render → screenshot (Chrome DevTools MCP or claude-in-chrome) → critique against the style guide → refine. Do at least one iteration on every user-facing page.
+4. **Frontend PRPs get a design phase.** `/KGP:prp-create` emits a "Phase 0: Design Foundation" for website/UI PRPs — token setup, component inventory, and a visual QA gate in the integration validation.
 
 ---
 
@@ -176,264 +186,86 @@ Or reference it in your project's CLAUDE.md:
 
 ---
 
-## Available Agents
+## Available Agents (11)
 
-### frontend-engineer
-**Purpose:** Full-stack frontend development (UI, components, performance)
+### Engineering
 
-**When to use:**
-- Building UI components
-- Implementing designs from mockups
-- Accessibility improvements
-- State management
+| Agent | Purpose | When to Use |
+|-------|---------|-------------|
+| `frontend-engineer` | UI, components, performance, accessibility | Building UI, implementing designs, state management |
+| `backend-engineer` | APIs, business logic, services | API design, auth, service integration |
+| `data-engineer` | Schema, migrations, optimization | Data modeling, query optimization |
+| `qa-engineer` | Testing, security, code review | Before merging, after complex features |
+| `devops-engineer` | CI/CD, Docker, infrastructure | Pipeline setup, deployment, monitoring |
+| `project-coordinator` | Sprint planning, task breakdown | Planning, estimation, progress tracking |
+| `document-specialist` | PRDs, PRPs, technical docs | Documentation of any kind |
 
-**Invocation:**
-```bash
-# Via Task tool in Claude Code
-```
+### Auditors
 
-### backend-engineer
-**Purpose:** Server-side development (API, business logic, services)
+| Agent | Purpose |
+|-------|---------|
+| `config-auditor` | Plugin configuration validation (skills + commands + agents) |
+| `skill-auditor` | SKILL.md best-practices audits |
+| `slash-command-auditor` | Slash command audits |
+| `subagent-auditor` | Subagent configuration audits |
 
-**When to use:**
-- API design and implementation
-- Business logic development
-- Authentication/authorization
-- Service integration
-
-### data-engineer
-**Purpose:** Database and data layer (schema, migrations, optimization)
-
-**When to use:**
-- Schema design and updates
-- Migration planning
-- Query optimization
-- Data modeling
-
-### qa-engineer
-**Purpose:** Quality assurance (testing, security, code review)
-
-**When to use:**
-- Before merging PRs
-- After implementing complex features
-- For security-sensitive changes
-- Test strategy planning
-
-### project-coordinator
-**Purpose:** Project management and Agile workflows
-
-**When to use:**
-- Sprint planning
-- Task breakdown and estimation
-- Progress tracking
-- Risk assessment
-
-### document-specialist
-**Purpose:** Technical documentation and content creation
-
-**When to use:**
-- PRD/PRP creation
-- API documentation
-- README updates
-- Technical guides
-
-### devops-engineer
-**Purpose:** Infrastructure and deployment
-
-**When to use:**
-- CI/CD pipeline setup
-- Docker configuration
-- Infrastructure as Code
-- Performance monitoring
-
-### config-auditor (Optional)
-**Purpose:** Plugin configuration validation
-
-**When to use:**
-- Validating new skills
-- Auditing command quality
-- Checking agent configurations
-- Best practices compliance
+Invoke agents via the Task tool with the matching `subagent_type`.
 
 ---
 
-## Commands Reference
+## Commands Reference (25)
 
-### Core Commands
+### Top-Level
 
-#### /context-prime
-Initializes Claude's understanding of the current project.
+| Command | Purpose |
+|---------|---------|
+| `/KGP:context-prime` | Initialize project understanding (structure, stack, CLAUDE.md files) |
+| `/KGP:deploy` | Deploy via deployment-expert skill (Netlify, Azure VM, FTP, GitHub) |
+| `/KGP:help` | Explain the plugin and available commands |
+| `/KGP:prp-create` | Generate PRP from requirements (intent-lock + decision-log) |
+| `/KGP:prp-validate` | Pre-flight PRP validation with auto-fix |
+| `/KGP:prp-execute` | Execute one or more PRPs in a single native session |
+| `/KGP:run-regression` | Automated regression tests (frontend, backend, E2E, coverage) |
+| `/KGP:team-invoke` | Spawn an experimental Agent Team |
 
-```bash
-/context-prime
-```
-**What it does:**
-1. Reads project structure
-2. Identifies tech stack
-3. Loads relevant CLAUDE.md files
-4. Prepares optimal context
+### core/ — Plugin Authoring & Audits
 
-#### /create
-Universal scaffolding command.
+| Command | Purpose |
+|---------|---------|
+| `/KGP:core:audit-skill` | Audit a skill for best practices |
+| `/KGP:core:audit-slash-command` | Audit a slash command |
+| `/KGP:core:audit-subagent` | Audit a subagent config |
+| `/KGP:core:create-agent-skill` | Create a Claude Code skill |
+| `/KGP:core:create-hook` | Configure Claude Code hooks |
+| `/KGP:core:create-meta-prompt` | Create multi-stage Claude-to-Claude prompts |
+| `/KGP:core:create-slash-command` | Create a slash command |
+| `/KGP:core:create-subagent` | Create a specialized subagent |
+| `/KGP:core:heal-skill` | Apply corrections to skill docs discovered during execution |
 
-```bash
-/create <type> [name]
-```
-**Types:** component, service, api, model, test, prp, hook, command, agent, feature
+### dev/ — Daily Workflow
 
-**What it does:**
-1. Detects project patterns
-2. Generates consistent structure
-3. Includes tests and exports
+| Command | Purpose |
+|---------|---------|
+| `/KGP:dev:add-to-todos` | Add todo item to TO-DOS.md with context |
+| `/KGP:dev:check-todos` | List outstanding todos and pick one |
+| `/KGP:dev:create-plan` | Create hierarchical project plans |
+| `/KGP:dev:create-prompt` | Create a prompt for another Claude to execute |
+| `/KGP:dev:debug` | Expert debugging methodology |
+| `/KGP:dev:run-plan` | Execute a PLAN.md directly |
+| `/KGP:dev:run-prompt` | Delegate prompts to fresh sub-task contexts |
+| `/KGP:dev:whats-next` | Create a handoff document for continuing in a fresh context |
 
-#### /debug
-Expert debugging with hypothesis testing.
+---
 
-```bash
-/debug [issue description]
-```
-**What it does:**
-1. Gathers evidence
-2. Forms hypotheses
-3. Tests systematically
-4. Documents root cause
+## Automatic Skill Invocation
 
-### PRP Commands
+The plugin ships hooks (see `hooks/hooks.json`) that make skill selection automatic:
 
-#### /$PLUGIN_NAME:prp-create
-Generate PRP from requirements.
+- **UserPromptSubmit** — detects PRP-shaped, design-shaped, deploy-shaped, and debug-shaped prompts and injects a one-line hint pointing at the right command/skill.
+- **SessionStart** — inventories `PRPs/` in the working project and surfaces in-flight PRPs so a fresh session knows what's active.
+- **PostToolUse** — after editing a `SKILL.md`, command, or agent file, suggests the matching auditor agent.
 
-```bash
-/$PLUGIN_NAME:prp-create "Feature description"
-```
-
-#### /$PLUGIN_NAME:prp-execute
-Execute PRP with validation.
-
-```bash
-/$PLUGIN_NAME:prp-execute <path-to-prp.md>
-```
-
-#### /$PLUGIN_NAME:prp-validate
-Pre-flight PRP validation.
-
-```bash
-/$PLUGIN_NAME:prp-validate <path-to-prp.md>
-```
-
-#### /$PLUGIN_NAME:prp-execute (multi-PRP)
-Execute multiple PRPs sequentially in a single native Claude Code session.
-
-```bash
-/$PLUGIN_NAME:prp-execute PRPs/PRP-foundation.md PRPs/PRP-core.md PRPs/PRP-polish.md
-```
-
-All PRPs run in one context window. No external scripts. No iteration loops. See the "Native Long-Run Execution" section above for the underlying philosophy and Anthropic harness-design references.
-
-### Workflow Commands
-
-#### /commit
-Smart git commit with conventional format.
-
-```bash
-/commit
-```
-
-#### /pr
-Create pull request.
-
-```bash
-/pr
-```
-
-#### /review
-Code review for staged changes.
-
-```bash
-/review
-```
-
-### Meta-Prompting Commands
-
-#### /create-prompt
-Create prompts for other Claude instances.
-
-```bash
-/create-prompt
-```
-
-#### /run-prompt
-Delegate prompts to fresh contexts.
-
-```bash
-/run-prompt <prompt-file>
-```
-
-### Creation Toolkit Commands
-
-#### /create-hook
-Configure Claude Code hooks (PreToolUse, PostToolUse, Stop, etc.).
-
-#### /create-subagent
-Create specialized subagents with role definition.
-
-#### /create-slash-command
-Create slash commands with YAML frontmatter.
-
-#### /create-agent-skill
-Create Claude Code skills with router pattern.
-
-#### /create-plan
-Create hierarchical project plans.
-
-#### /create-meta-prompt
-Create multi-stage prompts (Research → Plan → Implement).
-
-### Analysis Commands
-
-#### /consider
-Unified decision framework.
-
-```bash
-/consider <framework> [problem]
-```
-
-**Available frameworks:**
-- `first-principles` - Break down to fundamentals
-- `5-whys` - Root cause by asking why repeatedly
-- `inversion` - Solve problems backwards
-- `pareto` - Apply 80/20 rule
-- `second-order` - Consequences of consequences
-- `opportunity-cost` - Analyze trade-offs
-- `one-thing` - Highest-leverage action
-- `occams-razor` - Simplest explanation
-- `swot` - Strengths/weaknesses/opportunities/threats
-- `eisenhower` - Urgent/important matrix
-- `via-negativa` - Improve by removing
-- `10-10-10` - Time horizon evaluation
-
-#### /onboard
-Project onboarding analysis for new engineers.
-
-```bash
-/onboard
-```
-
-### Utility Commands
-
-#### /handoff
-Create context handoff document.
-
-```bash
-/handoff
-```
-
-#### /resolve-conflicts
-Git conflict resolution.
-
-```bash
-/resolve-conflicts
-```
+Skills also self-invoke through their descriptions — each skill's `description` lists concrete trigger phrases. When adding a skill, write the description as "Use when [specific user phrasings]…" so Claude fires it without being asked.
 
 ---
 
@@ -441,27 +273,28 @@ Git conflict resolution.
 
 ### Adding New Commands
 
-1. Create `.claude/commands/[category]/command-name.md`
+1. Create `commands/[category]/command-name.md` in the plugin
 2. Follow YAML frontmatter format:
    ```yaml
    ---
-   name: command-name
    description: Brief description
-   tools: Read, Write, Bash, Grep, Glob
+   argument-hint: "<expected-args>"
+   allowed-tools: [Read, Write, Bash, Grep, Glob]
    ---
    ```
 3. Document in CLAUDE.md
-4. Test with `/command-name`
+4. Test with `/KGP:command-name`
 
 ### Adding New Agents
 
-1. Create `.claude/agents/agent-name.md`
+1. Create `agents/agent-name.md`
 2. Include frontmatter:
    ```yaml
    ---
    name: agent-name
-   description: Detailed purpose
-   tools: Read, Write, Bash, Task, etc.
+   description: Detailed purpose with "MUST BE USED when..." trigger phrasing
+   tools: Read, Write, Bash, Task
+   model: haiku   # optional — pin cheap models for mechanical agents
    color: Blue
    ---
    ```
@@ -470,15 +303,9 @@ Git conflict resolution.
 
 ### Updating Documentation
 
-**Weekly:**
-- Review command effectiveness
-- Update examples if needed
-- Remove deprecated items
-
-**Monthly:**
-- Full documentation audit
-- Verify all commands work
-- Update version manifest
+- Update CHANGELOG.md with every version bump
+- Periodically run `/KGP:core:audit-skill`, `audit-slash-command`, `audit-subagent` across the plugin
+- Re-run a capability sweep against the Claude Code changelog every few months and prune anything stale
 
 ---
 
@@ -486,9 +313,9 @@ Git conflict resolution.
 
 ### For All Development
 
-1. **Start with context:** Always run `/context-prime` in new sessions
+1. **Start with context:** Run `/KGP:context-prime` in new sessions (the SessionStart hook covers the basics automatically)
 2. **Use agents for complexity:** Single commands for simple tasks, agents for complex
-3. **Verify before commit:** Run `/review` before committing
+3. **Verify before commit:** Run tests and delegate a review to `qa-engineer` before committing
 4. **Test incrementally:** Don't batch large changes
 
 ### For PRP Workflow
@@ -500,7 +327,7 @@ Git conflict resolution.
 
 ### Execution Philosophy
 
-With 1M-context windows and auto-compaction, full PRPs (or several PRPs at once) execute in a single native Claude Code session. There is no "isolation mode," no batch runner, no iteration loop. The single command handles all cases.
+With 1M-context models, full PRPs (or several PRPs at once) execute in a single native Claude Code session. There is no "isolation mode," no batch runner, no iteration loop. The single command handles all cases.
 
 **Commands comparison:**
 
@@ -510,7 +337,7 @@ With 1M-context windows and auto-compaction, full PRPs (or several PRPs at once)
 | `prp-execute <prp1.md> <prp2.md> ...` | Single session | Multiple related PRPs in sequence |
 | `prp-execute <prp.md> --team` | Single session, parallel teammates | Tasks with independent tracks |
 
-If a single PRP is so large that auto-compaction starts erroring, the right move is to delegate verbose-output tasks to subagents via the Task tool, NOT to spin up external orchestration.
+If a single PRP is so large that context pressure becomes a problem, the right moves are: (1) delegate verbose-output tasks to subagents via the Task tool, and (2) split the PRP — `/KGP:prp-validate` warns when a PRP exceeds the recommended envelope. Do NOT spin up external orchestration.
 
 ### For Code Review
 
@@ -524,8 +351,8 @@ If a single PRP is so large that auto-compaction starts erroring, the right move
 
 ### Command Not Found
 ```bash
-# Verify installation
-ls ~/.claude/commands/
+# Verify the plugin is installed
+/plugin
 
 # Restart Claude session
 Ctrl+D
@@ -534,29 +361,32 @@ claude
 
 ### Agent Not Available
 ```bash
-# Check agent file exists
-ls ~/.claude/agents/
+# Check agent file exists in the plugin
+ls ~/.claude/plugins/KGProDesign-DevKit/agents/
 
 # Verify frontmatter format
-cat ~/.claude/agents/agent-name.md
+cat ~/.claude/plugins/KGProDesign-DevKit/agents/agent-name.md
 ```
 
 ### Context Issues
 ```bash
 # Clear and reinitialize
 /clear
-/context-prime
+/KGP:context-prime
 ```
 
 ---
 
 ## Configuration
 
-### settings.local.json
+### Project settings (`.claude/settings.json`)
 ```json
 {
-  "toolPermissions": {
-    "allowlist": ["bash", "write", "read", "edit"]
+  "permissions": {
+    "allow": ["Bash(npm run lint)", "Bash(npm run test:*)"]
+  },
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
   }
 }
 ```
@@ -578,5 +408,5 @@ Create project-specific CLAUDE.md in your project root:
 
 ---
 
-Last Updated: 2025-12-31
+Last Updated: 2026-07-21
 Maintained by: KGProDesign

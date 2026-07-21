@@ -38,7 +38,7 @@ interface DebugContext {
 }
 
 async function initDebugSession(url: string): Promise<DebugContext> {
-  const browser = await puppeteer.launch({ headless: 'new' });
+  const browser = await puppeteer.launch({ headless: true });
   const page = await browser.newPage();
   await page.setViewport({ width: 1280, height: 720 });
 

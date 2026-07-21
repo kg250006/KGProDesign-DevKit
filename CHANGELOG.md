@@ -1,0 +1,52 @@
+# Changelog
+
+All notable changes to KGProDesign-DevKit.
+
+## [2.3.0] - 2026-07-21
+
+Modernization sweep against the July 2026 Claude Code capability set.
+
+### Added
+- **Auto-invocation hooks** (`hooks/hooks.json` + `scripts/hooks/`):
+  - `UserPromptSubmit` — detects deploy/debug/design/feature-sized prompts and injects a one-line hint pointing at the matching KGP command or skill.
+  - `SessionStart` — surfaces PRP files and in-flight execution state so fresh sessions know what's active.
+  - `PostToolUse` (Edit|Write) — suggests the matching auditor agent after SKILL.md / command / agent file edits.
+- **Design-first frontend PRPs**: `/KGP:prp-create` emits a `Phase 0: Design Foundation` (design tokens → component inventory → design-skill directives) for UI-bearing PRPs, plus a `verify="visual"` integration criterion.
+- **Adversarial verification**: `/KGP:prp-execute` supports `verify="adversarial"` success criteria — an independent qa-engineer verifier attempts to refute the claim before it counts as met.
+- **Visual QA gate** in `/KGP:prp-execute`: UI-bearing PRPs run the screenshot-critique-refine loop (ui-visual-testing) before emitting completion promises.
+- **Sizing & design advisories** in `/KGP:prp-validate`: warns on >5,000-line / >40-task PRPs (compaction risk) and on UI PRPs missing a Design Foundation phase or visual QA gate.
+- **Remote monitoring guidance**: prp-execute/help/README document attaching to long runs from claude.ai/code or mobile via remote control.
+- **Model strategy**: docs and prp-create reports recommend Sonnet 5 / Opus 4.8 (1M context) for execution, Opus 4.8 / Fable 5 for planning, Haiku 4.5 for mechanical agents, `/fast` for time-critical output.
+- `CHANGELOG.md` (this file).
+
+### Changed
+- **ui-visual-testing skill**: now routes to Chrome DevTools MCP / claude-in-chrome first (snapshots, console, network, performance traces, Lighthouse); Puppeteer retained as the headless-CI fallback. Replaced deprecated `headless: 'new'` with `headless: true` throughout.
+- **templates/prp_base.md**: replaced the legacy non-XML v2 template with the XML v3 structure (intent-anchors, decisions, Design Foundation phase, verify attributes) — now consistent with prp-create/validate/execute.
+- **software-architect skill**: template gains `<intent-anchors>`, `<context><decisions>`, and `verify` attributes; added Design-First principle.
+- **prp-execute**: reduced auto-compaction reliance — context hygiene via subagent delegation is the primary strategy; `/rewind` documented for mid-run recovery; Workflow tool recommended for deterministic fan-out phases.
+- Model references updated everywhere: `Opus 4.7 / Sonnet 4.6` → `Sonnet 5 / Opus 4.8 / Fable 5 / Haiku 4.5`.
+- Normalized legacy command frontmatter (`context-prime`, `dev/run-plan`) to `description`/`argument-hint`/`allowed-tools`.
+- Removed deprecated `MultiEdit` from agent tool lists.
+- Fixed skill `name` ↔ directory mismatches (`iphone-apps`, `macos-apps`); removed non-standard `triggers:`/`allowed-tools:` keys from agent-teams SKILL frontmatter (trigger phrases folded into the description).
+- Corrected counts and metadata: 11 agents / 25 commands / 18 skills; README footer version; INSTALL.md leftover `/SG-STAC:` prefixes.
+
+### Removed
+- **`commands/toolkit/`** (6 commands) — duplicates of `/KGP:core:create-*` and `/KGP:dev:create-plan`. Use those instead.
+- Dead documentation: `prp_runner.py` script docs, and references to commands that never shipped in v2.x (`/create`, `/commit`, `/pr`, `/review`, `/consider`, `/onboard`, `/handoff`, `/resolve-conflicts`), `QUICKSTART.md`, `VERSION_MANIFEST.md`.
+- Stale `--isolated` mutex references (flag was removed in v2.2.0).
+
+## [2.2.0] - 2026-07
+
+- **Breaking**: simplified PRP execution to the native single-session `/KGP:prp-execute` command accepting multiple PRP paths. Removed `/KGP:prp-execute-batch` and `/KGP:prp-execute-isolated`.
+
+## [2.1.1] - 2026-06
+
+- Fixed Ralph Loop plugin name to `ralph-loop`.
+
+## [2.1.0] - 2026-06
+
+- **Breaking**: replaced forked Ralph Loop with marketplace delegation; added experimental Agent Teams (`/KGP:team-invoke`, `--team`).
+
+## [1.9.1] and earlier
+
+- See git history.

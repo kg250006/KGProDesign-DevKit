@@ -1,9 +1,11 @@
 ---
-command: context-prime
-description: Prime context for claude code before starting a new task
-arguments: Specify the area of the codebase where you will be working on.
+description: "[KGP] Prime context for Claude Code before starting a new task"
+argument-hint: "[area of the codebase you will be working on]"
+allowed-tools: [Read, Bash, Glob, Grep]
 ---
 
-Read README.md, THEN run git ls-files | grep -v -f (sed 's|^|^|; s|$|/|' .cursorignore | psub) to understand the context of the project
+Read README.md, then run `git ls-files` (respecting any ignore files) to understand the context of the project.
 
-the user might specify the area of the codebase where they will be working on here: $ARGUMENTS
+The user might specify the area of the codebase where they will be working on here: $ARGUMENTS
+
+If a `PRPs/` directory exists, list any PRP files and note which appear in-flight (rows in `.claude/prp-task-progress.md`).

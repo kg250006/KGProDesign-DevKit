@@ -5,3 +5,4 @@ PRPs/*.md
 .claude/current-task.md
 .claude/prp-progress.md
 .claude/prp-batch-progress.md
+.claude/prp-task-progress.md

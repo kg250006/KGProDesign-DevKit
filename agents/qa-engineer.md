@@ -135,7 +135,7 @@ When your work involves specialized methodologies, invoke the appropriate skill 
 
 ### debug-like-expert
 - **Trigger**: Root cause analysis for reported bugs, investigating flaky tests, or analyzing security vulnerabilities
-- **Invoke**: Use `/$PLUGIN_NAME:debug-like-expert` or `/debug`
+- **Invoke**: Use `/KGP:debug-like-expert` or `/KGP:dev:debug`
 - **Purpose**: Methodical investigation with hypothesis testing, evidence gathering, and root cause analysis
 - **When to use**:
   - Reproducing and diagnosing reported bugs
@@ -146,7 +146,7 @@ When your work involves specialized methodologies, invoke the appropriate skill 
 
 ### ui-visual-testing
 - **Trigger**: Automated UI validation, visual regression testing, or verifying frontend fixes
-- **Invoke**: Use `/$PLUGIN_NAME:ui-visual-testing`
+- **Invoke**: Use `/KGP:ui-visual-testing`
 - **Purpose**: Puppeteer-based UI validation with DOM inspection, console monitoring, and screenshots
 - **When to use**:
   - Running automated visual regression tests
@@ -158,7 +158,7 @@ When your work involves specialized methodologies, invoke the appropriate skill 
 
 ### regression-testing
 - **Trigger**: Running comprehensive regression tests, coverage enhancement, or fixing test failures
-- **Invoke**: Use `/regression-test` or `/$PLUGIN_NAME:regression-testing`
+- **Invoke**: Use `/regression-test` or `/KGP:regression-testing`
 - **Purpose**: Automated regression testing with project detection, coverage analysis, and failure fixing
 - **When to use**:
   - Running full regression test suites (unit, integration, E2E)

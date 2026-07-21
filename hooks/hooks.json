@@ -1,4 +1,40 @@
 {
-  "description": "KGProDesign-DevKit hooks",
-  "hooks": {}
+  "description": "KGProDesign-DevKit auto-invocation hooks: skill hints on matching prompts, PRP inventory at session start, auditor suggestions after plugin-config edits.",
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/hooks/suggest-skill.sh\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/hooks/session-start.sh\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/hooks/suggest-auditor.sh\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
 }
