@@ -186,12 +186,13 @@ Or reference it in your project's CLAUDE.md:
 
 ---
 
-## Available Agents (11)
+## Available Agents (12)
 
 ### Engineering
 
 | Agent | Purpose | When to Use |
 |-------|---------|-------------|
+| `dev-engineer` | Workflow-enforcing orchestrator (Vibe Kanban default) | Any implementation card — always runs PRP-Create → Validate → Execute |
 | `frontend-engineer` | UI, components, performance, accessibility | Building UI, implementing designs, state management |
 | `backend-engineer` | APIs, business logic, services | API design, auth, service integration |
 | `data-engineer` | Schema, migrations, optimization | Data modeling, query optimization |
