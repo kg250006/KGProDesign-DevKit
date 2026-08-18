@@ -2,6 +2,11 @@
 
 All notable changes to KGProDesign-DevKit.
 
+## [Unreleased]
+
+### Added
+- **`dev-engineer` agent** (`agents/dev-engineer.md`) — workflow-enforcing orchestrator designed as the Vibe Kanban workspace default (`KGP:dev-engineer`). Every task runs PRP-Create → PRP-Validate → PRP-Execute with no shortcuts; specialist agent dispatch happens automatically inside the executor via each PRP task's `agent=` attribute. Agent count 11 → 12.
+
 ## [2.3.0] - 2026-07-21
 
 Modernization sweep against the July 2026 Claude Code capability set.
