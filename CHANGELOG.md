@@ -2,10 +2,13 @@
 
 All notable changes to KGProDesign-DevKit.
 
-## [Unreleased]
+## [2.4.0] - 2026-08-24
 
 ### Added
 - **`dev-engineer` agent** (`agents/dev-engineer.md`) — workflow-enforcing orchestrator designed as the Vibe Kanban workspace default (`KGP:dev-engineer`). Every task runs PRP-Create → PRP-Validate → PRP-Execute with no shortcuts; specialist agent dispatch happens automatically inside the executor via each PRP task's `agent=` attribute. Agent count 11 → 12.
+
+### Fixed
+- **`dev-engineer` command resolution** (`agents/dev-engineer.md` Step 1) — the PRP command files were located with a hardcoded `**/KGProDesign-DevKit/commands/prp-*.md` glob, a path that exists only in the dev clone. Running from an installed plugin (`~/.claude/plugins/cache/KGP/KGP/<version>/`) or from any Vibe Kanban workspace rooted in another repo, all three lookups missed and the agent halted with "plugin is not available" — i.e. it failed in precisely the environment it is the default agent for, while testing clean from the plugin repo. Resolution is now layered: `${CLAUDE_PLUGIN_ROOT}` first (layout-independent, already the convention in `hooks/hooks.json`), then a `Bash` search of the install roots (`Glob` cannot reach outside the session working directory), then a project-vendored copy. Multiple hits are disambiguated by requiring `agents/dev-engineer.md` in the same tree, which excludes SG-STAC's identically named `prp-create.md`. Halt-and-report now fires only when all three methods fail.
 
 ## [2.3.0] - 2026-07-21
 

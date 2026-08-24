@@ -5,7 +5,7 @@ Universal Claude Code development toolkit for any project.
 ## Why Use This Plugin
 
 - **Unified Foundation** - Every developer starts with identical tools, workflows, and guidelines
-- **Focused Agents** - 11 agents (7 engineering + 4 auditors) covering all development categories
+- **Focused Agents** - 12 agents (7 engineering + 4 auditors + 1 workflow orchestrator) covering all development categories
 - **Essential Commands** - 25 commands for efficient workflows
 - **Native PRP Execution** - Spec-driven development in a single long-running session, no external scripts
 - **Design-First Frontend** - Website PRPs include design-token phases and visual QA gates
@@ -225,4 +225,4 @@ Recipes: `implementation`, `review`, `research`, `hypothesis`. Classifier + disa
 - Issues: GitHub Issues
 
 ---
-Universal development toolkit | v2.3.0
+Universal development toolkit | v2.4.0

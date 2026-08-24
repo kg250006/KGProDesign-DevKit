@@ -37,15 +37,48 @@ For every task assigned to you:
 
 ### Step 1 — Locate the KGP commands
 
-Find the plugin's PRP command files (works whether the plugin is installed at `~/.claude/plugins/KGProDesign-DevKit/` or vendored inside the project):
+Resolve the three PRP command files — `prp-create.md`, `prp-validate.md`, and
+`prp-execute.md` — before doing anything else. Try the methods below **in order** and
+stop at the first that yields all three.
+
+Do not assume a directory name. The installed plugin lives under a marketplace/version
+path (`~/.claude/plugins/cache/KGP/KGP/<version>/`), the dev clone lives in a folder
+named `KGProDesign-DevKit`, and a vendored copy can be anywhere. Only Method A is
+layout-independent.
+
+**Method A — plugin root variable (preferred).** When running from an installed plugin,
+the runtime exports the plugin's own directory:
+
+```bash
+echo "${CLAUDE_PLUGIN_ROOT:-unset}"
+```
+
+If that prints a real path, the files are at `${CLAUDE_PLUGIN_ROOT}/commands/prp-create.md`
+and its two siblings. Verify all three exist, record the absolute paths, and skip to Step 2.
+
+**Method B — search the install roots (fallback).** If the variable is unset or empty,
+search the standard install locations. This is a `Bash` step, not `Glob`, because `Glob`
+only searches the session's working directory and the plugin usually sits outside it:
+
+```bash
+ls ~/.claude/plugins/cache/*/*/*/commands/prp-create.md 2>/dev/null
+```
+
+Take the match whose tree also contains `agents/dev-engineer.md` — that confirms a real
+KGP plugin root rather than another plugin's similarly named command file.
+
+**Method C — vendored in the project (last resort).** If the plugin is checked into the
+repo you are working in, find it relative to the working directory:
 
 ```
-Glob: **/KGProDesign-DevKit/commands/prp-create.md
-Glob: **/KGProDesign-DevKit/commands/prp-validate.md
-Glob: **/KGProDesign-DevKit/commands/prp-execute.md
+Glob: **/commands/prp-create.md
 ```
 
-Record the three absolute paths. If any file is missing, halt and report that the KGProDesign-DevKit plugin is not available in this environment.
+Again, keep only a hit whose sibling tree contains `agents/dev-engineer.md`.
+
+Record the three absolute paths. Halt and report that the KGProDesign-DevKit plugin is
+unavailable **only if all three methods fail** — never on the strength of one failed
+lookup.
 
 ### Step 2 — PRP-Create
 
