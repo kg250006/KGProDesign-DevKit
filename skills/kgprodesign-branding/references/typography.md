@@ -19,7 +19,66 @@
 @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap');
 ```
 
+The Google Fonts `<link>` above is the **convenience default** for internal tools and
+quick prototypes. For any client-facing production site, use self-hosting (below).
+
 </font_stack>
+
+<self_hosting>
+
+## Self-Hosting Sora (required for production / corporate-network-hardened builds)
+
+The Google Fonts CDN is a **third-party external resource**. Strict corporate/enterprise
+web filters strip external sub-resources, which makes an otherwise-finished site render
+**unstyled** on a client's work computer. Self-hosting keeps the font first-party so
+there is nothing external for a filter to block.
+
+This is mitigation **M3** in `deployment-expert` →
+`references/corporate-accessibility.md`. Self-host fonts on every production/client site.
+
+### 1. Download the Sora weights
+Get the `woff2` files for the weights in use (300, 400, 500, 600, 700) — from the
+[Sora repo](https://github.com/be5invis/Sora) or `google-webfonts-helper`. Place them in
+the project, e.g. `public/fonts/` (static hosts) or `/fonts/` (served at the web root).
+
+### 2. Declare `@font-face` (self-hosted)
+Replace the CDN `<link>`/`@import` with local `@font-face` rules. Keep the same
+`--kgp-font-family` stack — only the source changes.
+
+```css
+/* Repeat one block per weight; woff2 only is fine for modern browsers */
+@font-face {
+  font-family: 'Sora';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;               /* avoids invisible text while loading */
+  src: url('/fonts/sora-300.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Sora';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/sora-400.woff2') format('woff2');
+}
+/* ...repeat for 500, 600, 700... */
+
+:root {
+  --kgp-font-family: 'Sora', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+}
+```
+
+### 3. Preload the critical weight (optional, for LCP)
+```html
+<link rel="preload" href="/fonts/sora-600.woff2" as="font" type="font/woff2" crossorigin>
+```
+
+### Notes
+- **Do not** load both the CDN `<link>` and self-hosted `@font-face` — pick one. Production = self-hosted.
+- Serve fonts from the **same custom domain** as the site (not a separate CDN host) so a filter sees a single first-party origin.
+- Apply the same "self-host / bundle" principle to any other external resource on the critical render path (icon fonts, CDN CSS/JS).
+
+</self_hosting>
 
 <type_scale>
 

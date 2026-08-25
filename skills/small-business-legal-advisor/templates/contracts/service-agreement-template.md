@@ -82,6 +82,8 @@ The parties agree as follows:
 
 6.3 Disclaimer. EXCEPT AS EXPRESSLY SET FORTH HEREIN, PROVIDER DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 
+6.4 Corporate Network Accessibility (Best-Efforts). Corporate network accessibility hardening (custom domain, security headers, self-hosted assets, and pre-launch filter categorization submission) is included on a best-efforts basis. Corporate proxies and web filters are configured and operated by each visitor's own IT department and third-party filtering vendors and are outside Provider's control. Provider does not warrant access to, or full rendering of, any deliverable on any specific third-party corporate network, proxy, or web filter, as those systems are outside Provider's control.
+
 7. LIMITATION OF LIABILITY
 
 7.1 Exclusion of Damages. NEITHER PARTY SHALL BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, REGARDLESS OF CAUSE OR THEORY OF LIABILITY.
@@ -149,4 +151,35 @@ Industry-Specific Considerations:
 - Consulting: Strengthen non-compete/non-solicitation
 - Creative: Detailed IP assignment, moral rights waiver
 - Technical: Acceptance testing, warranty periods
+
+Web/Website Engagements:
+- Include §6.4 Corporate Network Accessibility (best-efforts) for any site delivered to a
+  client whose audience browses from corporate/enterprise networks (nonprofit boards,
+  foundation donors, grant reviewers, B2B buyers). Pair it with the proposal paragraph
+  below. The technical work it describes is implemented by the KGP `deployment-expert`
+  skill (`workflows/corporate-accessibility-hardening.md`).
 </customization_notes>
+
+<proposal_language>
+## Corporate Network Accessibility — non-technical proposal paragraph
+
+Use in proposals to set best-effort / no-guarantee expectations up front (mirrors the
+§6.4 contract clause):
+
+> **Corporate Network Accessibility.** Some organizations run strict security filters on
+> their work computers that can hide or block brand-new websites they haven't yet
+> recognized — which can make a finished site look broken on an office computer even
+> though it works perfectly everywhere else. We proactively build against this: your site
+> will live on its own dedicated web address, ship with the security configuration
+> corporate networks look for, keep its content self-contained, and be submitted to the
+> major corporate filtering services for recognition before launch. **Please note:** these
+> filters are controlled by each visitor's own IT department and are outside our control,
+> so while we apply every best practice to maximize compatibility, we cannot guarantee how
+> any specific corporate network chooses to treat any website.
+
+### SOW / scope one-liner
+> *Corporate network accessibility hardening (custom domain, security headers, self-hosted
+> assets, pre-launch filter categorization submission) is included on a best-efforts basis;
+> Provider does not warrant access or rendering on any specific third-party corporate
+> network, proxy, or web filter, as those systems are outside Provider's control.*
+</proposal_language>

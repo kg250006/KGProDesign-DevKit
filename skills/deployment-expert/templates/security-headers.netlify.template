@@ -1,0 +1,27 @@
+# Netlify _headers — corporate-network-hardened security header set.
+# Copy this file to the publish directory as `_headers` (no extension),
+# OR use the netlify.toml [[headers]] block below. Do not use both.
+#
+# See references/corporate-accessibility.md → security_headers (M2).
+
+/*
+  X-Frame-Options: DENY
+  X-XSS-Protection: 1; mode=block
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+  Permissions-Policy: geolocation=(), microphone=(), camera=()
+  Cache-Control: public, max-age=0, must-revalidate
+
+# --- Equivalent netlify.toml block (use INSTEAD of the _headers file above) ---
+#
+# [[headers]]
+#   for = "/*"
+#   [headers.values]
+#     X-Frame-Options = "DENY"
+#     X-XSS-Protection = "1; mode=block"
+#     X-Content-Type-Options = "nosniff"
+#     Referrer-Policy = "strict-origin-when-cross-origin"
+#     Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
+#     Permissions-Policy = "geolocation=(), microphone=(), camera=()"
+#     Cache-Control = "public, max-age=0, must-revalidate"

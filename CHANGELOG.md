@@ -2,6 +2,25 @@
 
 All notable changes to KGProDesign-DevKit.
 
+## [2.5.0] - 2026-08-24
+
+Corporate network accessibility hardening — new sites are hardened against enterprise web
+filters by default (from `PRDs/PRD-corporate-network-accessibility.md`). Split across the
+three owning skills.
+
+### Added
+- **`deployment-expert` — corporate-accessibility reference** (`skills/deployment-expert/references/corporate-accessibility.md`) — knowledge base for why new sites break on corporate networks (three root causes: uncategorized new-domain reputation, shared free-subdomain distrust, weak security posture), the M1–M7 mitigation table, the per-platform baseline security-header set (Netlify/nginx/NPM), font self-hosting pointer, and the filter-vendor categorization list.
+- **`deployment-expert` — hardening workflow** (`skills/deployment-expert/workflows/corporate-accessibility-hardening.md`) — ordered runnable checklist: confirm custom domain (M1) → apply security headers (M2) → scan/remove external resources & self-host fonts (M3) → confirm HTTPS+HSTS (M4) → guided filter-vendor categorization submission (M5) → corporate-like verification (M6) → hardening record + no-guarantee caveat (M7). Includes the AC1–AC7 acceptance checklist.
+- **`deployment-expert` — security-header templates** (`skills/deployment-expert/templates/security-headers.netlify.template`, `security-headers.nginx.template`) — drop-in hardened header set (`X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `Strict-Transport-Security` w/ preload, `Permissions-Policy`, `X-XSS-Protection`, `Cache-Control`) for Netlify (`_headers`/`netlify.toml`) and nginx/NPM.
+- **`kgprodesign-branding` — font self-hosting** (`skills/kgprodesign-branding/references/typography.md`) — new `<self_hosting>` section with the Sora `@font-face` recipe (local `woff2`, `font-display: swap`, preload), required for production/corporate-hardened builds instead of the Google Fonts CDN. Cross-linked to `deployment-expert` M3.
+- **`small-business-legal-advisor` — best-efforts clause** (`skills/small-business-legal-advisor/templates/contracts/service-agreement-template.md`) — new §6.4 Corporate Network Accessibility (best-efforts, no warranty of access/rendering on third-party corporate networks) plus a `<proposal_language>` snippet (non-technical proposal paragraph + SOW one-liner).
+
+### Changed
+- **`deployment-expert` — `post-deploy-health.md`**: new platform-agnostic Step 4.5 asserts the full security-header set + HTTPS from the custom domain via `curl -sS -D -`, and **fails the health check** if any header is missing.
+- **`deployment-expert` — `setup-profile.md`**: initializes the `corporateAccessibility` profile block and scaffolds the security-headers template on new-project setup (PRD §5.6 scaffolding folded here rather than a new command).
+- **`deployment-expert` — profile schema**: `templates/deployment-profile.json` and the `SKILL.md` inline schema gain a `corporateAccessibility` block (`customDomainRequired`, `securityHeadersApplied`, `externalResourceAllowlist`, `fontsSelfHosted`, `categorizationSubmitted` per-vendor map, `corporateVerified`, `lastVerifiedAt`).
+- **`deployment-expert` — `SKILL.md`**: description mentions corporate-accessibility hardening; intake menu (item 10), routing table, `<reference_index>`, `<workflows_index>`, and `<templates_index>` wire the new files. Index hygiene: removed the dangling `references/verification.md` entry, added the previously-unindexed `references/deploy-scripts.md` and `scripts/` helpers.
+
 ## [2.4.0] - 2026-08-24
 
 ### Added

@@ -177,10 +177,49 @@ cat > .deployment-profile.json << EOF
     "expectedStatus": 200
   },
 
+  "corporateAccessibility": {
+    "customDomainRequired": true,
+    "securityHeadersApplied": false,
+    "externalResourceAllowlist": [],
+    "fontsSelfHosted": false,
+    "categorizationSubmitted": {
+      "zscaler": null, "cisco": null, "paloAlto": null,
+      "forcepoint": null, "symantec": null
+    },
+    "corporateVerified": false,
+    "lastVerifiedAt": null
+  },
+
   "history": []
 }
 EOF
 ```
+
+The `corporateAccessibility` block tracks corporate-network hardening (custom domain,
+security headers, self-hosted assets, filter categorization, verification). It is
+initialized unhardened; `workflows/corporate-accessibility-hardening.md` applies and
+records each mitigation. See `references/corporate-accessibility.md`.
+
+## Step 5.5: Scaffold Security Headers (Corporate Accessibility)
+
+Every new site ships corporate-network-hardened by default. Scaffold the header template
+for the detected platform from `templates/security-headers.*.template`:
+
+```bash
+case "$PLATFORM" in
+  netlify)
+    # Add the [[headers]] block to netlify.toml, or drop a _headers file in the publish dir
+    echo "→ Apply templates/security-headers.netlify.template (netlify.toml block or _headers)" ;;
+  azure-vm|github-production)
+    echo "→ Apply templates/security-headers.nginx.template to the nginx/NPM server block" ;;
+  ftp)
+    echo "→ Apply the header set via the host's mechanism (e.g. .htaccess for Apache)" ;;
+esac
+```
+
+Then run `workflows/corporate-accessibility-hardening.md` before the first client handoff
+to apply and verify all mitigations (custom domain, headers, self-hosted fonts, HTTPS/HSTS,
+filter categorization, corporate-like verification).
 
 ## Step 6: Set Up Environment Variables
 
@@ -305,5 +344,6 @@ Profile setup is complete when:
 - [ ] Environment variable requirements documented
 - [ ] Deploy scripts created (if needed)
 - [ ] .gitignore updated
+- [ ] corporateAccessibility block initialized + security-headers template scaffolded
 - [ ] User informed of next steps
 </success_criteria>

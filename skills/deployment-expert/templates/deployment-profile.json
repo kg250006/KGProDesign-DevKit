@@ -30,6 +30,22 @@
     "timeout": 30
   },
 
+  "corporateAccessibility": {
+    "customDomainRequired": true,
+    "securityHeadersApplied": false,
+    "externalResourceAllowlist": [],
+    "fontsSelfHosted": false,
+    "categorizationSubmitted": {
+      "zscaler": null,
+      "cisco": null,
+      "paloAlto": null,
+      "forcepoint": null,
+      "symantec": null
+    },
+    "corporateVerified": false,
+    "lastVerifiedAt": null
+  },
+
   "scripts": {
     "preDeploy": null,
     "deploy": null,

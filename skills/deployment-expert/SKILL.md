@@ -1,6 +1,6 @@
 ---
 name: deployment-expert
-description: Deploy projects to any platform - Netlify, Azure VM (SSH/CLI), FTP servers, GitHub production branches with Docker. Auto-detects deployment profiles, manages environment variables, handles forms and build configs. Use when deploying, setting up hosting, or managing production environments.
+description: Deploy projects to any platform - Netlify, Azure VM (SSH/CLI), FTP servers, GitHub production branches with Docker. Auto-detects deployment profiles, manages environment variables, handles forms and build configs. Hardens new sites for corporate-network accessibility (custom domain, security headers, self-hosted assets, filter categorization) so they don't appear broken on enterprise/work computers. Use when deploying, setting up hosting, managing production environments, or when a site renders broken/unstyled/blocked on a corporate network.
 ---
 
 <essential_principles>
@@ -100,6 +100,7 @@ What would you like to do?
 7. Connect/configure account (Netlify, Azure, FTP)
 8. Set up VM auto-deploy (cron-based git monitoring)
 9. Run post-deploy health checks
+10. Harden for corporate-network accessibility (custom domain, security headers, self-hosted assets, filter categorization)
 
 **Then read the matching workflow and follow it.**
 </intake>
@@ -124,6 +125,7 @@ When user says "deploy", "ship", "push", "commit to production", "merge to produ
 | 7, "connect", "account", "auth", "login" | `workflows/connect-account.md` |
 | 8, "auto-deploy", "cron", "vm setup", "git monitoring" | `workflows/vm-auto-deploy-setup.md` |
 | 9, "health", "post-deploy", "verify deployment" | `workflows/post-deploy-health.md` |
+| "corporate", "harden", "security headers", "unstyled on work computer", "blocked/quarantined", "uncategorized", "filter", "self-host fonts" | `workflows/corporate-accessibility-hardening.md` |
 
 **Platform-Specific Fast Paths:**
 | Platform | Fast Path Trigger | Workflow |
@@ -249,9 +251,25 @@ git push origin production       # Triggers deployment via cron/webhook
     "url": "https://mysite.com",
     "healthEndpoint": "/api/health",
     "expectedStatus": 200
+  },
+
+  "corporateAccessibility": {
+    "customDomainRequired": true,
+    "securityHeadersApplied": false,
+    "externalResourceAllowlist": [],
+    "fontsSelfHosted": false,
+    "categorizationSubmitted": {
+      "zscaler": null, "cisco": null, "paloAlto": null,
+      "forcepoint": null, "symantec": null
+    },
+    "corporateVerified": false,
+    "lastVerifiedAt": null
   }
 }
 ```
+
+The `corporateAccessibility` block tracks corporate-network hardening — see
+`references/corporate-accessibility.md` and `workflows/corporate-accessibility-hardening.md`.
 </profile_schema>
 
 <reference_index>
@@ -267,8 +285,14 @@ All in `references/`:
 
 **Cross-Platform:**
 - env-vars.md - Environment variable management patterns
-- verification.md - Post-deploy verification strategies
 - profiles.md - Profile creation and management
+- deploy-scripts.md - Reusable deploy-script patterns
+- corporate-accessibility.md - Corporate-network hardening: root causes, security-header set, font self-hosting, filter-vendor categorization
+
+**Scripts** (in `scripts/`):
+- detect-platform.sh - Auto-detect deployment platform from project markers
+- sync-env.sh - Sync env vars from `.env.production` to the platform
+- validate-env.sh - Validate required env vars exist before deploy
 </reference_index>
 
 <workflows_index>
@@ -291,7 +315,8 @@ All in `workflows/`:
 | troubleshoot.md | Debug failed deployments (includes VM/Docker issues) |
 | connect-account.md | Set up platform credentials |
 | vm-auto-deploy-setup.md | Set up cron-based git monitoring auto-deploy |
-| post-deploy-health.md | Comprehensive post-deploy health checks with NPM reload |
+| post-deploy-health.md | Comprehensive post-deploy health checks with NPM reload + security-header assertion |
+| corporate-accessibility-hardening.md | Harden a new site against corporate filters (custom domain, headers, self-hosted assets, filter categorization, verification) |
 
 ### Workflow Selection Logic
 
@@ -333,6 +358,12 @@ All in `templates/`:
 | Dockerfile.frontend.template | Next.js frontend with standalone mode, 127.0.0.1 health check |
 | validate-deployment.sh.template | Pre-deployment validation script |
 | operations-runbook.template.md | VM operations manual template |
+
+**Corporate Accessibility:**
+| File | Purpose |
+|------|---------|
+| security-headers.netlify.template | Netlify `_headers` file + `netlify.toml` block (hardened header set) |
+| security-headers.nginx.template | nginx/NPM `server`-block header set (Azure VM / GitHub-production) |
 </templates_index>
 
 <success_criteria>

@@ -103,6 +103,48 @@ else
 fi
 ```
 
+## Step 4.5: Verify Security Headers & HTTPS (Corporate Accessibility)
+
+Corporate-network-hardened sites must serve the full security-header set over HTTPS from
+the custom domain, or strict enterprise filters strip resources / block the site. This
+step is platform-agnostic (Netlify, FTP, and GitHub-production get it too, not just VM).
+
+```bash
+# Use the profile's custom-domain URL, not a shared subdomain
+URL=$(jq -r '.verification.url' .deployment-profile.json 2>/dev/null || echo "https://{domain}")
+
+# Assert HTTPS
+case "$URL" in
+  https://*) echo "HTTPS: OK ($URL)" ;;
+  *) echo "HTTPS: FAILED — URL is not https ($URL)"; HEADER_FAIL=1 ;;
+esac
+
+# Assert the full security-header set on the live response
+REQUIRED_HEADERS="x-frame-options x-content-type-options referrer-policy strict-transport-security permissions-policy"
+HEADERS=$(curl -sS -D - -o /dev/null --max-time 30 "$URL")
+for h in $REQUIRED_HEADERS; do
+    if echo "$HEADERS" | grep -iq "^$h:"; then
+        echo "  $h: present"
+    else
+        echo "  $h: MISSING"
+        HEADER_FAIL=1
+    fi
+done
+
+if [[ "$HEADER_FAIL" == "1" ]]; then
+    echo "❌ Security-header / HTTPS check FAILED — site is NOT corporate-network hardened."
+    echo "   Apply templates/security-headers.*.template and re-run."
+    echo "   See workflows/corporate-accessibility-hardening.md"
+    # Fail the health check
+    exit 1
+else
+    echo "✓ Security headers + HTTPS verified (corporate-network hardened)"
+fi
+```
+
+**A missing header fails the health check.** Do not hand off a site that fails this step —
+run `workflows/corporate-accessibility-hardening.md` first.
+
 ## Step 5: Check Application Logs for Errors
 
 ```bash
@@ -279,6 +321,7 @@ Health check is complete when:
 - [ ] NPM nginx config reloaded successfully
 - [ ] NPM can reach backend and frontend containers
 - [ ] External HTTPS endpoints return 200
+- [ ] Full security-header set present over HTTPS from the custom domain (corporate accessibility)
 - [ ] No critical errors in application logs
 - [ ] Database connection verified
 - [ ] Disk space above 20% free
