@@ -2,6 +2,24 @@
 
 All notable changes to KGProDesign-DevKit.
 
+## [2.6.0] - 2026-08-25
+
+Corporate Hardening Pass — the v2.5.0 accessibility artifacts grow into a full five-stage,
+idempotent, stack-agnostic hardening pipeline in `deployment-expert`, generated from
+`PRDs/PRD-corporate-network-hardening.md` via the `software-architect` PRD→PRP pipeline.
+
+### Added
+- **`software-architect` — hardening capability knowledge** (`skills/software-architect/references/corporate-hardening.md`) — distilled, reusable knowledge (M1–M7, the 5-stage pass, Tier-1/Tier-2 vendor split, idempotent state, best-effort caveat, authoring guidance) so the architect knows the capability when authoring PRDs/PRPs. Points at `PRDs/PRD-corporate-network-hardening.md` as the canonical example. Indexed in the skill's `<references_index>`.
+- **`deployment-expert` — hardening stage workflows** (`skills/deployment-expert/workflows/hardening-assess.md`, `hardening-remediate.md`, `hardening-reputation.md`, `hardening-verify-record.md`) — the five-stage pass: Assess (detect stack/host, score M1–M7 read-only), Remediate (approval-gated idempotent header + self-hosted-asset + HSTS fixes, staged never deployed), Reputation (tiered vendor lookup/submission with captcha/login human-gate), Verify+Record (custom-domain re-assertion, corporate-like render, compliance record + caveat).
+- **`deployment-expert` — vendor roster as data** (`skills/deployment-expert/references/reputation-vendors.md`) — filter-vendor roster (tier, lookup/submission URLs, suggested category) editable without touching workflow logic (NF4). Zscaler flagged tier-2 login-gated → client-IT routing.
+- **`deployment-expert` — assess probe** (`skills/deployment-expert/scripts/assess-hardening.sh`) — reuses `detect-platform.sh`; detects build type + header mechanism, flags shared-subdomain URLs as BLOCKERs, probes live headers/HTTPS/HSTS. Read-only.
+- **PRD + PRP artifacts** — `PRDs/PRD-corporate-network-hardening.md` (portable v1.0 PRD) and `PRPs/PRP-corporate-hardening.md` (generated PRP, 100% F1–F11 / NF1–NF5 coverage).
+
+### Changed
+- **`deployment-expert` — `corporateAccessibility` state block** (`templates/deployment-profile.json`): extended into the full hardening-state model — per-mitigation verdicts (M1–M7), `externalResourceAllowlist` entries now `{host, resourceType, disposition, reason}`, a `vendorLedger[]` (replacing the flat `categorizationSubmitted` map), and run metadata (`overallStatus`, `detectedStack`, `detectedHost`, `lastRunAt`). Backward-compatible keys retained.
+- **`deployment-expert` — `corporate-accessibility-hardening.md`** is now a thin idempotent orchestrator routing through the five stage workflows (states F10 idempotency + F11 no-auto-deploy up front); AC1–AC7 checklist retained.
+- **`deployment-expert` — `SKILL.md`**: intake/routing enriched for the pass; the four stage workflows, `reputation-vendors.md`, and `assess-hardening.sh` wired into the indices.
+
 ## [2.5.0] - 2026-08-24
 
 Corporate network accessibility hardening — new sites are hardened against enterprise web

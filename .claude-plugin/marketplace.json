@@ -5,7 +5,7 @@
   },
   "metadata": {
     "description": "Universal development toolkit for any project - 12 focused agents, 25 essential commands, native single-session PRP execution",
-    "version": "2.5.0",
+    "version": "2.6.0",
     "category": "development",
     "visibility": "public"
   },
@@ -14,7 +14,7 @@
       "name": "KGP",
       "source": "./",
       "description": "12 agents covering frontend, backend, data, QA, project management, documentation, DevOps, config audits, and PRP workflow orchestration",
-      "version": "2.5.0",
+      "version": "2.6.0",
       "strict": true
     }
   ]

@@ -125,7 +125,7 @@ When user says "deploy", "ship", "push", "commit to production", "merge to produ
 | 7, "connect", "account", "auth", "login" | `workflows/connect-account.md` |
 | 8, "auto-deploy", "cron", "vm setup", "git monitoring" | `workflows/vm-auto-deploy-setup.md` |
 | 9, "health", "post-deploy", "verify deployment" | `workflows/post-deploy-health.md` |
-| "corporate", "harden", "security headers", "unstyled on work computer", "blocked/quarantined", "uncategorized", "filter", "self-host fonts" | `workflows/corporate-accessibility-hardening.md` |
+| "corporate", "harden", "corporate hardening pass", "assess hardening", "reputation submission", "security headers", "unstyled on work computer", "blocked/quarantined", "uncategorized", "filter", "self-host fonts" | `workflows/corporate-accessibility-hardening.md` (orchestrator → routes to hardening-assess/remediate/reputation/verify-record) |
 
 **Platform-Specific Fast Paths:**
 | Platform | Fast Path Trigger | Workflow |
@@ -256,14 +256,27 @@ git push origin production       # Triggers deployment via cron/webhook
   "corporateAccessibility": {
     "customDomainRequired": true,
     "securityHeadersApplied": false,
-    "externalResourceAllowlist": [],
     "fontsSelfHosted": false,
-    "categorizationSubmitted": {
-      "zscaler": null, "cisco": null, "paloAlto": null,
-      "forcepoint": null, "symantec": null
-    },
     "corporateVerified": false,
-    "lastVerifiedAt": null
+    "lastVerifiedAt": null,
+    "overallStatus": "pending|compliant|remediated|blocked|pending-manual",
+    "detectedStack": "static|spa|ssr",
+    "detectedHost": "netlify|azure-vm|ftp|github-production",
+    "lastRunAt": null,
+    "mitigations": {
+      "M1": { "verdict": "pending|pass|fail|manual-required|not-applicable", "detail": null }
+      // ... M2–M7, same shape
+    },
+    "externalResourceAllowlist": [
+      { "host": "…", "resourceType": "payment|captcha|analytics|font|…",
+        "disposition": "internalized|allowlisted|pending", "reason": "…" }
+    ],
+    "vendorLedger": [
+      { "vendor": "fortinet", "tier": "tier-1-public|tier-2-gated",
+        "currentCategory": null, "suggestedCategory": "Business/Professional Services",
+        "status": "clean|submitted|manual-done|client-IT|skipped",
+        "submittedAt": null, "reference": null }
+    ]
   }
 }
 ```
@@ -288,11 +301,13 @@ All in `references/`:
 - profiles.md - Profile creation and management
 - deploy-scripts.md - Reusable deploy-script patterns
 - corporate-accessibility.md - Corporate-network hardening: root causes, security-header set, font self-hosting, filter-vendor categorization
+- reputation-vendors.md - Filter-vendor roster as editable data (tier, lookup/submission URLs, suggested category) for the hardening pass Stage C
 
 **Scripts** (in `scripts/`):
 - detect-platform.sh - Auto-detect deployment platform from project markers
 - sync-env.sh - Sync env vars from `.env.production` to the platform
 - validate-env.sh - Validate required env vars exist before deploy
+- assess-hardening.sh - Detect stack/host/header-mechanism + probe live headers/HTTPS (hardening pass Stage A)
 </reference_index>
 
 <workflows_index>
@@ -316,7 +331,15 @@ All in `workflows/`:
 | connect-account.md | Set up platform credentials |
 | vm-auto-deploy-setup.md | Set up cron-based git monitoring auto-deploy |
 | post-deploy-health.md | Comprehensive post-deploy health checks with NPM reload + security-header assertion |
-| corporate-accessibility-hardening.md | Harden a new site against corporate filters (custom domain, headers, self-hosted assets, filter categorization, verification) |
+
+### Corporate Hardening Pass (5-stage, idempotent, no auto-deploy)
+| File | Purpose |
+|------|---------|
+| corporate-accessibility-hardening.md | **Orchestrator** — routes through the five stages below; run this to harden a site |
+| hardening-assess.md | Stage A — detect stack/host, score M1–M7 from live inspection, emit gap report (read-only) |
+| hardening-remediate.md | Stage B — approval-gated idempotent fixes: headers, self-hosted assets, HSTS; stages diffs, never deploys |
+| hardening-reputation.md | Stage C — tiered vendor lookup + submission (reads reputation-vendors.md); human-gate pause at captcha/login |
+| hardening-verify-record.md | Stages D+E — re-assert from custom domain, corporate-like render, write record + best-effort caveat |
 
 ### Workflow Selection Logic
 

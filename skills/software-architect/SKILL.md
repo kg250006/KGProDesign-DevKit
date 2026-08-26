@@ -254,6 +254,7 @@ All in `references/`:
 | prd-best-practices.md | PRD structure, requirements writing, stakeholder communication |
 | effort-estimation.md | T-shirt sizing, complexity factors, scope management |
 | xml-structure-guide.md | XML tag conventions for machine-readable documents |
+| corporate-hardening.md | Corporate-network hardening capability (M1–M7, 5-stage pass, vendor tiering, idempotent state, best-effort caveat) — draw on this when authoring PRDs/PRPs about sites blocked/unstyled on corporate networks; canonical example: PRDs/PRD-corporate-network-hardening.md |
 </references_index>
 
 <templates_index>

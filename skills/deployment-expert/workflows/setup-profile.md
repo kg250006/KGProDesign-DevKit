@@ -180,14 +180,24 @@ cat > .deployment-profile.json << EOF
   "corporateAccessibility": {
     "customDomainRequired": true,
     "securityHeadersApplied": false,
-    "externalResourceAllowlist": [],
     "fontsSelfHosted": false,
-    "categorizationSubmitted": {
-      "zscaler": null, "cisco": null, "paloAlto": null,
-      "forcepoint": null, "symantec": null
-    },
     "corporateVerified": false,
-    "lastVerifiedAt": null
+    "lastVerifiedAt": null,
+    "overallStatus": "pending",
+    "detectedStack": null,
+    "detectedHost": null,
+    "lastRunAt": null,
+    "mitigations": {
+      "M1": { "verdict": "pending", "detail": null },
+      "M2": { "verdict": "pending", "detail": null },
+      "M3": { "verdict": "pending", "detail": null },
+      "M4": { "verdict": "pending", "detail": null },
+      "M5": { "verdict": "pending", "detail": null },
+      "M6": { "verdict": "pending", "detail": null },
+      "M7": { "verdict": "pending", "detail": null }
+    },
+    "externalResourceAllowlist": [],
+    "vendorLedger": []
   },
 
   "history": []

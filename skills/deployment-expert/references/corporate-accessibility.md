@@ -143,8 +143,10 @@ A strict filter strips third-party sub-resources (fonts, CDN CSS/JS), producing 
 
 Each vendor offers a free "request categorization / site review" form. Submit the
 **custom domain** BEFORE launch. Suggested category: **Business / Nonprofit / Charity**
-(match the site's actual purpose). Log the submission date + confirmation link into the
-profile's `corporateAccessibility.categorizationSubmitted` map.
+(match the site's actual purpose). Log each submission (date + confirmation reference) into
+the profile's `corporateAccessibility.vendorLedger` array — one entry per vendor. The
+hardening pass Stage C (`workflows/hardening-reputation.md`) drives this from the roster in
+`references/reputation-vendors.md`.
 
 | Vendor | Submission point |
 |--------|------------------|
