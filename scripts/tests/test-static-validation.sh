@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Static validation for KGProDesign-DevKit v2.2.0 native PRP execution.
+# Static validation for KGProDesign-DevKit v2.7.0.
 # Validates YAML frontmatter, JSON manifests, deletions of obsolete files,
 # absence of obsolete language, and structural elements introduced in v2.2.0.
 # No Claude CLI or plugin installation required.
@@ -11,10 +11,13 @@ cd "$PLUGIN_ROOT"
 
 PASS=0
 FAIL=0
+SKIPPED=0
 FAILURES=()
 
 pass() { PASS=$((PASS + 1)); printf "  \033[32mPASS\033[0m %s\n" "$1"; }
 fail() { FAIL=$((FAIL + 1)); FAILURES+=("$1"); printf "  \033[31mFAIL\033[0m %s\n" "$1"; }
+
+skip() { SKIPPED=$((SKIPPED + 1)); printf "  \033[33mSKIP\033[0m %s\n" "$1"; }
 
 section() { printf "\n\033[1m== %s ==\033[0m\n" "$1"; }
 
@@ -28,6 +31,8 @@ YAML_TARGETS=(
   "commands/help.md"
   "commands/team-invoke.md"
   "skills/agent-teams/SKILL.md"
+  "commands/comm-style.md"
+  "skills/communication-style/SKILL.md"
 )
 
 for f in "${YAML_TARGETS[@]}"; do
@@ -82,13 +87,13 @@ validate_json ".claude-plugin/plugin.json"
 validate_json ".claude-plugin/marketplace.json"
 validate_json "hooks/hooks.json"
 
-# v2.3.0 version invariants
+# v2.7.0 version invariants
 if command -v jq >/dev/null 2>&1; then
   ver=$(jq -r '.version' .claude-plugin/plugin.json 2>/dev/null)
-  if [ "$ver" = "2.3.0" ]; then
-    pass "plugin.json version is 2.3.0"
+  if [ "$ver" = "2.7.0" ]; then
+    pass "plugin.json version is 2.7.0"
   else
-    fail "plugin.json version is '$ver' (expected 2.3.0)"
+    fail "plugin.json version is '$ver' (expected 2.7.0)"
   fi
 
   mkt_ver=$(jq -r '.metadata.version' .claude-plugin/marketplace.json 2>/dev/null)
@@ -123,6 +128,10 @@ if command -v jq >/dev/null 2>&1; then
   else
     pass "plugin.json description has no obsolete language"
   fi
+else
+  skip "plugin.json/marketplace.json version invariants - jq not installed"
+  skip "plugin.json keyword assertions - jq not installed"
+  skip "plugin.json description language sweep - jq not installed"
 fi
 
 # hooks.json shape — v2.3.0 auto-invocation hooks registered
@@ -141,10 +150,12 @@ if command -v jq >/dev/null 2>&1; then
       fail "hooks.json missing ${evt}"
     fi
   done
+else
+  skip "hooks.json event-count and event-presence checks - jq not installed"
 fi
 
 # hook scripts exist and are executable
-for hs in scripts/hooks/suggest-skill.sh scripts/hooks/session-start.sh scripts/hooks/suggest-auditor.sh; do
+for hs in scripts/hooks/suggest-skill.sh scripts/hooks/session-start.sh scripts/hooks/suggest-auditor.sh scripts/hooks/expand-alias.sh scripts/hooks/comm-style-default.sh; do
   if [ -x "$hs" ]; then
     pass "$hs — present and executable"
   else
@@ -153,7 +164,7 @@ for hs in scripts/hooks/suggest-skill.sh scripts/hooks/session-start.sh scripts/
 done
 
 # hook scripts never fail and stay silent on malformed input
-for hs in scripts/hooks/suggest-skill.sh scripts/hooks/suggest-auditor.sh; do
+for hs in scripts/hooks/suggest-skill.sh scripts/hooks/suggest-auditor.sh scripts/hooks/expand-alias.sh scripts/hooks/comm-style-default.sh; do
   out=$(echo 'not json' | "./$hs" 2>/dev/null); rc=$?
   if [ $rc -eq 0 ] && [ -z "$out" ]; then
     pass "$hs — exit 0 and silent on malformed input"
@@ -161,6 +172,60 @@ for hs in scripts/hooks/suggest-skill.sh scripts/hooks/suggest-auditor.sh; do
     fail "$hs — rc=$rc output='$out' on malformed input (expected silent exit 0)"
   fi
 done
+
+# expand-alias.sh actually expands a bare alias
+out=$(echo '{"prompt":"ref"}' | ./scripts/hooks/expand-alias.sh 2>/dev/null)
+if printf "%s" "$out" | grep -q "reference codes"; then
+  pass "expand-alias.sh - expands a bare alias"
+else
+  fail "expand-alias.sh - did not expand 'ref' (got: '$out')"
+fi
+
+# expand-alias.sh stays silent when the alias is inside a longer message
+out=$(echo '{"prompt":"please ref the findings"}' | ./scripts/hooks/expand-alias.sh 2>/dev/null)
+if [ -z "$out" ]; then
+  pass "expand-alias.sh - silent when alias is not the whole message"
+else
+  fail "expand-alias.sh - expanded inline 'ref' (got: '$out')"
+fi
+
+# comm-style-default.sh is opt-in and stays off without the env var
+out=$(./scripts/hooks/comm-style-default.sh 2>/dev/null)
+if [ -z "$out" ]; then
+  pass "comm-style-default.sh - silent without KGP_COMM_STYLE_DEFAULT=1"
+else
+  fail "comm-style-default.sh - emitted output while opt-in flag was unset"
+fi
+
+# A personal communication rule must never be committable, and must never be paired with an
+# @ import (files in .claude/rules/ auto-load; an import would load the content twice).
+if [ -f .claude/rules/communication.local.md ]; then
+  if git check-ignore -q .claude/rules/communication.local.md 2>/dev/null; then
+    pass "personal communication rule is git-excluded"
+  else
+    fail "personal communication rule is NOT excluded - it would be committed"
+  fi
+  if git ls-files --error-unmatch .claude/rules/communication.local.md >/dev/null 2>&1; then
+    fail "personal communication rule is tracked by git"
+  else
+    pass "personal communication rule is not tracked"
+  fi
+fi
+
+# No @ import may reference a .claude/rules file from any memory file.
+stray=$(grep -lE '^@.*rules/communication' CLAUDE.md CLAUDE.local.md .claude.local.md 2>/dev/null || true)
+if [ -z "$stray" ]; then
+  pass "no redundant @ import for the auto-loaded communication rule"
+else
+  fail "redundant @ import found in: $stray (rules/*.md already auto-load)"
+fi
+
+# The dotted .claude.local.md is not a real Claude Code memory file; never write one.
+if [ -e .claude.local.md ]; then
+  fail ".claude.local.md exists - that filename is never loaded by Claude Code (use CLAUDE.local.md)"
+else
+  pass "no bogus .claude.local.md present"
+fi
 
 # --------------------------------------------------------------------
 section "3. v2.2.0 deletions — confirm removal"
@@ -203,6 +268,12 @@ REQUIRED=(
   "skills/software-architect/SKILL.md"
   "templates/prp_base.md"
   "templates/prp_planning.md"
+  "commands/comm-style.md"
+  "skills/communication-style/SKILL.md"
+  "skills/communication-style/templates/communication-style.md.template"
+  "skills/communication-style/workflows/setup.md"
+  "skills/communication-style/references/base-ruleset.md"
+  "skills/communication-style/references/model-tics.md"
 )
 
 for f in "${REQUIRED[@]}"; do
@@ -334,7 +405,11 @@ fi
 section "Summary"
 
 total=$((PASS + FAIL))
-printf "\n  Total: %d  Passed: \033[32m%d\033[0m  Failed: \033[31m%d\033[0m\n" "$total" "$PASS" "$FAIL"
+printf "\n  Total: %d  Passed: \033[32m%d\033[0m  Failed: \033[31m%d\033[0m  Skipped: \033[33m%d\033[0m\n" "$total" "$PASS" "$FAIL" "$SKIPPED"
+
+if [ "$SKIPPED" -gt 0 ]; then
+  printf "\n\033[33m%d check group(s) skipped - install jq for full coverage.\033[0m\n" "$SKIPPED"
+fi
 
 if [ "$FAIL" -gt 0 ]; then
   printf "\n\033[31mFailures:\033[0m\n"

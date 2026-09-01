@@ -214,12 +214,13 @@ Invoke agents via the Task tool with the matching `subagent_type`.
 
 ---
 
-## Commands Reference (25)
+## Commands Reference (26)
 
 ### Top-Level
 
 | Command | Purpose |
 |---------|---------|
+| `/KGP:comm-style` | Set up, review, tweak, or remove a project's communication style rule (`.claude/rules/`, personal and git-excluded by default) |
 | `/KGP:context-prime` | Initialize project understanding (structure, stack, CLAUDE.md files) |
 | `/KGP:deploy` | Deploy via deployment-expert skill (Netlify, Azure VM, FTP, GitHub) |
 | `/KGP:help` | Explain the plugin and available commands |
@@ -409,5 +410,5 @@ Create project-specific CLAUDE.md in your project root:
 
 ---
 
-Last Updated: 2026-07-21
+Last Updated: 2026-08-31
 Maintained by: KGProDesign

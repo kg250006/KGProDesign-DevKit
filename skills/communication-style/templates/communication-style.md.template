@@ -1,0 +1,96 @@
+---
+kgp_comm_style_version: 1.0
+kgp_plugin_version: {{PLUGIN_VERSION}}
+installed: {{TIMESTAMP}}
+scope: {{SCOPE}}
+tracked: {{TRACKED}}
+reading_level: {{READING_LEVEL}}
+model_overlays: [{{MODEL_OVERLAYS}}]
+ticket_prefix: {{TICKET_PREFIX}}
+gates: [{{GATES}}]
+modules: [{{MODULES}}]
+---
+
+# Communication
+
+Applies to chat replies in this project. Does NOT govern commit messages, PR bodies, plan
+and PRP documents{{SCOPE_EXCLUSIONS}}. Never applies to source code.
+
+## Style
+
+{{L1_CORE}}
+
+## Reading level
+
+{{L2_READING_LEVEL}}
+
+## Phrases to avoid
+
+{{L3_MERGED_PHRASES}}
+Add phrases you actually observe. Do not add guesses.
+
+## Reference codes
+
+{{REFERENCE_CODE_TABLE}}
+{{TICKET_PREFIX_RESERVATION}}
+
+## Boundaries
+
+- Deliver what was requested at the requested scope.
+{{L4_CARVE_OUTS}}
+- Do not claim completion without evidence. Name the gate and its result:
+{{GATE_LIST}}
+  A gate that was not run is reported as "not run", never omitted.
+
+## Aliases
+
+{{ALIAS_TABLE}}
+
+<!--
+GENERATOR CONTRACT — this comment block is stripped from the rendered artifact.
+
+Placeholders use the {{UPPER_SNAKE}} convention from templates/deployment-profile.json.
+
+  {{PLUGIN_VERSION}}   .claude-plugin/plugin.json version at install time
+  {{TIMESTAMP}}        ISO-8601 date
+  {{SCOPE}}            project | user
+  {{TRACKED}}          personal | shared   (personal is the default)
+
+  Written to, depending on the tracking answer:
+    personal  .claude/rules/communication.local.md   + .git/info/exclude entry
+    shared    .claude/rules/communication.md         + committed
+    user      ~/.claude/rules/communication.md       + nothing in the repo
+
+  All three match the rules/*.md glob and auto-load. NEVER write an @ import line for
+  this file; it would load the content a second time.
+  {{READING_LEVEL}}    high-school-senior | peer-engineer | mixed
+  {{MODEL_OVERLAYS}}   comma-separated, always begins with neutral
+  {{TICKET_PREFIX}}    detected prefix, or the literal none
+  {{GATES}}            comma-separated commands
+  {{MODULES}}          subset of: core, anti-verbosity, reference-codes, aliases
+
+  {{SCOPE_EXCLUSIONS}} extra exclusions from T1/T3 detection, rendered as ", X, and Y"
+                       or empty. Leading comma is part of the substitution.
+  {{L1_CORE}}          references/base-ruleset.md <layer_l1_core>, as a bullet list
+  {{L2_READING_LEVEL}} the selected <variant> body, as prose
+  {{L3_MERGED_PHRASES}} neutral + selected overlays, quoted and comma-joined into a
+                       single wrapped paragraph, NOT a bullet per phrase
+  {{REFERENCE_CODE_TABLE}} the code legend compressed to prose, not the full markdown table
+  {{TICKET_PREFIX_RESERVATION}} "`PREFIX-NNNN` is reserved for tickets. Never reuse it as a
+                       code." Omitted entirely when no prefix was detected.
+  {{L4_CARVE_OUTS}}    one bullet per resolved T2 conflict, or empty
+  {{GATE_LIST}}        two-space-indented "G1 <command>" lines
+  {{ALIAS_TABLE}}      the four aliases compressed to prose with the exact-match rule
+
+LINE BUDGET — hard requirement.
+The rendered file must be 40-60 lines. Count after substitution and after stripping this
+comment. If over 60, trim in this order:
+  1. Drop the <examples> block if it was included.
+  2. Compress {{L3_MERGED_PHRASES}} to one wrapped paragraph.
+  3. Compress {{REFERENCE_CODE_TABLE}} from a table to a single prose sentence.
+If still over 60, report the count and stop rather than shipping a bloated artifact.
+If under 40, the ruleset is too thin to be useful; check that modules were applied.
+
+Rationale: this file loads on every session. Input tokens spent here must stay smaller than
+the output tokens saved, or the whole feature is a net loss.
+-->

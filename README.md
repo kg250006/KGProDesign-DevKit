@@ -6,9 +6,10 @@ Universal Claude Code development toolkit for any project.
 
 - **Unified Foundation** - Every developer starts with identical tools, workflows, and guidelines
 - **Focused Agents** - 12 agents (7 engineering + 4 auditors + 1 workflow orchestrator) covering all development categories
-- **Essential Commands** - 25 commands for efficient workflows
+- **Essential Commands** - 26 commands for efficient workflows
 - **Native PRP Execution** - Spec-driven development in a single long-running session, no external scripts
 - **Design-First Frontend** - Website PRPs include design-token phases and visual QA gates
+- **Tunable Communication** - Install a per-project rule so replies stay concise and plainly worded, personal and git-excluded by default
 
 ## Installation
 
@@ -111,6 +112,7 @@ claude
 - `/KGP:context-prime` - Initialize project context
 - `/KGP:deploy` - Deploy via deployment-expert skill (Netlify, Azure VM, FTP, GitHub)
 - `/KGP:run-regression` - Automated regression testing
+- `/KGP:comm-style` - Set up, review, or tweak this project's communication style (`.claude/rules/`, personal by default, never committed unless you say so)
 - `/KGP:help` - Plugin overview
 
 ### Plugin Authoring & Audits (core/)
@@ -137,10 +139,10 @@ claude
 ├── .claude-plugin/
 │   ├── plugin.json
 │   └── marketplace.json
-├── agents/           # 11 specialized agents
-├── commands/         # 25 commands (top-level + core/ + dev/)
+├── agents/           # 12 specialized agents
+├── commands/         # 26 commands (top-level + core/ + dev/)
 ├── hooks/            # Auto-invocation hooks (hooks.json)
-├── skills/           # 18 skills (PRP, design, deployment, testing, business)
+├── skills/           # 19 skills (PRP, design, deployment, testing, communication, business)
 ├── scripts/
 │   ├── hooks/            # Hook scripts
 │   └── tests/            # Static-validation suite
@@ -225,4 +227,4 @@ Recipes: `implementation`, `review`, `research`, `hypothesis`. Classifier + disa
 - Issues: GitHub Issues
 
 ---
-Universal development toolkit | v2.4.0
+Universal development toolkit | v2.7.0

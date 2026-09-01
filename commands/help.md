@@ -48,6 +48,29 @@ Then:
 
 **Recipes:** `implementation`, `review`, `research`, `hypothesis`.
 
+## Communication Style
+
+Install a short ruleset that keeps replies concise and plainly worded. Scoped to chat only,
+never to code, commits, or PRP documents.
+
+```bash
+/KGP:comm-style                 # Wizard: detect, ask, generate, install for this project
+/KGP:comm-style review          # Show what is currently active
+/KGP:comm-style tweak           # Change reading level, gates, or banned phrases
+/KGP:comm-style user            # Install at user level, all projects
+/KGP:comm-style remove          # Uninstall from this project
+```
+
+Defaults to plain language at a high-school-senior reading level, with reference codes for
+lists of three or more and the aliases `scr`, `eli`, `foc`, `ref`. Model-agnostic: only the
+banned-phrase section varies by model.
+
+**Personal by default.** The wizard asks up front whether the style should be tracked by the
+repo. Answering no (the default) writes `.claude/rules/communication.local.md` and excludes
+it via `.git/info/exclude`, leaving `git status` completely clean, so teammates never inherit
+your preference. Answering yes writes `.claude/rules/communication.md` to be committed and
+reviewed in a PR. Files in `.claude/rules/` auto-load; no import line is created.
+
 ## Available Agents
 
 Use the `Task` tool with `subagent_type` to delegate work:

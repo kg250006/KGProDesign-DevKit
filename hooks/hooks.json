@@ -1,5 +1,5 @@
 {
-  "description": "KGProDesign-DevKit auto-invocation hooks: skill hints on matching prompts, PRP inventory at session start, auditor suggestions after plugin-config edits.",
+  "description": "KGProDesign-DevKit auto-invocation hooks: skill hints on matching prompts, communication-alias expansion, PRP inventory at session start, opt-in communication-style default, auditor suggestions after plugin-config edits.",
   "hooks": {
     "UserPromptSubmit": [
       {
@@ -7,6 +7,11 @@
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/hooks/suggest-skill.sh\"",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/hooks/expand-alias.sh\"",
             "timeout": 10
           }
         ]
@@ -19,6 +24,11 @@
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/hooks/session-start.sh\"",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/hooks/comm-style-default.sh\"",
             "timeout": 10
           }
         ]

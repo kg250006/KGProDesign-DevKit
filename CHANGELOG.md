@@ -2,6 +2,39 @@
 
 All notable changes to KGProDesign-DevKit.
 
+## [2.7.0] - 2026-08-31
+
+Communication-style control. A new skill generates and installs a tailored, model-agnostic
+communication ruleset into any repository, so replies stay concise and plainly worded
+without restating the preference every conversation.
+
+### Added
+- **Tracked-vs-personal install choice** — the wizard's FIRST question is whether the rule should be tracked by the repository, and it **defaults to personal**. A communication ruleset is a preference; committing one makes everyone who clones the repo inherit how one person likes to be spoken to. Personal writes `.claude/rules/communication.local.md` and excludes it via `.git/info/exclude`, leaving `git status` completely empty. Shared writes `.claude/rules/communication.md` to be committed and reviewed in a PR. User scope writes `~/.claude/rules/communication.md` and touches nothing in the repo. `tweak` moves an install between modes.
+- **`.claude/rules/*.md` as the load mechanism, verified against the CLI binary** — no `@` import line is written anywhere. Rule files auto-load, so an import would load the content a second time. Confirmed by four independent strings in `claude.exe` v2.1.234: the literal `rules/*.md` glob, a prompt listing `.claude/rules/*.md` among always-loaded files, a settings schema offering `"**/some-dir/.claude/rules/**"` exclusions, and `function vCt(){return join(claudeHome(),"rules")}` for the user-level directory.
+- **`communication-style` skill** (`skills/communication-style/`) — router with a detect-then-ask wizard. Four references (`base-ruleset.md` for the model-neutral L1/L2 text, `model-tics.md` for the per-model banned-phrase overlays, `conflict-resolution.md` for the T1–T5 conflict catalogue and detection commands, `mechanisms.md` for install mechanics and the two rejected approaches), four workflows (`setup`, `review`, `tweak`, `remove`), and one artifact template. Skill count 18 → 19.
+- **`/KGP:comm-style` command** (`commands/comm-style.md`) — `setup` / `review` / `tweak` / `remove` / `user`. Command count 25 → 26.
+- **`expand-alias.sh` hook** (`scripts/hooks/expand-alias.sh`) — UserPromptSubmit. Expands a prompt that is exactly `scr`, `eli`, `foc`, or `ref`. Separate from `suggest-skill.sh` because that script exits for prompts under six words and every alias is one word.
+- **`comm-style-default.sh` hook** (`scripts/hooks/comm-style-default.sh`) — SessionStart, opt-in behind `KGP_COMM_STYLE_DEFAULT=1`, and silent whenever a project or user artifact already exists. Off by default because it fires in every repo and costs input tokens every session.
+- **Dogfood rule** (`.claude/rules/communication.local.md`) — this repo runs its own ruleset in personal mode: git-excluded, invisible to anyone who clones, and leaving no diff in any tracked file. Contributors get the `/KGP:comm-style` capability, not the maintainer's preference.
+- **Tracking regression guards** (`scripts/tests/test-static-validation.sh`) — four assertions that fail if a personal rule becomes exclude-exempt or git-tracked, if a redundant `@` import appears for an auto-loaded rule file, or if a bogus `.claude.local.md` is ever written.
+
+### Changed
+- **`hooks/hooks.json`** — two new entries added *inside* the existing `UserPromptSubmit` and `SessionStart` events. The registered event count stays at 3, which is what `test-static-validation.sh` asserts.
+- **`scripts/hooks/suggest-skill.sh`** — new verbosity-intent branch appended as the last `elif`, so the existing deploy > debug > design > PRP priority cascade is unchanged.
+- **`scripts/tests/test-static-validation.sh`** — new YAML and REQUIRED targets, both new hook scripts added to the executable and malformed-input loops, plus a positive alias-expansion check.
+- Counts and versions across `README.md`, `CLAUDE.md`, `plugin.json`, `marketplace.json`, and `commands/help.md`.
+
+### Fixed
+- **`scripts/tests/test-static-validation.sh` version invariant** — pinned to `2.3.0` while `plugin.json` had moved to `2.5.0`. The mismatch was invisible on machines without `jq`, since the assertion sits inside a `command -v jq` guard. Now asserts `2.6.0`.
+- **`scripts/tests/test-static-validation.sh` silent skips** — 21 assertions behind `jq` guards vanished without a word while the suite still printed "All static validation checks passed." A `Skipped: N` field and per-group `SKIP` lines now report what was not measured. Skips still exit 0, so CI behavior is unchanged.
+- **`README.md`** — the directory-structure block described "11 specialized agents" while the feature list said 12. There are 12.
+
+### Notes
+- Whether a rule file actually loaded cannot be confirmed from inside the session that writes it, since rules load at session start. The wizard says so rather than reporting the install as verified on file existence alone.
+- **Verify load paths against the installed binary, not against prose.** Three separate sources were wrong about these paths during development: two research passes claimed `.claude/rules/` did not exist (it does) and named `CLAUDE.local.md` where the loader disagreed, and Anthropic's own `claude-md-management` plugin documents `./.claude.local.md` as the personal memory file in two places. That dotted filename has **zero** occurrences in `claude.exe`; the real one is `CLAUDE.local.md`, uppercase, a first-class memory type in the loader. Grepping the binary settled every one of these in minutes.
+- Output styles are deprecated upstream. Anthropic's own `explanatory-output-style` plugin exists to recreate one as a SessionStart hook, and names that pattern as the CLAUDE.md-equivalent that plugins can distribute. This feature therefore uses CLAUDE.md `@` imports plus SessionStart injection, never an output style.
+- `.claude/rules/` was evaluated and rejected as unverified: zero hits across the entire official plugin marketplace. See `skills/communication-style/references/mechanisms.md`.
+
 ## [2.6.0] - 2026-08-25
 
 Corporate Hardening Pass — the v2.5.0 accessibility artifacts grow into a full five-stage,
