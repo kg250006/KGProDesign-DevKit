@@ -1,0 +1,10 @@
+# CronLike dependencies.
+#
+# macOS finding (task 1.4): no explicit pyobjc marker is needed here. pystray
+# 0.19.5 declares its own darwin-gated pyobjc requirement in package metadata,
+# and that in turn pulls in pyobjc-framework-Cocoa, which is what pystray's
+# AppKit tray backend imports. The sibling tray tool in tools/ listed a pyobjc
+# framework directly because it drove the pointer itself; CronLike only draws an
+# icon and runs commands, so that line is dropped rather than carried over.
+pystray>=0.19.0
+Pillow>=10.0.0

@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "settings": { "check_every": "30 seconds", "notify_on_failure": true },
+  "jobs": [
+    { "name": "Pull Linear", "enabled": true,
+      "when": { "days": "weekdays", "at": "07:45" },
+      "run": "claude -p /pm:pull-linear",
+      "cwd": "~/PROJECTS/_ProjectManagement",
+      "catch_up_within": "2 hours", "timeout": "15 minutes" },
+
+    { "name": "Daily briefing",
+      "when": { "days": "weekdays", "at": "08:00" },
+      "run": "claude -p /pm:daily-briefing",
+      "cwd": "~/PROJECTS/_ProjectManagement",
+      "catch_up_within": "3 hours", "timeout": "20 minutes" },
+
+    { "name": "Board rebuild",
+      "when": { "days": ["mon","fri"], "at": ["09:00","16:30"] },
+      "run": "python .scratch/kanban/build_kanban.py",
+      "cwd": "~/PROJECTS/_ProjectManagement" },
+
+    { "name": "WO poll", "enabled": false,
+      "when": { "days": "weekdays", "every": "30 minutes",
+                "between": ["09:00","17:00"] },
+      "run": "claude -p /pm:wo-list",
+      "cwd": "~/PROJECTS/_ProjectManagement" },
+
+    { "name": "Month-start archive", "enabled": false,
+      "when": { "days": "daily", "day_of_month": [1], "at": "08:30" },
+      "run": "claude -p /pm:archive --dry-run",
+      "cwd": "~/PROJECTS/_ProjectManagement" }
+  ]
+}

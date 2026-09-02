@@ -74,10 +74,11 @@ Navigate to the **Installed** tab to confirm KGP is listed and enabled.
 
 | Component | Count | Description |
 |-----------|-------|-------------|
-| Agents | 11 | Frontend, Backend, Data, QA, DevOps, Docs, Project Coordinator + 4 auditors |
-| Commands | 25 | PRP workflow (create/validate/execute), debugging, plugin authoring, Agent Teams |
-| Skills | 18 | Reusable knowledge modules for development, design, deployment, and business tasks |
+| Agents | 12 | Frontend, Backend, Data, QA, DevOps, Docs, Project Coordinator, Dev Engineer + 4 auditors |
+| Commands | 26 | PRP workflow (create/validate/execute), debugging, plugin authoring, Agent Teams, communication style |
+| Skills | 19 | Reusable knowledge modules for development, design, deployment, and business tasks |
 | Hooks | 3 | Auto-invocation hooks (UserPromptSubmit, SessionStart, PostToolUse) |
+| Tools | 2 | Standalone desktop utilities: CronLike scheduler and MouseJiggler |
 
 ---
 
@@ -106,6 +107,22 @@ To update the plugin after pulling new changes:
    ```
 
 2. Restart Claude Code or run `/plugin` to refresh.
+
+### When `/plugin update` appears to do nothing
+
+The plugin cache is keyed by version (`~/.claude/plugins/cache/KGP/KGP/<version>/`). If content was pushed without bumping `version` in `.claude-plugin/plugin.json`, the updater has no new directory to resolve to and silently no-ops. Your installed copy stays on the old content and nothing reports an error.
+
+To force a refresh:
+
+```bash
+/plugin uninstall KGP@KGP
+rm -rf ~/.claude/plugins/cache/KGP/KGP/<version>/
+/plugin install KGP@KGP
+```
+
+Substitute the version you currently have installed for `<version>`. On Windows PowerShell, use `Remove-Item -Recurse -Force "$env:USERPROFILE\.claude\plugins\cache\KGP\KGP\<version>\"` for the middle step.
+
+The durable fix is to bump the version with every content change, which is why every release in CHANGELOG.md carries one.
 
 ---
 

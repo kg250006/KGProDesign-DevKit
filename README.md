@@ -150,10 +150,22 @@ claude
 │   ├── prp_base.md       # XML PRP template
 │   ├── prp_planning.md   # PRD generation template
 │   └── frameworks/       # Tech stack CLAUDE.md templates
+├── tools/            # Standalone desktop utilities (not slash commands)
 ├── CLAUDE.md         # Reference guide
 ├── CHANGELOG.md      # Version history
 └── README.md         # This file
 ```
+
+## Tools
+
+Standalone desktop utilities that ship with the plugin. These are ordinary programs you run yourself: not slash commands, not agent orchestration.
+
+| Tool | What it does |
+|------|--------------|
+| [MouseJiggler](tools/MouseJiggler/README.md) | Keeps the machine awake. Tray icon, Windows and macOS. |
+| [CronLike](tools/CronLike/README.md) | Runs commands on a human-readable JSON schedule. Tray icon, Windows and macOS. Configuration reference in [SCHEDULE.md](tools/CronLike/SCHEDULE.md). |
+
+Each has its own README with install and usage instructions. Both are Python and need `pip install -r requirements.txt` in their own directory.
 
 ## Framework Templates
 
@@ -227,4 +239,4 @@ Recipes: `implementation`, `review`, `research`, `hypothesis`. Classifier + disa
 - Issues: GitHub Issues
 
 ---
-Universal development toolkit | v2.7.0
+Universal development toolkit | v2.8.0

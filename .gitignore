@@ -6,3 +6,32 @@ PRPs/*.md
 .claude/prp-progress.md
 .claude/prp-batch-progress.md
 .claude/prp-task-progress.md
+
+# Python (tools/)
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+
+# OS cruft
+.DS_Store
+._*
+Thumbs.db
+desktop.ini
+
+# Editors
+.vscode/
+.idea/
+*.swp
+
+# Local env and secrets
+.env
+.env.local
+
+# Logs
+*.log
+
+# CronLike/MouseJiggler gate records (working artifacts)
+tools/**/.gates-*.md

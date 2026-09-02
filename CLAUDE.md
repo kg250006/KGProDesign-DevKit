@@ -259,6 +259,21 @@ Invoke agents via the Task tool with the matching `subagent_type`.
 
 ---
 
+## Tools
+
+`tools/` holds standalone desktop utilities that ship with the plugin. They are **not** agent orchestration, and the Execution Philosophy section below does not apply to them: they have no notion of agents, tasks, PRPs, iteration, or retries. CronLike runs whatever string you put in a config field, on a clock. Treat them the way you would treat any other program installed on the machine.
+
+| Tool | Entry point | Docs |
+|------|-------------|------|
+| MouseJiggler | `tools/MouseJiggler/mouse_jiggler.py` | `tools/MouseJiggler/README.md` |
+| CronLike | `tools/CronLike/cronlike.py` | `tools/CronLike/README.md`, `tools/CronLike/SCHEDULE.md` |
+
+Both are Python and install with `pip install -r requirements.txt` from their own directory. Neither registers a command, agent, skill, or hook.
+
+**Configuring CronLike:** read `tools/CronLike/SCHEDULE.md` first. It is the complete field reference and the error-message contract, and it is the file to load before adding or editing a scheduled job. The live config is at `~/.cronlike/schedule.json`; validate any edit with `python cronlike.py --check`, which prints the next 5 fire times per job so a wrong schedule is visible before it runs.
+
+---
+
 ## Automatic Skill Invocation
 
 The plugin ships hooks (see `hooks/hooks.json`) that make skill selection automatic:

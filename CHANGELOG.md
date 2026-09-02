@@ -2,6 +2,38 @@
 
 All notable changes to KGProDesign-DevKit.
 
+## [2.8.0] - 2026-09-01
+
+Desktop utilities ship. `tools/` was untracked, so neither of the two tray tools existed anywhere but one machine. This release tracks the directory, adds a scheduler to it, documents both, and closes the validation gap that let a version bump go unverified.
+
+### Added
+- **`tools/` directory now tracked and shipped.** Two standalone desktop utilities:
+  - **CronLike** (`tools/CronLike/`) — system tray scheduler. Runs commands on a human-readable JSON schedule at `~/.cronlike/schedule.json`. Windows and macOS. Catch-up windows for runs missed while the machine was asleep, hot config reload, single-instance locking, per-job threads with per-job timeouts, and a four-state tray icon. Command resolution wraps Windows `.cmd`/`.bat` shims through `COMSPEC`, which is the failure that killed the previous automation.
+  - **MouseJiggler** (`tools/MouseJiggler/`) — existing tray utility, now tracked rather than local-only.
+- **`tools/CronLike/README.md`** — install, launch, the tray menu item by item, how the scheduler works, log layout, and a troubleshooting table.
+- **`tools/CronLike/SCHEDULE.md`** — the complete configuration reference. Every field the parser accepts, the three composition rules, worked examples for every schedule shape, the catch-up semantics, what is deliberately unsupported, and all 48 error messages with a fix for each. It is the contract: `schedule_config.py` must not raise a message absent from it. This is the file to load before adding or editing a job.
+- **`json_get()`, `json_len()`, `json_has()`, `json_has_item()`** in `scripts/tests/test-static-validation.sh` — JSON readers that prefer `jq` and fall back to Python. Every JSON assertion now runs without `jq`.
+- **Tools sections in `README.md` and `CLAUDE.md`**, both framing these as user-facing utilities rather than agent orchestration, plus a `tools/` line in the directory-structure block.
+
+### Changed
+- **`scripts/tests/test-static-validation.sh`** — the three `command -v jq` guards are replaced by `_json_have_reader`, which is satisfied by either `jq` or Python. Assertion count rises from 80 to 90 on a machine without `jq`, and the skip count falls from 4 groups to 0. `validate_json` now accepts `python` as well as `python3`.
+- **`INSTALL.md`** — component counts corrected, and a Tools row added.
+- Version literals across `plugin.json`, `marketplace.json` (both fields), `test-static-validation.sh`, and `README.md`.
+
+### Fixed
+- **The validation suite's `jq` blind spot.** Ten assertions, including all three version invariants, the keyword assertions, the description sweep, and the hook-event checks, sat behind `command -v jq` and reported SKIP on any machine without it. This is how `plugin.json` was allowed to drift from 2.3.0 to 2.5.0 while the suite printed "All static validation checks passed." v2.7.0 made the skips visible; this release makes them run. Verified by injecting a wrong `metadata.version` and confirming the suite fails.
+- **`.gitignore` had no Python, OS, editor, or secrets rules.** Added before Python entered the tree, so `__pycache__/` and `.pyc` never became a tracking problem.
+- **12 committed `.DS_Store` files** were shipping inside the plugin payload. Untracked. A gitignore rule alone does not untrack an already-tracked file.
+- **`.gitignore` now excludes `tools/**/.gates-*.md`.** The PRP gate records are working artifacts and were not covered by any existing rule, so `git add tools/` would have committed them.
+- **`INSTALL.md` component counts were stale** — 11 agents, 25 commands, and 18 skills against an actual 12, 26, and 19.
+- **`INSTALL.md` now documents why `/plugin update` no-ops after a same-version push.** The plugin cache is keyed by version, so without a bump the updater has no new directory to resolve and silently does nothing. The uninstall, cache-delete, reinstall procedure is recorded, with the PowerShell equivalent for the delete step.
+
+### Notes
+- These tools are user-facing utilities, not agent orchestration. The Execution Philosophy constraints in `CLAUDE.md` are scoped to PRP execution and do not apply to them: CronLike has no notion of agents, tasks, PRPs, iteration, or retries.
+- **No new commands, agents, skills, or hooks.** Counts stay at 26, 12, 19, and the registered hook event count stays at 3.
+- **Open finding, not fixed here:** `tools/MouseJiggler/install.bat` tells the user to start the tool with `run.bat`, which does not exist. Its launchers are `run-MouseJiggler.vbs` and `run-debug.bat`. Changing MouseJiggler's behaviour was out of scope for this release, so the defect is recorded rather than corrected. CronLike's own `install.bat` names its launchers correctly.
+- No git tag. This repository has never used them.
+
 ## [2.7.0] - 2026-08-31
 
 Communication-style control. A new skill generates and installs a tailored, model-agnostic

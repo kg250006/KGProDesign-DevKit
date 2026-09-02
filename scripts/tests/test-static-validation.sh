@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Static validation for KGProDesign-DevKit v2.7.0.
+# Static validation for KGProDesign-DevKit v2.8.0.
 # Validates YAML frontmatter, JSON manifests, deletions of obsolete files,
 # absence of obsolete language, and structural elements introduced in v2.2.0.
 # No Claude CLI or plugin installation required.
@@ -20,6 +20,100 @@ fail() { FAIL=$((FAIL + 1)); FAILURES+=("$1"); printf "  \033[31mFAIL\033[0m %s\
 skip() { SKIPPED=$((SKIPPED + 1)); printf "  \033[33mSKIP\033[0m %s\n" "$1"; }
 
 section() { printf "\n\033[1m== %s ==\033[0m\n" "$1"; }
+
+# --------------------------------------------------------------------
+# JSON readers with a jq-free fallback.
+#
+# Every JSON assertion below used to sit behind `if command -v jq`, so on a
+# machine without jq the whole group reported SKIP and proved nothing. That is
+# how the plugin version was allowed to drift from 2.3.0 to 2.5.0 unnoticed:
+# the suite said "all checks passed" while the version invariants never ran.
+#
+# Python is already a hard dependency of this repo's tools/ directory, so the
+# fallback adds no new requirement. jq stays preferred where it is present.
+
+_json_py() {
+  # Print the Python interpreter to use, or nothing when there is none.
+  command -v python3 2>/dev/null || command -v python 2>/dev/null || true
+}
+
+_json_have_reader() {
+  command -v jq >/dev/null 2>&1 && return 0
+  [ -n "$(_json_py)" ]
+}
+
+# Walk a dotted path with at most one indexed segment per step. The three
+# real call sites are ".version", ".metadata.version", and ".plugins[0].version",
+# so this handles an indexed segment explicitly rather than implementing a
+# general JSONPath parser.
+_JSON_WALK='import json,re,sys
+d = json.load(open(sys.argv[1], encoding="utf-8"))
+for seg in sys.argv[2].lstrip(".").split("."):
+    if not seg:
+        continue
+    m = re.match(r"^([^\[\]]*)(?:\[(\d+)\])?$", seg)
+    if m is None:
+        sys.exit(1)
+    key, idx = m.group(1), m.group(2)
+    if key:
+        d = d[key]
+    if idx is not None:
+        d = d[int(idx)]
+'
+
+json_get() {
+  # json_get <file> <dotted.path> -- print the value, empty on any failure.
+  local file="$1" path="$2" py
+  if command -v jq >/dev/null 2>&1; then
+    jq -r "$path" "$file" 2>/dev/null
+    return
+  fi
+  py="$(_json_py)"
+  [ -n "$py" ] || return 0
+  "$py" -c "${_JSON_WALK}"'
+print(str(d).lower() if isinstance(d, bool) else d)' "$file" "$path" 2>/dev/null
+}
+
+json_len() {
+  # json_len <file> <dotted.path> -- print the element count, empty on failure.
+  local file="$1" path="$2" py
+  if command -v jq >/dev/null 2>&1; then
+    jq "$path | length" "$file" 2>/dev/null
+    return
+  fi
+  py="$(_json_py)"
+  [ -n "$py" ] || return 0
+  "$py" -c "${_JSON_WALK}"'
+print(len(d))' "$file" "$path" 2>/dev/null
+}
+
+json_has() {
+  # json_has <file> <dotted.path> -- exit 0 when the path resolves to a
+  # non-null value, non-zero otherwise. Prints nothing.
+  local file="$1" path="$2" py
+  if command -v jq >/dev/null 2>&1; then
+    jq -e "$path" "$file" >/dev/null 2>&1
+    return
+  fi
+  py="$(_json_py)"
+  [ -n "$py" ] || return 1
+  "$py" -c "${_JSON_WALK}"'
+sys.exit(0 if d is not None else 1)' "$file" "$path" >/dev/null 2>&1
+}
+
+json_has_item() {
+  # json_has_item <file> <dotted.path> <value> -- exit 0 when the array at
+  # <path> contains <value>. Prints nothing.
+  local file="$1" path="$2" want="$3" py
+  if command -v jq >/dev/null 2>&1; then
+    jq -e --arg w "$want" "$path | index(\$w)" "$file" >/dev/null 2>&1
+    return
+  fi
+  py="$(_json_py)"
+  [ -n "$py" ] || return 1
+  "$py" -c "${_JSON_WALK}"'
+sys.exit(0 if sys.argv[3] in (d or []) else 1)' "$file" "$path" "$want" >/dev/null 2>&1
+}
 
 # --------------------------------------------------------------------
 section "1. YAML frontmatter parse — surviving commands + skills"
@@ -72,14 +166,14 @@ validate_json() {
     else
       fail "$path — invalid JSON (jq)"
     fi
-  elif command -v python3 >/dev/null 2>&1; then
-    if python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$path" >/dev/null 2>&1; then
-      pass "$path — valid JSON (python3)"
+  elif [ -n "$(_json_py)" ]; then
+    if "$(_json_py)" -c "import json,sys; json.load(open(sys.argv[1],encoding='utf-8'))" "$path" >/dev/null 2>&1; then
+      pass "$path — valid JSON (python)"
     else
-      fail "$path — invalid JSON (python3)"
+      fail "$path — invalid JSON (python)"
     fi
   else
-    fail "$path — no jq/python3 to validate"
+    fail "$path — no jq/python to validate"
   fi
 }
 
@@ -87,56 +181,56 @@ validate_json ".claude-plugin/plugin.json"
 validate_json ".claude-plugin/marketplace.json"
 validate_json "hooks/hooks.json"
 
-# v2.7.0 version invariants
-if command -v jq >/dev/null 2>&1; then
-  ver=$(jq -r '.version' .claude-plugin/plugin.json 2>/dev/null)
-  if [ "$ver" = "2.7.0" ]; then
-    pass "plugin.json version is 2.7.0"
+# v2.8.0 version invariants
+if _json_have_reader; then
+  ver=$(json_get .claude-plugin/plugin.json ".version")
+  if [ "$ver" = "2.8.0" ]; then
+    pass "plugin.json version is 2.8.0"
   else
-    fail "plugin.json version is '$ver' (expected 2.7.0)"
+    fail "plugin.json version is '$ver' (expected 2.8.0)"
   fi
 
-  mkt_ver=$(jq -r '.metadata.version' .claude-plugin/marketplace.json 2>/dev/null)
+  mkt_ver=$(json_get .claude-plugin/marketplace.json ".metadata.version")
   if [ "$mkt_ver" = "$ver" ]; then
     pass "marketplace.json metadata.version ($mkt_ver) matches plugin.json"
   else
     fail "marketplace.json metadata.version ($mkt_ver) does not match plugin.json ($ver)"
   fi
 
-  mkt_plugin_ver=$(jq -r '.plugins[0].version' .claude-plugin/marketplace.json 2>/dev/null)
+  mkt_plugin_ver=$(json_get .claude-plugin/marketplace.json ".plugins[0].version")
   if [ "$mkt_plugin_ver" = "$ver" ]; then
     pass "marketplace.json plugins[0].version ($mkt_plugin_ver) matches plugin.json"
   else
     fail "marketplace.json plugins[0].version ($mkt_plugin_ver) does not match plugin.json ($ver)"
   fi
 
-  if jq -e '.keywords | index("agent-teams")' .claude-plugin/plugin.json >/dev/null 2>&1; then
+  if json_has_item .claude-plugin/plugin.json ".keywords" "agent-teams"; then
     pass "plugin.json keywords include 'agent-teams'"
   else
     fail "plugin.json keywords missing 'agent-teams'"
   fi
 
-  if jq -e '.keywords | index("iterative-development")' .claude-plugin/plugin.json >/dev/null 2>&1; then
+  if json_has_item .claude-plugin/plugin.json ".keywords" "iterative-development"; then
     fail "plugin.json keywords still include 'iterative-development' (should have been removed in v2.2.0)"
   else
     pass "plugin.json keywords do NOT include 'iterative-development'"
   fi
 
-  desc=$(jq -r '.description' .claude-plugin/plugin.json 2>/dev/null)
+  desc=$(json_get .claude-plugin/plugin.json ".description")
   if printf "%s" "$desc" | grep -qiE 'three-tier|ralph loop|marketplace'; then
     fail "plugin.json description still contains obsolete language: $desc"
   else
     pass "plugin.json description has no obsolete language"
   fi
 else
-  skip "plugin.json/marketplace.json version invariants - jq not installed"
-  skip "plugin.json keyword assertions - jq not installed"
-  skip "plugin.json description language sweep - jq not installed"
+  skip "plugin.json/marketplace.json version invariants - neither jq nor python available"
+  skip "plugin.json keyword assertions - neither jq nor python available"
+  skip "plugin.json description language sweep - neither jq nor python available"
 fi
 
 # hooks.json shape — v2.3.0 auto-invocation hooks registered
-if command -v jq >/dev/null 2>&1; then
-  hook_count=$(jq '.hooks | length' hooks/hooks.json 2>/dev/null)
+if _json_have_reader; then
+  hook_count=$(json_len hooks/hooks.json ".hooks")
   if [ "$hook_count" = "3" ]; then
     pass "hooks.json registers 3 hook events"
   else
@@ -144,14 +238,14 @@ if command -v jq >/dev/null 2>&1; then
   fi
 
   for evt in UserPromptSubmit SessionStart PostToolUse; do
-    if jq -e ".hooks.${evt}" hooks/hooks.json >/dev/null 2>&1; then
+    if json_has hooks/hooks.json ".hooks.${evt}"; then
       pass "hooks.json registers ${evt}"
     else
       fail "hooks.json missing ${evt}"
     fi
   done
 else
-  skip "hooks.json event-count and event-presence checks - jq not installed"
+  skip "hooks.json event-count and event-presence checks - neither jq nor python available"
 fi
 
 # hook scripts exist and are executable
@@ -274,6 +368,14 @@ REQUIRED=(
   "skills/communication-style/workflows/setup.md"
   "skills/communication-style/references/base-ruleset.md"
   "skills/communication-style/references/model-tics.md"
+  "tools/CronLike/cronlike.py"
+  "tools/CronLike/schedule_config.py"
+  "tools/CronLike/scheduler.py"
+  "tools/CronLike/runner.py"
+  "tools/CronLike/schedule.example.json"
+  "tools/CronLike/README.md"
+  "tools/CronLike/SCHEDULE.md"
+  "tools/MouseJiggler/mouse_jiggler.py"
 )
 
 for f in "${REQUIRED[@]}"; do
@@ -408,7 +510,7 @@ total=$((PASS + FAIL))
 printf "\n  Total: %d  Passed: \033[32m%d\033[0m  Failed: \033[31m%d\033[0m  Skipped: \033[33m%d\033[0m\n" "$total" "$PASS" "$FAIL" "$SKIPPED"
 
 if [ "$SKIPPED" -gt 0 ]; then
-  printf "\n\033[33m%d check group(s) skipped - install jq for full coverage.\033[0m\n" "$SKIPPED"
+  printf "\n\033[33m%d check group(s) skipped - install jq or python for full coverage.\033[0m\n" "$SKIPPED"
 fi
 
 if [ "$FAIL" -gt 0 ]; then
