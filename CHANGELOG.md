@@ -27,11 +27,11 @@ Desktop utilities ship. `tools/` was untracked, so neither of the two tray tools
 - **`.gitignore` now excludes `tools/**/.gates-*.md`.** The PRP gate records are working artifacts and were not covered by any existing rule, so `git add tools/` would have committed them.
 - **`INSTALL.md` component counts were stale** — 11 agents, 25 commands, and 18 skills against an actual 12, 26, and 19.
 - **`INSTALL.md` now documents why `/plugin update` no-ops after a same-version push.** The plugin cache is keyed by version, so without a bump the updater has no new directory to resolve and silently does nothing. The uninstall, cache-delete, reinstall procedure is recorded, with the PowerShell equivalent for the delete step.
+- **`tools/MouseJiggler/install.bat` told the user to start the tool with `run.bat`, which does not exist.** Its launchers are `run-MouseJiggler.vbs` and `run-debug.bat`. CronLike's installer was copied from this file and had the same defect corrected during its own build, but the source file was never fixed, so the broken instruction would have shipped on the tool's first release. Both installers now name their real launchers in matching wording.
 
 ### Notes
 - These tools are user-facing utilities, not agent orchestration. The Execution Philosophy constraints in `CLAUDE.md` are scoped to PRP execution and do not apply to them: CronLike has no notion of agents, tasks, PRPs, iteration, or retries.
 - **No new commands, agents, skills, or hooks.** Counts stay at 26, 12, 19, and the registered hook event count stays at 3.
-- **Open finding, not fixed here:** `tools/MouseJiggler/install.bat` tells the user to start the tool with `run.bat`, which does not exist. Its launchers are `run-MouseJiggler.vbs` and `run-debug.bat`. Changing MouseJiggler's behaviour was out of scope for this release, so the defect is recorded rather than corrected. CronLike's own `install.bat` names its launchers correctly.
 - No git tag. This repository has never used them.
 
 ## [2.7.0] - 2026-08-31
