@@ -6,7 +6,7 @@ Universal Claude Code development toolkit for any project.
 
 - **Unified Foundation** - Every developer starts with identical tools, workflows, and guidelines
 - **Focused Agents** - 12 agents (7 engineering + 4 auditors + 1 workflow orchestrator) covering all development categories
-- **Essential Commands** - 26 commands for efficient workflows
+- **Essential Commands** - 30 commands for efficient workflows
 - **Native PRP Execution** - Spec-driven development in a single long-running session, no external scripts
 - **Design-First Frontend** - Website PRPs include design-token phases and visual QA gates
 - **Tunable Communication** - Install a per-project rule so replies stay concise and plainly worded, personal and git-excluded by default
@@ -115,6 +115,12 @@ claude
 - `/KGP:comm-style` - Set up, review, or tweak this project's communication style (`.claude/rules/`, personal by default, never committed unless you say so)
 - `/KGP:help` - Plugin overview
 
+### Desktop Tools (tools/)
+- `/KGP:tools:status` - Install path, dependency health, and running state for both desktop tools
+- `/KGP:tools:cron` - Start, stop, inspect, autostart, or hand-fire CronLike jobs
+- `/KGP:tools:schedule` - Add, edit, enable, disable, or remove a CronLike job, scoped to the current project
+- `/KGP:tools:jiggler` - Start, stop, inspect, or autostart the Mouse Jiggler
+
 ### Plugin Authoring & Audits (core/)
 - `/KGP:core:create-hook` - Configure Claude Code hooks
 - `/KGP:core:create-subagent` - Create specialized subagents
@@ -140,9 +146,9 @@ claude
 │   ├── plugin.json
 │   └── marketplace.json
 ├── agents/           # 12 specialized agents
-├── commands/         # 26 commands (top-level + core/ + dev/)
+├── commands/         # 30 commands (top-level + core/ + dev/ + tools/)
 ├── hooks/            # Auto-invocation hooks (hooks.json)
-├── skills/           # 19 skills (PRP, design, deployment, testing, communication, business)
+├── skills/           # 20 skills (PRP, design, deployment, testing, communication, business, desktop tools)
 ├── scripts/
 │   ├── hooks/            # Hook scripts
 │   └── tests/            # Static-validation suite
@@ -166,6 +172,8 @@ Standalone desktop utilities that ship with the plugin. These are ordinary progr
 | [CronLike](tools/CronLike/README.md) | Runs commands on a human-readable JSON schedule. Tray icon, Windows and macOS. Configuration reference in [SCHEDULE.md](tools/CronLike/SCHEDULE.md). |
 
 Each has its own README with install and usage instructions. Both are Python and need `pip install -r requirements.txt` in their own directory.
+
+Control them from any project with the `/KGP:tools:*` commands above, or just describe what you want and the `desktop-tools` skill routes it. Autostart at login survives plugin updates: the Startup entry points at a stable shim in `~/.kgp-tools/` that resolves the plugin at launch time, never a version-stamped path.
 
 ## Framework Templates
 
@@ -239,4 +247,4 @@ Recipes: `implementation`, `review`, `research`, `hypothesis`. Classifier + disa
 - Issues: GitHub Issues
 
 ---
-Universal development toolkit | v2.8.0
+Universal development toolkit | v2.9.0

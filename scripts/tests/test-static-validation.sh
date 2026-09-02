@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Static validation for KGProDesign-DevKit v2.8.0.
+# Static validation for KGProDesign-DevKit v2.9.0.
 # Validates YAML frontmatter, JSON manifests, deletions of obsolete files,
 # absence of obsolete language, and structural elements introduced in v2.2.0.
 # No Claude CLI or plugin installation required.
@@ -127,6 +127,11 @@ YAML_TARGETS=(
   "skills/agent-teams/SKILL.md"
   "commands/comm-style.md"
   "skills/communication-style/SKILL.md"
+  "commands/tools/status.md"
+  "commands/tools/cron.md"
+  "commands/tools/schedule.md"
+  "commands/tools/jiggler.md"
+  "skills/desktop-tools/SKILL.md"
 )
 
 for f in "${YAML_TARGETS[@]}"; do
@@ -181,13 +186,13 @@ validate_json ".claude-plugin/plugin.json"
 validate_json ".claude-plugin/marketplace.json"
 validate_json "hooks/hooks.json"
 
-# v2.8.0 version invariants
+# v2.9.0 version invariants
 if _json_have_reader; then
   ver=$(json_get .claude-plugin/plugin.json ".version")
-  if [ "$ver" = "2.8.0" ]; then
-    pass "plugin.json version is 2.8.0"
+  if [ "$ver" = "2.9.0" ]; then
+    pass "plugin.json version is 2.9.0"
   else
-    fail "plugin.json version is '$ver' (expected 2.8.0)"
+    fail "plugin.json version is '$ver' (expected 2.9.0)"
   fi
 
   mkt_ver=$(json_get .claude-plugin/marketplace.json ".metadata.version")
@@ -376,6 +381,26 @@ REQUIRED=(
   "tools/CronLike/README.md"
   "tools/CronLike/SCHEDULE.md"
   "tools/MouseJiggler/mouse_jiggler.py"
+  "tools/MouseJiggler/README.md"
+  "scripts/tools/plugin-root.sh"
+  "scripts/tools/toolctl.sh"
+  "scripts/tools/launch.py"
+  "commands/tools/status.md"
+  "commands/tools/cron.md"
+  "commands/tools/schedule.md"
+  "commands/tools/jiggler.md"
+  "skills/desktop-tools/SKILL.md"
+  "skills/desktop-tools/references/tool-registry.md"
+  "skills/desktop-tools/references/cronlike.md"
+  "skills/desktop-tools/references/mousejiggler.md"
+  "skills/desktop-tools/references/scheduling-patterns.md"
+  "skills/desktop-tools/references/install-and-update.md"
+  "skills/desktop-tools/references/troubleshooting.md"
+  "skills/desktop-tools/workflows/operate.md"
+  "skills/desktop-tools/workflows/configure-schedule.md"
+  "skills/desktop-tools/workflows/diagnose.md"
+  "skills/desktop-tools/workflows/add-tool.md"
+  "skills/desktop-tools/templates/tool-reference.md.template"
 )
 
 for f in "${REQUIRED[@]}"; do
@@ -501,6 +526,80 @@ if [ -f "$PLAYBOOKS" ]; then
   done
 else
   fail "playbooks.md missing entirely"
+fi
+
+# --------------------------------------------------------------------
+section "9. Desktop tools — anti-drift and path invariants"
+
+# A. Scheduling references must POINT at SCHEDULE.md, never restate it.
+DT_REFS="skills/desktop-tools/references"
+if [ -d "$DT_REFS" ]; then
+  for f in "$DT_REFS"/cronlike.md "$DT_REFS"/scheduling-patterns.md; do
+    if [ ! -f "$f" ]; then
+      fail "$f — missing"
+    elif grep -q "SCHEDULE.md" "$f"; then
+      pass "$(basename "$f") points at SCHEDULE.md"
+    else
+      fail "$(basename "$f") never references SCHEDULE.md — it must point, not restate"
+    fi
+  done
+else
+  fail "skills/desktop-tools/references/ missing entirely"
+fi
+
+# B. THE anti-drift assertion. A field-definition table inside the skill is a
+# second copy of SCHEDULE.md's contract, which drifts from the parser silently
+# and only surfaces months later as a job that quietly stopped firing.
+if [ -d "skills/desktop-tools" ]; then
+  if grep -rEq '^\|.*[Ff]ield.*\|.*[Rr]equired' skills/desktop-tools/; then
+    fail "skills/desktop-tools/ contains a field-definition table — SCHEDULE.md is the only field reference"
+    grep -rEn '^\|.*[Ff]ield.*\|.*[Rr]equired' skills/desktop-tools/ | head -3
+  else
+    pass "skills/desktop-tools/ has no duplicated field-definition table"
+  fi
+else
+  fail "skills/desktop-tools/ missing entirely"
+fi
+
+# C. No version-stamped plugin path may be committed. The plugin cache is
+# versioned, so any captured absolute path breaks on the next update.
+if grep -rEq 'cache/KGP/KGP/[0-9]+\.[0-9]+\.[0-9]+' commands/tools scripts/tools 2>/dev/null; then
+  fail "a versioned plugin path is committed under commands/tools or scripts/tools"
+  grep -rEn 'cache/KGP/KGP/[0-9]+\.[0-9]+\.[0-9]+' commands/tools scripts/tools | head -3
+else
+  pass "no version-stamped plugin paths in commands/tools or scripts/tools"
+fi
+
+# D. The autostart shim must survive a plugin update, so it may not bake in a version.
+if [ -f "scripts/tools/launch.py" ]; then
+  if grep -vE '^\s*#' scripts/tools/launch.py | grep -Eq '[0-9]+\.[0-9]+\.[0-9]+'; then
+    fail "scripts/tools/launch.py contains a hardcoded version outside comments"
+  else
+    pass "scripts/tools/launch.py bakes in no version"
+  fi
+else
+  fail "scripts/tools/launch.py missing"
+fi
+
+# E. Every tool directory must have a registry row, so a tool cannot be added
+# half-way. The registry and toolctl.sh's REGISTRY block are two copies of one fact.
+REG="skills/desktop-tools/references/tool-registry.md"
+if [ -f "$REG" ] && [ -d "tools" ]; then
+  for d in tools/*/; do
+    name="$(basename "$d")"
+    if grep -q "tools/$name/" "$REG"; then
+      pass "tool-registry.md has a row for tools/$name"
+    else
+      fail "tools/$name has no row in tool-registry.md"
+    fi
+    if grep -q "tools/$name|" scripts/tools/toolctl.sh 2>/dev/null; then
+      pass "toolctl.sh REGISTRY has a row for tools/$name"
+    else
+      fail "tools/$name has no row in toolctl.sh REGISTRY"
+    fi
+  done
+else
+  fail "$REG or tools/ missing"
 fi
 
 # --------------------------------------------------------------------

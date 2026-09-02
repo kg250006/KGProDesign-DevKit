@@ -214,7 +214,7 @@ Invoke agents via the Task tool with the matching `subagent_type`.
 
 ---
 
-## Commands Reference (26)
+## Commands Reference (30)
 
 ### Top-Level
 
@@ -257,6 +257,15 @@ Invoke agents via the Task tool with the matching `subagent_type`.
 | `/KGP:dev:run-prompt` | Delegate prompts to fresh sub-task contexts |
 | `/KGP:dev:whats-next` | Create a handoff document for continuing in a fresh context |
 
+### tools/ — Desktop Utilities
+
+| Command | Purpose |
+|---------|---------|
+| `/KGP:tools:status` | Install path, dependency health, and running state for both desktop tools |
+| `/KGP:tools:cron` | Start, stop, restart, inspect, autostart, hand-fire jobs, read logs |
+| `/KGP:tools:schedule` | Add, edit, enable, disable, remove a CronLike job, scoped to the current project |
+| `/KGP:tools:jiggler` | Start, stop, inspect, or autostart the Mouse Jiggler |
+
 ---
 
 ## Tools
@@ -269,6 +278,10 @@ Invoke agents via the Task tool with the matching `subagent_type`.
 | CronLike | `tools/CronLike/cronlike.py` | `tools/CronLike/README.md`, `tools/CronLike/SCHEDULE.md` |
 
 Both are Python and install with `pip install -r requirements.txt` from their own directory. Neither registers a command, agent, skill, or hook.
+
+**Operational knowledge lives in the `desktop-tools` skill** (`skills/desktop-tools/`): a router plus references for each tool, scheduling recipes, the install-and-update layout, and a troubleshooting table. It auto-invokes on phrases like "schedule this to run every morning" or "keep my machine awake". `workflows/add-tool.md` is the procedure for adding a third tool: one registry row plus one reference file.
+
+All process control goes through `scripts/tools/toolctl.sh`. The four commands and the skill are two front doors to one implementation; neither reimplements start, stop, or status.
 
 **Configuring CronLike:** read `tools/CronLike/SCHEDULE.md` first. It is the complete field reference and the error-message contract, and it is the file to load before adding or editing a scheduled job. The live config is at `~/.cronlike/schedule.json`; validate any edit with `python cronlike.py --check`, which prints the next 5 fire times per job so a wrong schedule is visible before it runs.
 
@@ -425,5 +438,5 @@ Create project-specific CLAUDE.md in your project root:
 
 ---
 
-Last Updated: 2026-08-31
+Last Updated: 2026-09-02
 Maintained by: KGProDesign

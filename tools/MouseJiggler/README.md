@@ -46,6 +46,50 @@ nohup python mouse_jiggler.py &
 
 **Tip:** Add the command to your Login Items (System Settings > General > Login Items) to start it automatically.
 
+## Command line
+
+| Flag | What it does |
+|------|--------------|
+| `--status` | Print one status line describing whether the jiggler is running. Always exits 0. |
+| `--stop` | Stop the running jiggler. Exit 0 when it stopped one, exit 1 when nothing was running. |
+| `--generate-ico` | Regenerate `icon.ico` at seven sizes from the active icon design. |
+
+With no flag, the tool starts the tray icon.
+
+### Single instance
+
+Only one jiggler runs at a time. A PID is recorded in
+`~/.mousejiggler/mousejiggler.lock` at startup and removed on a clean exit. A
+second launch refuses with `Mouse Jiggler is already running (PID N).` and exits
+1 rather than starting a duplicate. A lock naming a process that is no longer
+alive is stale and gets taken over automatically, so a crash never needs manual
+cleanup.
+
+Pause is a tray-menu action only. There is no `--pause` flag; stopping and
+starting is the command-line equivalent.
+
+### Status output contract
+
+`--status` prints exactly one line to stdout and exits 0, whether or not the tool
+is running. The line is space-separated `key=value` pairs. `state` is always
+present and is either `running` or `stopped`. `pid` is present only when
+`state=running`. Values never contain spaces; a value that would contain one is
+wrapped in double quotes.
+
+
+Examples:
+
+```
+state=running pid=25140
+state=stopped
+```
+
+`--stop` exits 0 when it stopped a running instance and 1 when nothing was
+running. It prints one human-readable line either way.
+
+`scripts/tools/toolctl.sh` in the plugin parses this line, so the grammar is
+shared with the sibling tray tool and must not drift.
+
 ## How It Works
 
 The application runs in the background and moves the mouse 4 pixels diagonally and then back every 60 seconds. The movement alternates direction each cycle, making it imperceptible during normal use while being sufficient to prevent screen lock and sleep timers from activating.

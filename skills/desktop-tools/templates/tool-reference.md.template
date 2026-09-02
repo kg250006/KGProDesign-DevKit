@@ -1,0 +1,67 @@
+<!--
+  Skeleton for a new tool's reference file in skills/desktop-tools/references/.
+
+  Copy to references/<toolkey>.md and fill every section. Delete this comment.
+
+  Before writing, confirm the tool satisfies the four-point contract in
+  references/tool-registry.md, because a tool that meets it needs no
+  special-casing anywhere in scripts/tools/toolctl.sh:
+
+    1. A PID lockfile under its own ~/.<name>/ directory, with stale-lock takeover.
+    2. --status printing the one-line key=value grammar, exit 0 either way.
+    3. --stop returning 0 when it stopped something and 1 when nothing ran,
+       clearing the lockfile after confirming the process is gone.
+    4. Flat imports tolerating a cd-to-script-dir launch.
+
+  Keep every section. The "Honest limits" section is not optional: both existing
+  references carry one, and a reference that only lists capabilities makes Claude
+  claim things the tool cannot do.
+-->
+
+# <Tool Name>
+
+<One or two sentences: what it does and what it is for. No marketing.>
+
+> If this tool owns a contract document of its own (the way CronLike owns
+> `tools/CronLike/SCHEDULE.md`), name it here and say plainly that this file does not repeat
+> it. Point at contracts; never copy them.
+
+## What it does
+
+<The mechanism, concretely. Which OS APIs, which intervals, which files. Enough that a reader
+can predict its behaviour rather than guess at it.>
+
+## Where its config lives
+
+<`~/.<name>/`, with a table of each file, what it is for, and whether it is safe to delete.
+Write "None. It has no configuration." if that is the truth, rather than omitting the section.>
+
+## Lifecycle
+
+<Which of start / stop / restart / status / autostart it supports, and anything unusual about
+how it starts or stops. Note the single-instance behaviour.>
+
+## Command line
+
+| Flag | What it is for |
+|------|----------------|
+| `--status` | One status line. See the contract in `tool-registry.md`. |
+| `--stop` | Stop the running instance. Exit 1 when nothing was running. |
+| <...> | <...> |
+
+<State what happens with no flag.>
+
+**Only document flags the code actually dispatches.** Cross-check this table against the argv
+handling in the entry point before committing. A documented flag that does not exist is worse
+than an undocumented one.
+
+## Platform notes
+
+<Windows and macOS differences: interpreter, permissions prompts, console behaviour, anything
+that makes it work on one and not the other.>
+
+## Honest limits
+
+<What it cannot do, and what it deliberately does not do. Anything a user is likely to ask for
+and not find. If a capability exists only in the tray menu and not on the command line, say so
+here: that is exactly the kind of gap that otherwise gets claimed by mistake.>

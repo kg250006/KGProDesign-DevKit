@@ -2,6 +2,28 @@
 
 All notable changes to KGProDesign-DevKit.
 
+## [2.9.0] - 2026-09-02
+
+The desktop tools become controllable from anywhere. Before this, CronLike and MouseJiggler could only be driven from their own tray menus, nothing could tell you whether the scheduler was actually running, and CronLike's schedule could only be edited by hand.
+
+### Added
+- **Four `/KGP:tools:*` commands.** `status` (install path, dependency health, running state), `cron` (start/stop/restart/status/run/logs/autostart), `schedule` (job CRUD scoped to the repo you are in), `jiggler` (start/stop/status/autostart).
+- **`desktop-tools` skill** (`skills/desktop-tools/`) — router, six references, four workflows, one template. Carries the operational knowledge: what lives where, scheduling recipes, the install-and-update layout, a symptom-to-fix table, and `workflows/add-tool.md` for adding a third tool. Auto-invokes on phrases like "schedule this to run every morning" or "keep my machine awake".
+- **`scripts/tools/`** — `plugin-root.sh` resolves the live plugin directory (env, then manifest, then source checkout, each validated by content rather than existence); `toolctl.sh` is the single implementation of all process control; `launch.py` is the version-independent autostart shim.
+- **`--status` and `--stop` on both desktop tools**, emitting a shared one-line `key=value` grammar documented identically in both READMEs. CronLike's adds `next` and `at`.
+- **Autostart at login**, Windows Startup entry and macOS LaunchAgent, both pointing at `~/.kgp-tools/launch.py` rather than a versioned path, so a `/plugin update` cannot break them. Every shim failure is logged to `~/.kgp-tools/launch.log`.
+- **Static-validation section 9** — anti-drift and path invariants: scheduling references must point at `SCHEDULE.md`, no skill file may contain a field-definition table, no committed file may carry a version-stamped plugin path, the shim may bake in no version, and every `tools/` directory must have a registry row in both `tool-registry.md` and `toolctl.sh`.
+- **`suggest-skill.sh` desktop-tools branch**, placed last so it cannot shadow the deploy, debug, design, or PRP hints.
+
+### Fixed
+- **MouseJiggler had no single-instance guard.** Any number could be launched at once, with no way to tell which was running or to stop one from outside its tray menu. It now takes a PID lock at `~/.mousejiggler/mousejiggler.lock`, with stale-lock takeover, matching CronLike.
+- **A terminated tool left a stale lockfile, and Windows recycles PIDs.** `--status` would intermittently report a stopped tool as running, and the next `start` would refuse. Both tools now clear the lockfile on the stop path, after confirming the process is gone. Stale-lock *detection* in `acquire_lock()` is unchanged and remains the only such implementation.
+
+### Notes
+- Counts: 30 commands, 20 skills, 12 agents.
+- Static validation rises from 98 to 132 assertions, 0 failed, 0 skipped.
+- The macOS LaunchAgent branch is verified by inspection only; it was authored and reviewed on Windows and has not been executed on macOS.
+
 ## [2.8.0] - 2026-09-01
 
 Desktop utilities ship. `tools/` was untracked, so neither of the two tray tools existed anywhere but one machine. This release tracks the directory, adds a scheduler to it, documents both, and closes the validation gap that let a version bump go unverified.

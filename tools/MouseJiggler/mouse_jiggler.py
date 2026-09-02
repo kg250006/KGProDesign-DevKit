@@ -1,11 +1,18 @@
 import sys
 import os
+import signal
 import pystray
 from PIL import Image, ImageDraw
 import threading
 import time
 
+from pathlib import Path
+
 from mouse_input import send_mouse_input
+
+
+CONFIG_DIR_NAME = '.mousejiggler'
+LOCK_FILE = 'mousejiggler.lock'
 
 
 # -- Icon color palettes --------------------------------------------------
@@ -221,13 +228,195 @@ class MouseJigglerApp:
         self.icon.run()
 
 
+# -- Paths ----------------------------------------------------------------
+
+def config_dir():
+    """Return ~/.mousejiggler/, creating it if absent.
+
+    Returns:
+        Path to the configuration directory.
+    """
+    d = Path.home() / CONFIG_DIR_NAME
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def lock_path():
+    """Return the path to mousejiggler.lock.
+
+    Returns:
+        Path to the single-instance lockfile, which may not exist yet.
+    """
+    return config_dir() / LOCK_FILE
+
+
+# -- Single-instance lock -------------------------------------------------
+#
+# Ported from the sibling tray tool at ../CronLike/cronlike.py. Before this
+# existed, nothing stopped a second jiggler from starting and nothing could
+# tell which one was running, so there was no honest way to report status or
+# to stop the tool from outside its own tray menu.
+
+def _pid_alive(pid):
+    """Return True when a process with this PID exists."""
+    if pid is None or pid <= 0:
+        return False
+    if sys.platform == 'win32':
+        import ctypes
+        PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+        STILL_ACTIVE = 259
+        kernel32 = ctypes.windll.kernel32
+        handle = kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, pid)
+        if not handle:
+            return False
+        try:
+            # A PID stays openable while any handle to it is still held, so an
+            # exited process can answer OpenProcess. The exit code is what
+            # actually distinguishes running from finished.
+            code = ctypes.c_ulong()
+            if not kernel32.GetExitCodeProcess(handle, ctypes.byref(code)):
+                return True
+            return code.value == STILL_ACTIVE
+        finally:
+            kernel32.CloseHandle(handle)
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    return True
+
+
+def read_lock_pid():
+    """Return the PID recorded in the lockfile, or None if there is none."""
+    path = lock_path()
+    try:
+        return int(path.read_text(encoding='utf-8').strip())
+    except (OSError, ValueError):
+        return None
+
+
+def acquire_lock():
+    """Claim ~/.mousejiggler/mousejiggler.lock. Returns True on success.
+
+    A lock naming a dead PID, or holding text that is not a PID at all, is
+    stale and gets overwritten, so a crash never requires manual cleanup.
+    """
+    path = lock_path()
+    if path.exists():
+        existing = read_lock_pid()
+        if existing and existing != os.getpid() and _pid_alive(existing):
+            return False
+    try:
+        path.write_text(str(os.getpid()), encoding='utf-8')
+    except OSError:
+        return False
+    return True
+
+
+def release_lock():
+    """Remove the lockfile if it still names this process."""
+    path = lock_path()
+    if read_lock_pid() != os.getpid():
+        return False
+    try:
+        path.unlink()
+    except OSError:
+        return False
+    return True
+
+
+def _terminate(pid):
+    """Ask the process to exit. Returns True when the request was delivered."""
+    try:
+        if sys.platform == 'win32':
+            import ctypes
+            PROCESS_TERMINATE = 0x0001
+            kernel32 = ctypes.windll.kernel32
+            handle = kernel32.OpenProcess(PROCESS_TERMINATE, False, pid)
+            if not handle:
+                return False
+            try:
+                return bool(kernel32.TerminateProcess(handle, 0))
+            finally:
+                kernel32.CloseHandle(handle)
+        os.kill(pid, signal.SIGTERM)
+        return True
+    except OSError:
+        return False
+
+
+def _clear_lock(pid):
+    """Remove a lockfile still naming a process we just terminated.
+
+    A terminated process never reaches its own `finally: release_lock()`, so
+    the file outlives it. Windows recycles PIDs, and a stale lock naming a
+    recycled PID makes --status report a stopped tool as running and makes a
+    later start refuse. This is the stop path finishing the cleanup its own
+    kill prevented; stale-lock takeover in acquire_lock() is unchanged and
+    remains the only staleness *detection* in the tool.
+    """
+    path = lock_path()
+    if read_lock_pid() != pid:
+        return False
+    try:
+        path.unlink()
+    except OSError:
+        return False
+    return True
+
+# -- Command line ---------------------------------------------------------
+
+def cmd_status():
+    """Print the one-line status. Always exits 0.
+
+    The grammar is shared with ../CronLike/cronlike.py and documented in both
+    READMEs; scripts/tools/toolctl.sh parses it.
+    """
+    pid = read_lock_pid()
+    if pid and _pid_alive(pid):
+        print(f"state=running pid={pid}")
+    else:
+        print("state=stopped")
+    return 0
+
+
+def cmd_stop():
+    """Terminate a running instance. 0 if stopped, 1 if nothing was running."""
+    pid = read_lock_pid()
+    if not pid or not _pid_alive(pid):
+        print("Mouse Jiggler is not running.")
+        return 1
+    if not _terminate(pid):
+        print(f"Could not stop Mouse Jiggler (PID {pid}).", file=sys.stderr)
+        return 1
+    # The tray's own finally-block releases the lock on a clean exit, but a
+    # terminated process never reaches it. Poll rather than assume.
+    for _ in range(30):
+        if not _pid_alive(pid):
+            break
+        time.sleep(0.1)
+    _clear_lock(pid)
+    print(f"Stopped Mouse Jiggler (PID {pid}).")
+    return 0
+
+
 def main():
     """Main entry point with error handling and graceful shutdown"""
     if '--generate-ico' in sys.argv:
         generate_ico()
         print("icon.ico generated.")
         sys.exit(0)
+    if '--status' in sys.argv:
+        sys.exit(cmd_status())
+    if '--stop' in sys.argv:
+        sys.exit(cmd_stop())
 
+    if not acquire_lock():
+        holder = read_lock_pid()
+        print(f"Mouse Jiggler is already running (PID {holder}).", file=sys.stderr)
+        sys.exit(1)
     try:
         app = MouseJigglerApp()
         app.run()
@@ -237,6 +426,8 @@ def main():
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
+    finally:
+        release_lock()
 
 
 if __name__ == "__main__":

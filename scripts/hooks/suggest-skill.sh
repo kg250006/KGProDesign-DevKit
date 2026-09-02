@@ -46,6 +46,21 @@ elif has(r"\btoo (verbose|long|wordy|technical)\b", r"\bshorter (replies|respons
     hint = ("Verbosity/communication-style intent detected — consider /KGP:comm-style to install a "
             "per-project communication ruleset (concise, plain language, reference codes, aliases).")
 
+# Desktop tools (CronLike scheduler, Mouse Jiggler). Placed last so it cannot
+# shadow the deploy/debug/design/PRP branches above.
+elif has(r"\bschedule (this|it|that|the)\b", r"\brun (this|it|that) (daily|every|each)\b",
+         r"\bevery (morning|weekday|weekdays|day|hour|night)\b", r"\bcron job\b",
+         r"\brecurring task\b", r"\bon a schedule\b",
+         r"\bkeep (my|the|this) (machine|computer|screen|laptop) awake\b",
+         r"\bstop (my|the) screen (from )?locking\b",
+         r"\bdid (my|the) (job|task|script) (run|fire)\b",
+         r"\bwhy didn.?t (the|my) (job|scheduler|task)\b",
+         r"\b(start|stop) the (tray|scheduler|jiggler)\b",
+         r"\blaunch at (login|startup)\b", r"\brun at (login|startup)\b"):
+    hint = ("Desktop-tools intent detected — consider /KGP:tools:schedule to add a CronLike job "
+            "scoped to this repo, /KGP:tools:status to see what is running, or /KGP:tools:jiggler "
+            "to keep the machine awake (desktop-tools skill).")
+
 if hint:
     print("[KGP hint] " + hint + " Ignore if the user intent is better served directly.")
 sys.exit(0)

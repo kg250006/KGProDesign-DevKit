@@ -1,5 +1,6 @@
 import math
 import os
+import signal
 import subprocess
 import sys
 import threading
@@ -602,6 +603,45 @@ def release_lock():
     return True
 
 
+def _terminate(pid):
+    """Ask the process to exit. Returns True when the request was delivered."""
+    try:
+        if sys.platform == 'win32':
+            import ctypes
+            PROCESS_TERMINATE = 0x0001
+            kernel32 = ctypes.windll.kernel32
+            handle = kernel32.OpenProcess(PROCESS_TERMINATE, False, pid)
+            if not handle:
+                return False
+            try:
+                return bool(kernel32.TerminateProcess(handle, 0))
+            finally:
+                kernel32.CloseHandle(handle)
+        os.kill(pid, signal.SIGTERM)
+        return True
+    except OSError:
+        return False
+
+
+def _clear_lock(pid):
+    """Remove a lockfile still naming a process we just terminated.
+
+    A terminated process never reaches its own `finally: release_lock()`, so
+    the file outlives it. Windows recycles PIDs, and a stale lock naming a
+    recycled PID makes --status report a stopped tool as running and makes a
+    later start refuse. This is the stop path finishing the cleanup its own
+    kill prevented; stale-lock takeover in acquire_lock() is unchanged and
+    remains the only staleness *detection* in the tool.
+    """
+    path = schedule_config.lock_path()
+    if read_lock_pid() != pid:
+        return False
+    try:
+        path.unlink()
+    except OSError:
+        return False
+    return True
+
 # -- Command line ---------------------------------------------------------
 
 EXAMPLE_FILE = 'schedule.example.json'
@@ -704,6 +744,62 @@ def cmd_run(name):
     return 1
 
 
+def cmd_status():
+    """Print the one-line status. Always exits 0.
+
+    The grammar is shared with ../MouseJiggler/mouse_jiggler.py and documented
+    in both READMEs; scripts/tools/toolctl.sh parses it.
+    """
+    pid = read_lock_pid()
+    if not (pid and _pid_alive(pid)):
+        print("state=stopped")
+        return 0
+
+    parts = [f"state=running pid={pid}"]
+    # Next-fire is best-effort. A broken config must not turn status into an
+    # error, because "the config is broken" is exactly when status gets asked.
+    try:
+        jobs, _ = _load_jobs()
+        now = datetime.now()
+        upcoming = []
+        for job in jobs:
+            if not job.enabled:
+                continue
+            when = job.next_fire(now)
+            if when is not None:
+                upcoming.append((when, job.name))
+        if upcoming:
+            when, name = min(upcoming)
+            parts.append(f'next="{name}" at={when:%Y-%m-%dT%H:%M}')
+    except schedule_config.ConfigError:
+        parts.append("next=unknown")
+    print(" ".join(parts))
+    return 0
+
+
+def cmd_stop():
+    """Terminate the running scheduler. 0 if stopped, 1 if nothing was running.
+
+    No lockfile cleanup happens here on purpose: acquire_lock() already takes
+    over a lock naming a dead PID, and a second cleanup implementation would
+    be a second thing that can be wrong.
+    """
+    pid = read_lock_pid()
+    if not pid or not _pid_alive(pid):
+        print("CronLike is not running.")
+        return 1
+    if not _terminate(pid):
+        print(f"Could not stop CronLike (PID {pid}).", file=sys.stderr)
+        return 1
+    for _ in range(30):
+        if not _pid_alive(pid):
+            break
+        time.sleep(0.1)
+    _clear_lock(pid)
+    print(f"Stopped CronLike (PID {pid}).")
+    return 0
+
+
 def main():
     if '--generate-ico' in sys.argv:
         path = generate_ico()
@@ -713,6 +809,10 @@ def main():
         sys.exit(cmd_init())
     if '--check' in sys.argv:
         sys.exit(cmd_check())
+    if '--status' in sys.argv:
+        sys.exit(cmd_status())
+    if '--stop' in sys.argv:
+        sys.exit(cmd_stop())
     if '--run' in sys.argv:
         i = sys.argv.index('--run')
         if i + 1 >= len(sys.argv):

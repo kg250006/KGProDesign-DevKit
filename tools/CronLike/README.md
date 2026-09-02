@@ -67,9 +67,39 @@ It installs missing dependencies, starts the scheduler under `nohup`, and closes
 | `--init` | Create `~/.cronlike/schedule.json` from `schedule.example.json` if it does not exist. Never overwrites an existing config. |
 | `--check` | Validate the config and print each job with its next 5 fire times. Exit 0 when valid, exit 1 with the error message when not. |
 | `--run "Job Name"` | Run one job immediately, outside its schedule. For testing. Prints the exit code, duration, and log path. |
+| `--status` | Print one status line describing whether the scheduler is running, and what fires next. Always exits 0. |
+| `--stop` | Stop the running scheduler. Exit 0 when it stopped one, exit 1 when nothing was running. |
 | `--generate-ico` | Regenerate `icon.ico` at seven sizes from the active icon design. |
 
 With no flag, CronLike starts the tray application.
+
+### Status output contract
+
+`--status` prints exactly one line to stdout and exits 0, whether or not the tool
+is running. The line is space-separated `key=value` pairs. `state` is always
+present and is either `running` or `stopped`. `pid` is present only when
+`state=running`. Values never contain spaces; a value that would contain one is
+wrapped in double quotes.
+
+CronLike adds two more keys when it is running and at least one enabled job has a
+next slot: `next` is the job name and `at` is an ISO-8601 local timestamp to the
+minute. A config that fails to load yields `next=unknown` rather than an error,
+because a broken config is exactly when status gets asked.
+
+
+Examples:
+
+```
+state=running pid=24180 next="Daily briefing" at=2026-09-02T08:00
+state=running pid=24180 next=unknown
+state=stopped
+```
+
+`--stop` exits 0 when it stopped a running instance and 1 when nothing was
+running. It prints one human-readable line either way.
+
+`scripts/tools/toolctl.sh` in the plugin parses this line, so the grammar is
+shared with the sibling tray tool and must not drift.
 
 ## The tray menu
 
