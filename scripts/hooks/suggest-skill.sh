@@ -30,8 +30,8 @@ def has(*pats):
 hint = None
 
 # Priority order: KGP Host > deploy > debug > design > spec/PRP
-if has(r"\bkgp (deploy|host|hosting|rollback|status|releases|sites|instance|link|doctor)\b", r"\bsitepage\.app\b",
-       r"\bkgp\.toml\b", r"\bkgp cli\b"):
+if has(r"\bkgp (deploy|host|hosting|rollback|status|releases|sites|instance|link|doctor|env|domains|functions|migrate|dev)\b", r"\bsitepage\.app\b",
+       r"\bkgp\.toml\b", r"\bkgp cli\b", r"\bkgp_(env|respond|send_email|fetch)\b"):
     hint = ("KGP Host intent detected — use the kgp-hosting skill (kgp CLI: draft deploy, publish only when "
             "asked, rollback, doctor). /KGP:deploy routes there when the repo has kgp.toml.")
 elif has(r"\bdeploy\b", r"\bgo live\b", r"\bpublish (the )?(site|website|app)\b", r"\bship (it|this|to prod)"):

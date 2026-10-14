@@ -1,6 +1,6 @@
 ---
 name: kgp-hosting
-description: Deploys, publishes, rolls back, and diagnoses websites hosted on KGP Host (sitepage.app or a customer domain) safely through the kgp CLI. Use when the repo contains kgp.toml, when asked to deploy, publish, preview, roll back, check status, or fix a broken KGP-hosted site, or when editing build config, redirects, or headers of such a site.
+description: Deploys, publishes, rolls back, and diagnoses websites hosted on KGP Host (sitepage.app or a customer domain) safely through the kgp CLI, including PHP functions under /api/, runtime env vars, redirects, custom domains, and Netlify migrations. Use when the repo contains kgp.toml, when asked to deploy, publish, roll back, check status, or fix a broken KGP-hosted site, when writing or debugging functions/*.php, setting env vars, adding redirects, headers or a custom domain, or when moving a site from Netlify.
 ---
 
 <objective>
@@ -16,6 +16,8 @@ Read it before doing anything:
 - `instance`: the hosting instance, if not the machine's default.
 - `[build] command` and `publish`: how the site is built and which folder is deployed.
 - `spa`: when true, paths without a file extension fall back to `index.html`.
+- `[functions] dir` (default `functions`): PHP functions served under `/api/`.
+- `[[redirects]]`: redirects in netlify.toml's shape (`from`, `to`, `status`, `force`).
 
 A marked "KGP Hosting" section in `AGENTS.md` or `CLAUDE.md` (written by `kgp link`) also means the repo is KGP-hosted.
 </detection>
@@ -39,7 +41,10 @@ Check these before the first kgp call. Stop and tell the user what is missing in
 - The platform sets security headers on every response: `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy: geolocation=(), microphone=(), camera=()`, and HSTS over HTTPS. Sites can override or add headers in `kgp.toml` `[headers]`.
 - `sitepage.app` is HTTPS-only (the `.app` TLD is on the HSTS preload list). Never link to `http://` addresses there.
 - Each site answers only on its own host names. The same files requested through another host or path return 404.
-- Customer domains point at a site through DNS records (a later milestone). Never change DNS yourself.
+- `functions/NAME.php` answers `/api/NAME` and `/api/NAME/...`; `functions/index.php` answers any other `/api/*` path; `functions/_shared/` is for `require` only. Functions deploy and roll back with the release. `/api/*` is reserved: a release without functions answers 404 there. Details and the helper API: [references/functions.md](references/functions.md).
+- Runtime env vars (`kgp env set`) are write-only secrets for functions. They apply on the next request and are not part of releases. A deploy fails (exit 7, `secret_in_build`) if the static build contains a runtime value.
+- Redirects come from `[[redirects]]` in kgp.toml and from `_redirects` / `_headers` files at the root of the publish folder; those two files are compiled into the rules and not served.
+- Custom domains are attached with `kgp domains add`, which prints the DNS record for the domain owner to set. Never change DNS yourself.
 </how_it_works>
 
 <quick_start>
@@ -55,12 +60,13 @@ The safe deploy workflow:
 
 <guardrails>
 Never:
-- put secrets, tokens, or passwords in `kgp.toml` or in the build output (deploys refuse such keys);
-- ship `.htaccess` or PHP files in the build output (the deploy leaves them out or refuses them);
+- put secrets, tokens, or passwords in `kgp.toml`, the build output, or function source (read them with `kgp_env()`);
+- ship `.htaccess` or PHP files in the build output (PHP belongs in `functions/`; the deploy leaves build PHP out or refuses it);
+- pass an env value or the mail key on the command line (use `kgp env set NAME < file`, `kgp env import FILE`, `kgp server mail set --key-stdin`), or print one back to the user;
 - edit files on the server, in cPanel, or through the cPanel API directly;
 - change DNS records or nameservers;
 - pass a token or secret as a command-line argument (use `KGP_CPANEL_TOKEN`, `KGP_AGENT_SECRET`, or `kgp login --token-stdin`);
-- run `kgp sites delete` or `kgp instance remove` without an explicit user request;
+- run an owner-only command without an explicit user request: `kgp sites create|delete`, `kgp instance add|remove`, `kgp login|logout`, `kgp server init|upgrade`, `kgp server mail set`, `kgp domains add|remove`, `kgp env set|unset|import`, `kgp migrate netlify --write` (the full list is in [references/commands.md](references/commands.md));
 - publish to production without an explicit user request.
 
 Always use `--json --yes` and read results from stdout only. Logs and build output go to stderr.
@@ -72,7 +78,7 @@ The deployment-expert skill's corporate hardening pass also applies to KGP-hoste
 - Headers (M2): the platform already sends the hardened set above. Add or override headers only in `kgp.toml` `[headers]`, never in an `.htaccess` file.
 - HSTS (M4): the platform sends `max-age=31536000; includeSubDomains`. A `Strict-Transport-Security` value containing `preload` is refused with exit 7.
 - `Cache-Control`: the platform caches `/assets/` for a year and revalidates everything else. Do not override it unless asked.
-- Custom domain (M1): a `*.sitepage.app` address is a shared platform subdomain, so M1 stays blocked until custom domains ship. Record it as blocked, not as a failure to fix by hand.
+- Custom domain (M1): a `*.sitepage.app` address is a shared platform subdomain. Attach the client's own domain with `kgp domains add DOMAIN --primary` when the owner asks; until the owner sets the DNS record, record M1 as waiting on DNS, not as a failure to fix by hand.
 </corporate_hardening>
 
 <exit_codes>
@@ -94,14 +100,24 @@ See [references/troubleshooting.md](references/troubleshooting.md) for doctor ch
 [references/commands.md](references/commands.md); the site layout is in [references/site-anatomy.md](references/site-anatomy.md).
 </troubleshooting>
 
+<migrating_from_netlify>
+1. `kgp migrate netlify --json --yes`: read `kgp_toml`, `node_functions`, and `unsupported`. Run it again with `--write` only after the user agrees.
+2. Move non-secret `VITE_*` build values into a committed `.env.production`; ask the owner to set secrets with `kgp env set`.
+3. Port each Node function to `functions/NAME.php` with the helpers in [references/functions.md](references/functions.md), keeping the same paths, status codes and JSON. Test with `kgp dev` (env from `.env.kgp-dev`, never committed).
+4. Deploy as a draft, then follow the quick start. Report every `unsupported` item with its suggestion instead of improvising.
+</migrating_from_netlify>
+
 <not_yet>
-Previews, environment variables, forms, functions, custom domains, and Netlify-style `_redirects` and `_headers`
-files arrive in later milestones. When asked for one of these, say it is not available yet instead of improvising
-(for example, do not add PHP files or server-side redirects by hand).
+Previews, forms (Netlify form markup), site databases, scheduled functions, edge functions, Node functions,
+redirect conditions (country, language, role), signed redirects, query-parameter matching, and proxying to external
+URLs are not available. When asked for one of these, say so instead of improvising (for example, do not add PHP to
+the build output or write `.htaccess` rules by hand). Edge-function work such as share previews can usually be done
+with a 200 redirect to `/api/NAME` and a PHP function.
 </not_yet>
 
 <success_criteria>
 - Every kgp call used `--json --yes`, and decisions came from stdout and the exit code.
 - Nothing was published to production unless the user asked for it.
-- No secret appeared in a command line, `kgp.toml`, the build output, or a message to the user.
+- No secret appeared in a command line, `kgp.toml`, the build output, function source, or a message to the user.
+- Owner actions (domains, mail, deleting sites) ran only on an explicit request.
 </success_criteria>

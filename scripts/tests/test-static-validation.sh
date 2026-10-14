@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Static validation for KGProDesign-DevKit v2.10.0.
+# Static validation for KGProDesign-DevKit v2.11.0.
 # Validates YAML frontmatter, JSON manifests, deletions of obsolete files,
 # absence of obsolete language, and structural elements introduced in v2.2.0.
 # No Claude CLI or plugin installation required.
@@ -187,13 +187,13 @@ validate_json ".claude-plugin/plugin.json"
 validate_json ".claude-plugin/marketplace.json"
 validate_json "hooks/hooks.json"
 
-# v2.10.0 version invariants
+# v2.11.0 version invariants
 if _json_have_reader; then
   ver=$(json_get .claude-plugin/plugin.json ".version")
-  if [ "$ver" = "2.10.0" ]; then
-    pass "plugin.json version is 2.10.0"
+  if [ "$ver" = "2.11.0" ]; then
+    pass "plugin.json version is 2.11.0"
   else
-    fail "plugin.json version is '$ver' (expected 2.10.0)"
+    fail "plugin.json version is '$ver' (expected 2.11.0)"
   fi
 
   mkt_ver=$(json_get .claude-plugin/marketplace.json ".metadata.version")
@@ -406,6 +406,7 @@ REQUIRED=(
   "skills/kgp-hosting/references/commands.md"
   "skills/kgp-hosting/references/site-anatomy.md"
   "skills/kgp-hosting/references/troubleshooting.md"
+  "skills/kgp-hosting/references/functions.md"
 )
 
 for f in "${REQUIRED[@]}"; do
@@ -630,6 +631,12 @@ if grep -q "Skill(kgp-hosting)" commands/deploy.md && grep -q "kgp.toml" command
   pass "/KGP:deploy routes kgp.toml repos to kgp-hosting"
 else
   fail "/KGP:deploy does not route kgp.toml repos to kgp-hosting"
+fi
+
+if grep -q "references/functions.md" "$KH/SKILL.md" && grep -q "kgp_send_email" "$KH/references/functions.md"; then
+  pass "kgp-hosting documents PHP functions (references/functions.md)"
+else
+  fail "kgp-hosting does not link or document references/functions.md"
 fi
 
 if grep -q "kgp-hosting skill" scripts/hooks/suggest-skill.sh; then

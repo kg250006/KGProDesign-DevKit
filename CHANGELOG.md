@@ -2,6 +2,25 @@
 
 All notable changes to KGProDesign-DevKit.
 
+## [2.11.0] - 2026-10-14
+
+The kgp-hosting skill covers the KGP Host Netlify bridge: PHP functions, runtime env vars, redirects, custom domains, and Netlify migrations. Before this, the skill told agents that functions, env vars, custom domains, and `_redirects` files did not exist.
+
+### Added
+- **`skills/kgp-hosting/references/functions.md`** — function layout and routing (`functions/NAME.php` at `/api/NAME`), the `kgp_*` helper API, a contact-form example, how to port a Node function, `kgp dev`, and the trust model.
+- **`<migrating_from_netlify>` section in the skill** — `kgp migrate netlify`, `.env.production` for build values, porting to PHP, testing with `kgp dev`.
+- **`suggest-skill.sh`** recognizes `kgp env|domains|functions|migrate|dev` and `kgp_*` helper names.
+- **Static validation** requires `references/functions.md` and its link from SKILL.md.
+
+### Changed
+- **Skill guardrails**: env values and the mail key only through stdin or files; no secrets in function source; `kgp domains` and `kgp server mail set` are owner actions.
+- **`<not_yet>`** now lists only what is still missing: previews, forms, databases, scheduled and edge functions, redirect conditions, proxying.
+- **Corporate hardening M1** points at `kgp domains add DOMAIN --primary` instead of recording the custom domain as blocked.
+
+### Notes
+- The skill's source of truth stays in KGP-WebHosting-Tools (copied with `scripts/install-skill.sh --devkit PATH`). The CLI features need kgp 0.2.0 and `kgp server upgrade` on the host.
+- Static validation: 145 -> 147 assertions, 0 failed, 0 skipped.
+
 ## [2.10.0] - 2026-10-13
 
 KGP Host deploys become available in every project. The `kgp-hosting` skill was only installable from the private KGP-WebHosting-Tools repo, one machine at a time.
