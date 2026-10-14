@@ -25,10 +25,20 @@ Add `--json --yes` to every call, as shown.
 | What a Netlify site needs to move | `kgp migrate netlify --json --yes` |
 | Host names of the site | `kgp domains list --json --yes` |
 | DNS and certificate state of a custom domain | `kgp domains status DOMAIN --json --yes` |
+| Mail the site sent or tried to send (no bodies) | `kgp mail log --since 24h --json --yes` |
+| Only refused mail | `kgp mail log --status rejected --json --yes` |
+| One log entry with its bodies (do not paste bodies unasked) | `kgp mail show ENTRY_ID --json --yes` |
+| Busiest senders on every site, by salted IP hash | `kgp mail top --by ip --json --yes` |
+| Blocked senders and send caps | `kgp mail blocks --json --yes` / `kgp mail limits --json --yes` |
+| WordPress link state and pending pushes | `kgp mail wp status --json --yes` |
+| Test the WordPress link | `kgp mail wp test --json --yes` |
 
 Owner-only commands (run only on an explicit request): `kgp sites create`, `kgp sites delete`, `kgp server init`,
 `kgp server upgrade`, `kgp server mail set`, `kgp instance add`, `kgp instance remove`, `kgp login`, `kgp logout`,
-`kgp domains add`, `kgp domains remove`, `kgp env set`, `kgp env unset`, `kgp env import`, `kgp migrate netlify --write`.
+`kgp domains add`, `kgp domains remove`, `kgp env set`, `kgp env unset`, `kgp env import`, `kgp migrate netlify --write`,
+`kgp mail block`, `kgp mail unblock`, `kgp mail limits` with values, `kgp mail wp set`, `kgp mail wp unlink`.
 
 Values for `kgp env set` and `kgp server mail set` come from stdin or a file, never from an argument:
-`kgp env set NAME < file`, `kgp env import .env.server`, `kgp server mail set --key-stdin < file`.
+`kgp env set NAME < file`, `kgp env import .env.server`, `kgp server mail set --key-stdin < file`. The WordPress
+application password for the email log link comes from stdin too:
+`kgp mail wp set --url https://example.com --user kgp-log --app-password-stdin --json --yes < app-password.txt`.

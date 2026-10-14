@@ -2,6 +2,19 @@
 
 All notable changes to KGProDesign-DevKit.
 
+## [2.13.0] - 2026-10-14
+
+The kgp-hosting skill documents the KGP Host email log, synced from KGP-WebHosting-Tools.
+
+### Added
+- **`references/commands.md`**: the `kgp mail` group (`log`, `show`, `top`, `blocks`, `limits`, `wp status`, `wp test`, and the owner-only `block`, `unblock`, `limits` with values, `wp set`, `wp unlink`); the WordPress application password comes from stdin only.
+- **`references/functions.md`** "Email log": every `kgp_send_email()` call is logged with its bodies and salted IP hashes for 90 days; `'log_body' => false` keeps secrets out of the log; a blocked or capped sender gets `false`.
+
+### Changed
+- **`references/troubleshooting.md`**: mail that never arrived (`failed` / `rejected` `abuse_limit`), `wp_sync: "pending"` and `kgp mail wp test`, WordPress `site_mismatch`.
+- Version 2.13.0 in `plugin.json`, `marketplace.json`, the README footer and `scripts/tests/test-static-validation.sh`.
+- **`SKILL.md`**: the email log in `<how_it_works>`; the new owner-only `kgp mail` commands, app passwords from stdin, and never pasting email bodies into chat unasked in `<guardrails>`.
+
 ## [2.12.1] - 2026-10-14
 
 The kgp-hosting skill documents the per-site email sender name, synced from KGP-WebHosting-Tools.

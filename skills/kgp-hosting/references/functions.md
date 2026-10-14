@@ -33,6 +33,22 @@ at most 1 MiB. A release without functions answers 404 for every `/api/*` path.
 | `kgp_client_ip()` | The caller's IP (`REMOTE_ADDR`; forwarded headers are not trusted). |
 | `kgp_log('message')` | One line in `kgp functions logs`. Never log secrets or form contents. |
 
+### Email log
+
+Every `kgp_send_email()` call writes one entry to the site's email log (kept 90 days): the recipients, subject,
+text and HTML bodies (64 KB each, runtime env values redacted), the function, and salted hashes of the sender's IP
+(`ip_hash`, `net_hash`), never the raw IP. Outcomes: `sent`, `failed` (`provider_error`, `network_error`) or
+`rejected` (`invalid_email`, `mail_not_configured`, `abuse_limit`).
+
+- Pass `'log_body' => false` for mail that carries a secret (sign-in links, one-time codes). The log then stores
+  `[not logged]`; the mail itself is unchanged:
+  `kgp_send_email(['to' => $email, 'subject' => 'Your sign-in link', 'text' => $link, 'log_body' => false]);`
+- A sender the owner blocked, or one over the send caps (by default 10 per IP and 30 per network per hour, across
+  the instance), gets `false` from `kgp_send_email()`. Answer it like any other send failure (for example 503); do
+  not retry in a loop.
+- Read the log with `kgp mail log --json --yes`. Forms and deploy notices must also send through
+  `kgp_send_email()` so they are logged.
+
 `kgp_respond()` ends the function by throwing; do not wrap it in `catch (Throwable)`. Uncaught errors and warnings
 return `{"error":"internal"}` with status 500 and add one line to `kgp functions logs`.
 
