@@ -6,7 +6,7 @@ Universal Claude Code development toolkit for any project.
 
 - **Unified Foundation** - Every developer starts with identical tools, workflows, and guidelines
 - **Focused Agents** - 12 agents (7 engineering + 4 auditors + 1 workflow orchestrator) covering all development categories
-- **Essential Commands** - 30 commands for efficient workflows
+- **Essential Commands** - 31 commands for efficient workflows
 - **Native PRP Execution** - Spec-driven development in a single long-running session, no external scripts
 - **Design-First Frontend** - Website PRPs include design-token phases and visual QA gates
 - **Tunable Communication** - Install a per-project rule so replies stay concise and plainly worded, personal and git-excluded by default
@@ -111,6 +111,7 @@ claude
 ### Project & Deployment
 - `/KGP:context-prime` - Initialize project context
 - `/KGP:deploy` - Deploy via deployment-expert skill (Netlify, Azure VM, FTP, GitHub), or via the kgp-hosting skill when the repo has `kgp.toml`
+- `/KGP:migrate-netlify` - Move a Netlify site to KGP Host step by step (plan, `kgp.toml`, env vars, PHP functions, local test, draft deploy)
 - `/KGP:run-regression` - Automated regression testing
 - `/KGP:comm-style` - Set up, review, or tweak this project's communication style (`.claude/rules/`, personal by default, never committed unless you say so)
 - `/KGP:help` - Plugin overview
@@ -146,7 +147,7 @@ claude
 │   ├── plugin.json
 │   └── marketplace.json
 ├── agents/           # 12 specialized agents
-├── commands/         # 30 commands (top-level + core/ + dev/ + tools/)
+├── commands/         # 31 commands (top-level + core/ + dev/ + tools/)
 ├── hooks/            # Auto-invocation hooks (hooks.json)
 ├── skills/           # 21 skills (PRP, design, deployment, KGP Host, testing, communication, business, desktop tools)
 ├── scripts/
@@ -253,4 +254,4 @@ Recipes: `implementation`, `review`, `research`, `hypothesis`. Classifier + disa
 - Issues: GitHub Issues
 
 ---
-Universal development toolkit | v2.11.0
+Universal development toolkit | v2.12.0

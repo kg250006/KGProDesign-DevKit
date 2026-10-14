@@ -214,7 +214,7 @@ Invoke agents via the Task tool with the matching `subagent_type`.
 
 ---
 
-## Commands Reference (30)
+## Commands Reference (31)
 
 ### Top-Level
 
@@ -224,6 +224,7 @@ Invoke agents via the Task tool with the matching `subagent_type`.
 | `/KGP:context-prime` | Initialize project understanding (structure, stack, CLAUDE.md files) |
 | `/KGP:deploy` | Deploy via deployment-expert skill (Netlify, Azure VM, FTP, GitHub), or kgp-hosting when the repo has `kgp.toml` |
 | `/KGP:help` | Explain the plugin and available commands |
+| `/KGP:migrate-netlify` | Move a Netlify site to KGP Host step by step, with an approval gate before each owner action |
 | `/KGP:prp-create` | Generate PRP from requirements (intent-lock + decision-log) |
 | `/KGP:prp-validate` | Pre-flight PRP validation with auto-fix |
 | `/KGP:prp-execute` | Execute one or more PRPs in a single native session |

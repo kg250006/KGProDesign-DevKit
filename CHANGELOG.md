@@ -2,6 +2,17 @@
 
 All notable changes to KGProDesign-DevKit.
 
+## [2.12.0] - 2026-10-14
+
+Moving a Netlify site to KGP Host becomes one command. Before this, the steps lived only in the kgp-hosting skill, and nothing named them for the user.
+
+### Added
+- **`/KGP:migrate-netlify`** (`commands/migrate-netlify.md`) — drives the skill's `<migrating_from_netlify>` section in seven steps: read-only plan, `kgp.toml`, env vars, PHP function ports, `kgp dev` test, draft deploy, domain. Stops for approval before each owner action and never publishes unasked. `/KGP:migrate-netlify plan` runs the read-only step only.
+- **`suggest-skill.sh`** hints `/KGP:migrate-netlify` for prompts about moving or converting a Netlify site to KGP Host.
+
+### Changed
+- Command count 30 -> 31 in README, CLAUDE.md, INSTALL.md, and marketplace.json.
+
 ## [2.11.0] - 2026-10-14
 
 The kgp-hosting skill covers the KGP Host Netlify bridge: PHP functions, runtime env vars, redirects, custom domains, and Netlify migrations. Before this, the skill told agents that functions, env vars, custom domains, and `_redirects` files did not exist.

@@ -81,7 +81,7 @@ Navigate to the **Installed** tab to confirm KGP is listed and enabled.
 | Component | Count | Description |
 |-----------|-------|-------------|
 | Agents | 12 | Frontend, Backend, Data, QA, DevOps, Docs, Project Coordinator, Dev Engineer + 4 auditors |
-| Commands | 30 | PRP workflow (create/validate/execute), debugging, plugin authoring, Agent Teams, communication style, desktop tools |
+| Commands | 31 | PRP workflow (create/validate/execute), debugging, plugin authoring, Agent Teams, communication style, desktop tools |
 | Skills | 21 | Reusable knowledge modules for development, design, deployment, KGP Host, and business tasks |
 | Hooks | 3 | Auto-invocation hooks (UserPromptSubmit, SessionStart, PostToolUse) |
 | Tools | 2 | Standalone desktop utilities: CronLike scheduler and MouseJiggler |
