@@ -46,6 +46,7 @@ Check these before the first kgp call. Stop and tell the user what is missing in
 - Runtime env vars (`kgp env set`) are write-only secrets for functions. They apply on the next request and are not part of releases. A deploy fails (exit 7, `secret_in_build`) if the static build contains a runtime value.
 - Redirects come from `[[redirects]]` in kgp.toml and from `_redirects` / `_headers` files at the root of the publish folder; those two files are compiled into the rules and not served.
 - Custom domains are attached with `kgp domains add`, which prints the DNS record for the domain owner to set. Never change DNS yourself.
+- Page analytics come from the instance's self-hosted Matomo (cookieless, no consent banner). `kgp analytics add-site --json --yes` gives a site its Matomo id in `kgp.toml`; `kgp analytics snippet --format js --json --yes` prints the tracker for the React app. Deploys add the stats origin to a site's own Content-Security-Policy. Details: [references/analytics.md](references/analytics.md).
 - Every `kgp_send_email()` call is logged on the server for 90 days (sent, failed or rejected), with its bodies and salted hashes of the sender's IP, never the raw IP. Read it with `kgp mail log --json --yes` and `kgp mail show ID --json --yes`. A blocked or capped sender gets `false` from `kgp_send_email()` and a `rejected` `abuse_limit` entry. A site can push its log to a WordPress site with the kgp-email-log plugin (`kgp mail wp`).
 </how_it_works>
 
@@ -68,7 +69,8 @@ Never:
 - edit files on the server, in cPanel, or through the cPanel API directly;
 - change DNS records or nameservers;
 - pass a token or secret as a command-line argument (use `KGP_CPANEL_TOKEN`, `KGP_AGENT_SECRET`, or `kgp login --token-stdin`);
-- run an owner-only command without an explicit user request: `kgp sites create|delete`, `kgp instance add|remove`, `kgp login|logout`, `kgp server init|upgrade`, `kgp server mail set`, `kgp domains add|remove`, `kgp env set|unset|import`, `kgp migrate netlify --write`, `kgp mail block|unblock`, `kgp mail limits` with values, `kgp mail wp set|unlink` (the full list is in [references/commands.md](references/commands.md));
+- run an owner-only command without an explicit user request: `kgp sites create|delete`, `kgp instance add|remove`, `kgp login|logout`, `kgp server init|upgrade`, `kgp server mail set`, `kgp domains add|remove`, `kgp env set|unset|import`, `kgp migrate netlify --write`, `kgp mail block|unblock`, `kgp mail limits` with values, `kgp mail wp set|unlink`, `kgp analytics configure|install|upgrade|wp-token|invite`, `kgp analytics add-site --wordpress` (the full list is in [references/commands.md](references/commands.md));
+- paste the Matomo `wp-connect` token or any Matomo credential into chat, files or tickets;
 - pass a WordPress application password as an argument (use `kgp mail wp set ... --app-password-stdin`);
 - paste an email body from `kgp mail show` into chat, tickets or commits unless the user asks; summarise it instead;
 - publish to production without an explicit user request.

@@ -2,6 +2,18 @@
 
 All notable changes to KGProDesign-DevKit.
 
+## [2.14.0] - 2026-10-14
+
+The kgp-hosting skill documents site analytics on KGP Host (self-hosted Matomo), synced from KGP-WebHosting-Tools.
+
+### Added
+- **`references/analytics.md`**: adding a site (`kgp analytics add-site`), the cookieless single-page-aware snippet for React apps, how deploys extend a site's Content-Security-Policy, WordPress through Connect Matomo and the view-only `wp-connect` user, the privacy defaults, and which `kgp analytics` commands are owner-only.
+
+### Changed
+- **`SKILL.md`**: analytics in `<how_it_works>`; the owner-only `kgp analytics` commands and never pasting Matomo credentials in `<guardrails>`.
+- **`references/commands.md`**: `kgp analytics status`, `add-site` and `snippet`; the owner-only analytics commands.
+- Version 2.14.0 in `plugin.json`, `marketplace.json`, the README footer and `scripts/tests/test-static-validation.sh`.
+
 ## [2.13.0] - 2026-10-14
 
 The kgp-hosting skill documents the KGP Host email log, synced from KGP-WebHosting-Tools.

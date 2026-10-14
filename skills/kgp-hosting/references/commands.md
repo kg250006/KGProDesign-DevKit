@@ -32,11 +32,16 @@ Add `--json --yes` to every call, as shown.
 | Blocked senders and send caps | `kgp mail blocks --json --yes` / `kgp mail limits --json --yes` |
 | WordPress link state and pending pushes | `kgp mail wp status --json --yes` |
 | Test the WordPress link | `kgp mail wp test --json --yes` |
+| Analytics install state | `kgp analytics status --json --yes` |
+| Give a site its Matomo id (writes kgp.toml) | `kgp analytics add-site --json --yes` |
+| Tracker code for the React app | `kgp analytics snippet --format js --json --yes` |
 
 Owner-only commands (run only on an explicit request): `kgp sites create`, `kgp sites delete`, `kgp server init`,
 `kgp server upgrade`, `kgp server mail set`, `kgp instance add`, `kgp instance remove`, `kgp login`, `kgp logout`,
 `kgp domains add`, `kgp domains remove`, `kgp env set`, `kgp env unset`, `kgp env import`, `kgp migrate netlify --write`,
-`kgp mail block`, `kgp mail unblock`, `kgp mail limits` with values, `kgp mail wp set`, `kgp mail wp unlink`.
+`kgp mail block`, `kgp mail unblock`, `kgp mail limits` with values, `kgp mail wp set`, `kgp mail wp unlink`,
+`kgp analytics configure`, `kgp analytics install`, `kgp analytics upgrade`, `kgp analytics add-site --wordpress`,
+`kgp analytics wp-token`, `kgp analytics invite`.
 
 Values for `kgp env set` and `kgp server mail set` come from stdin or a file, never from an argument:
 `kgp env set NAME < file`, `kgp env import .env.server`, `kgp server mail set --key-stdin < file`. The WordPress
