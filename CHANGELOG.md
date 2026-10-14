@@ -2,6 +2,15 @@
 
 All notable changes to KGProDesign-DevKit.
 
+## [2.12.1] - 2026-10-14
+
+The kgp-hosting skill documents the per-site email sender name, synced from KGP-WebHosting-Tools.
+
+### Changed
+- **`SKILL.md` `<detection>`** lists the `[mail] from_name` key in `kgp.toml`.
+- **`references/functions.md`**: `kgp_send_email()` takes an optional `from_name`. The sender name falls back to `[mail] from_name`, then the instance's ("KGP Mailer"). The From address is always the platform's verified sender. Porting step 4 says to set the client's company name there.
+- **`references/functions.md`** also adds `kgp_mail_configured()` and the no-dots rule for function names (shipped after 2.11.0 without a version bump).
+
 ## [2.12.0] - 2026-10-14
 
 Moving a Netlify site to KGP Host becomes one command. Before this, the steps lived only in the kgp-hosting skill, and nothing named them for the user.

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Static validation for KGProDesign-DevKit v2.12.0.
+# Static validation for KGProDesign-DevKit v2.12.1.
 # Validates YAML frontmatter, JSON manifests, deletions of obsolete files,
 # absence of obsolete language, and structural elements introduced in v2.2.0.
 # No Claude CLI or plugin installation required.
@@ -188,13 +188,13 @@ validate_json ".claude-plugin/plugin.json"
 validate_json ".claude-plugin/marketplace.json"
 validate_json "hooks/hooks.json"
 
-# v2.12.0 version invariants
+# v2.12.1 version invariants
 if _json_have_reader; then
   ver=$(json_get .claude-plugin/plugin.json ".version")
-  if [ "$ver" = "2.12.0" ]; then
-    pass "plugin.json version is 2.12.0"
+  if [ "$ver" = "2.12.1" ]; then
+    pass "plugin.json version is 2.12.1"
   else
-    fail "plugin.json version is '$ver' (expected 2.12.0)"
+    fail "plugin.json version is '$ver' (expected 2.12.1)"
   fi
 
   mkt_ver=$(json_get .claude-plugin/marketplace.json ".metadata.version")

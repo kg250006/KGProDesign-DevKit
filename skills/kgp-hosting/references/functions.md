@@ -26,7 +26,7 @@ at most 1 MiB. A release without functions answers 404 for every `/api/*` path.
 | `kgp_env('NAME', $default)` | A runtime env var (set with `kgp env set`). |
 | `kgp_cors([$origin, ...], $methods, $credentials)` | Allows only the listed origins; answers preflight `OPTIONS` with 204. Never `*`. |
 | `kgp_rate_limit('bucket', $max, $windowSeconds)` | Fixed window per bucket and client IP; ends with 429 `rate_limited` and `Retry-After`. |
-| `kgp_send_email(['to', 'subject', 'text' or 'html', 'reply_to'])` | Sends through the instance's MailerSend sender; returns `true` when accepted. |
+| `kgp_send_email(['to', 'subject', 'text' or 'html', 'reply_to', 'from_name'])` | Sends through the instance's MailerSend sender; returns `true` when accepted. The sender name is `from_name`, else `[mail] from_name` in `kgp.toml`, else the instance's ("KGP Mailer"). The From address is always the platform's verified one. |
 | `kgp_fetch($method, $url, ['headers', 'json' or 'body', 'timeout', 'follow_redirects'])` | Outbound HTTPS. Returns `['status', 'headers', 'body']`; status 0 means the request failed. |
 | `kgp_mail_configured()` | `true` when the instance mail sender is set up (`kgp server mail set`). |
 | `kgp_defer(fn () => ...)` | Runs after the response is sent (Netlify's `waitUntil`). |
@@ -69,7 +69,7 @@ kgp_respond($sent ? 200 : 503, $sent ? ['ok' => true] : ['error' => 'send_failed
    Public `VITE_*` values are build-time only; pass them to the function through a build step or keep them in the SPA.
 3. `fetch()` becomes `kgp_fetch()` (pass `follow_redirects` when the Node code relied on fetch following redirects,
    for example Google Apps Script URLs). `context.waitUntil()` becomes `kgp_defer()`.
-4. MailerSend calls become `kgp_send_email()`; the sender is the instance's (`kgp server mail status`).
+4. MailerSend calls become `kgp_send_email()`. Put the client's company name in `kgp.toml` (`[mail] from_name = "Acme Co"`) or pass `from_name` per message; replies go to `reply_to`.
 5. Database-backed routes cannot be ported yet (no site databases).
 
 ## Testing locally
