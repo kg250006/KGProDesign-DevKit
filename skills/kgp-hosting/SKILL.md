@@ -18,6 +18,7 @@ Read it before doing anything:
 - `spa`: when true, paths without a file extension fall back to `index.html`.
 - `[functions] dir` (default `functions`): PHP functions served under `/api/`.
 - `[[redirects]]`: redirects in netlify.toml's shape (`from`, `to`, `status`, `force`).
+- `[mail] from_name`: the sender name for the site's emails (usually the client's company name).
 
 A marked "KGP Hosting" section in `AGENTS.md` or `CLAUDE.md` (written by `kgp link`) also means the repo is KGP-hosted.
 </detection>
