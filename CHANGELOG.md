@@ -2,6 +2,30 @@
 
 All notable changes to KGProDesign-DevKit.
 
+## [2.10.0] - 2026-10-13
+
+KGP Host deploys become available in every project. The `kgp-hosting` skill was only installable from the private KGP-WebHosting-Tools repo, one machine at a time.
+
+### Added
+- **`kgp-hosting` skill** (`skills/kgp-hosting/`) — router plus three references (commands, site anatomy, troubleshooting). Deploys, publishes, rolls back, and diagnoses KGP Host sites through the `kgp` CLI. Activates in repos with `kgp.toml`. Never publishes to production unasked and never passes secrets on the command line.
+- **`<prerequisites>` section in the skill** — checks `kgp --version`, `kgp whoami --json`, and `kgp.toml` before the first call, and stops with the missing step instead of improvising.
+- **`/KGP:deploy` routing** — repos with `kgp.toml` go to `kgp-hosting` instead of deployment-expert.
+- **`suggest-skill.sh` KGP Host branch**, placed first so the generic deploy hint cannot shadow it.
+- **Static-validation section 10** — the public copy of the skill may carry no IP addresses, home paths, cPanel host names, account names, or tokens (the same pattern as the source repo's install guard); the skill keeps its required sections; every `kgp` example passes `--json --yes`; the deploy route and hook branch exist; `detect-platform.sh` reports `kgp-host`; the hardening pass covers KGP Host.
+- **deployment-expert KGP Host awareness** — `kgp.toml` is detection step 1 and hands off to `kgp-hosting`. `detect-platform.sh` returns `kgp-host`, found from any subfolder. The corporate hardening pass treats `*.sitepage.app` as a shared subdomain (M1 blocked), writes missing headers to `kgp.toml` `[headers]` instead of `.htaccess`, and never adds HSTS `preload`, which KGP Host refuses with exit 7.
+
+### Changed
+- **`kgp-hosting` examples** all pass `--json --yes`, matching the skill's own rule. The `ssl` doctor fix is marked as an owner task, so it no longer contradicts the no-cPanel guardrail.
+- **`/KGP:deploy`** description and opening line name the kgp-hosting route.
+- **`suggest-skill.sh`** also matches `kgp instance` and `kgp link`. The doctor is `kgp instance doctor`, which the old pattern missed.
+- **marketplace.json** description says 30 commands, not 26.
+- **INSTALL.md prerequisites** list Python 3 (hooks and tests) and the optional per-feature requirements (desktop tools, KGP Host). Component counts corrected to 30 commands and 21 skills; the remote-install section no longer says the repo is private.
+
+### Notes
+- Counts: 30 commands, 21 skills, 12 agents.
+- Static validation rises from 130 to 145 assertions, 0 failed, 0 skipped. (The v2.9.0 entry said 132; the v2.9.0 suite runs 130.)
+- The skill's source of truth stays in KGP-WebHosting-Tools. That repo's `scripts/install-skill.sh --devkit PATH` copies it here and refuses host-specific content.
+
 ## [2.9.0] - 2026-09-02
 
 The desktop tools become controllable from anywhere. Before this, CronLike and MouseJiggler could only be driven from their own tray menus, nothing could tell you whether the scheduler was actually running, and CronLike's schedule could only be edited by hand.

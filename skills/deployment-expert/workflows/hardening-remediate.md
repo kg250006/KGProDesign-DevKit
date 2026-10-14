@@ -27,6 +27,9 @@ Use the template for the detected header mechanism:
 - Netlify → `templates/security-headers.netlify.template` (`_headers` or `netlify.toml` block)
 - nginx / NPM (Azure VM, GitHub-production) → `templates/security-headers.nginx.template`
 - Apache / static host → the same header set via `.htaccess`
+- KGP Host (`kgp.toml`) → the platform already sends the set except `X-XSS-Protection`. Add missing headers to
+  `kgp.toml` `[headers]` only. Never write `.htaccess`, and never put `preload` in `Strict-Transport-Security`:
+  KGP Host refuses it with exit 7. Deploy afterwards with the `kgp-hosting` skill.
 
 **Idempotency (F10):** before adding, check whether each header is already present. If the
 full set exists, make no change and mark M2 already-satisfied. Never append duplicate

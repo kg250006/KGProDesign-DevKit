@@ -110,7 +110,7 @@ claude
 
 ### Project & Deployment
 - `/KGP:context-prime` - Initialize project context
-- `/KGP:deploy` - Deploy via deployment-expert skill (Netlify, Azure VM, FTP, GitHub)
+- `/KGP:deploy` - Deploy via deployment-expert skill (Netlify, Azure VM, FTP, GitHub), or via the kgp-hosting skill when the repo has `kgp.toml`
 - `/KGP:run-regression` - Automated regression testing
 - `/KGP:comm-style` - Set up, review, or tweak this project's communication style (`.claude/rules/`, personal by default, never committed unless you say so)
 - `/KGP:help` - Plugin overview
@@ -148,7 +148,7 @@ claude
 ├── agents/           # 12 specialized agents
 ├── commands/         # 30 commands (top-level + core/ + dev/ + tools/)
 ├── hooks/            # Auto-invocation hooks (hooks.json)
-├── skills/           # 20 skills (PRP, design, deployment, testing, communication, business, desktop tools)
+├── skills/           # 21 skills (PRP, design, deployment, KGP Host, testing, communication, business, desktop tools)
 ├── scripts/
 │   ├── hooks/            # Hook scripts
 │   └── tests/            # Static-validation suite
@@ -174,6 +174,12 @@ Standalone desktop utilities that ship with the plugin. These are ordinary progr
 Each has its own README with install and usage instructions. Both are Python and need `pip install -r requirements.txt` in their own directory.
 
 Control them from any project with the `/KGP:tools:*` commands above, or just describe what you want and the `desktop-tools` skill routes it. Autostart at login survives plugin updates: the Startup entry points at a stable shim in `~/.kgp-tools/` that resolves the plugin at launch time, never a version-stamped path.
+
+## KGP Host
+
+The `kgp-hosting` skill deploys, publishes, rolls back, and diagnoses sites on KGP Host through the `kgp` CLI. It activates in any repo with a `kgp.toml` and never publishes to production unless asked.
+
+Prerequisite: the `kgp` CLI on PATH (`kgp --version`), built from the KGP-WebHosting-Tools repo, plus a logged-in hosting instance (`kgp whoami --json`). The skill's `<prerequisites>` section has the steps. The skill's source lives in KGP-WebHosting-Tools; copy changes here with that repo's `scripts/install-skill.sh --devkit PATH`.
 
 ## Framework Templates
 
@@ -247,4 +253,4 @@ Recipes: `implementation`, `review`, `research`, `hypothesis`. Classifier + disa
 - Issues: GitHub Issues
 
 ---
-Universal development toolkit | v2.9.0
+Universal development toolkit | v2.10.0

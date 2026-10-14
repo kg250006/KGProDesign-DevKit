@@ -58,6 +58,7 @@ STACK="$(detect_stack)"
 
 # --- Header-mechanism detection ---
 detect_header_mechanism() {
+    if [ "$PLATFORM" = "kgp-host" ]; then echo "kgp.toml [headers] (platform defaults; no .htaccess, no HSTS preload)"; return; fi
     if [ -f "netlify.toml" ] || [ -f "_headers" ]; then echo "netlify-config (_headers / netlify.toml)"; return; fi
     if [ -f "vercel.json" ]; then echo "vercel-config (vercel.json headers)"; return; fi
     if [ -f ".htaccess" ]; then echo "apache-htaccess"; return; fi
@@ -81,7 +82,7 @@ echo ""
 # --- M1: shared-subdomain BLOCKER check ---
 echo "--- M1: Custom domain ---"
 case "$URL" in
-    *.netlify.app|*.vercel.app|*.web.app|*.github.io|*.pages.dev)
+    *.netlify.app|*.vercel.app|*.web.app|*.github.io|*.pages.dev|*.sitepage.app|*.sitepage.app/*)
         echo "BLOCKER: presented URL is a shared free-host subdomain — bind a custom domain before handoff." ;;
     https://*) echo "pass: custom HTTPS domain" ;;
     "") echo "manual-required: no URL set — cannot assess M1" ;;

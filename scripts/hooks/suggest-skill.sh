@@ -29,8 +29,12 @@ def has(*pats):
 
 hint = None
 
-# Priority order: deploy > debug > design > spec/PRP
-if has(r"\bdeploy\b", r"\bgo live\b", r"\bpublish (the )?(site|website|app)\b", r"\bship (it|this|to prod)"):
+# Priority order: KGP Host > deploy > debug > design > spec/PRP
+if has(r"\bkgp (deploy|host|hosting|rollback|status|releases|sites|instance|link|doctor)\b", r"\bsitepage\.app\b",
+       r"\bkgp\.toml\b", r"\bkgp cli\b"):
+    hint = ("KGP Host intent detected — use the kgp-hosting skill (kgp CLI: draft deploy, publish only when "
+            "asked, rollback, doctor). /KGP:deploy routes there when the repo has kgp.toml.")
+elif has(r"\bdeploy\b", r"\bgo live\b", r"\bpublish (the )?(site|website|app)\b", r"\bship (it|this|to prod)"):
     hint = "Deployment intent detected — consider /KGP:deploy (deployment-expert skill: Netlify, Azure VM, FTP, GitHub production)."
 elif has(r"\bwhy (is|does|isn.?t|won.?t)\b", r"\bnot working\b", r"\bkeeps? (crashing|failing|breaking)\b", r"\broot cause\b"):
     hint = "Debugging intent detected — consider /KGP:dev:debug (debug-like-expert skill: evidence, hypotheses, systematic testing)."

@@ -222,7 +222,7 @@ Invoke agents via the Task tool with the matching `subagent_type`.
 |---------|---------|
 | `/KGP:comm-style` | Set up, review, tweak, or remove a project's communication style rule (`.claude/rules/`, personal and git-excluded by default) |
 | `/KGP:context-prime` | Initialize project understanding (structure, stack, CLAUDE.md files) |
-| `/KGP:deploy` | Deploy via deployment-expert skill (Netlify, Azure VM, FTP, GitHub) |
+| `/KGP:deploy` | Deploy via deployment-expert skill (Netlify, Azure VM, FTP, GitHub), or kgp-hosting when the repo has `kgp.toml` |
 | `/KGP:help` | Explain the plugin and available commands |
 | `/KGP:prp-create` | Generate PRP from requirements (intent-lock + decision-log) |
 | `/KGP:prp-validate` | Pre-flight PRP validation with auto-fix |
@@ -284,6 +284,14 @@ Both are Python and install with `pip install -r requirements.txt` from their ow
 All process control goes through `scripts/tools/toolctl.sh`. The four commands and the skill are two front doors to one implementation; neither reimplements start, stop, or status.
 
 **Configuring CronLike:** read `tools/CronLike/SCHEDULE.md` first. It is the complete field reference and the error-message contract, and it is the file to load before adding or editing a scheduled job. The live config is at `~/.cronlike/schedule.json`; validate any edit with `python cronlike.py --check`, which prints the next 5 fire times per job so a wrong schedule is visible before it runs.
+
+---
+
+## KGP Host
+
+`skills/kgp-hosting/` deploys, publishes, rolls back, and diagnoses sites on KGP Host through the `kgp` CLI. It applies when the repo has `kgp.toml` and takes priority over deployment-expert there. It needs the `kgp` CLI on PATH and a logged-in instance; see its `<prerequisites>` section.
+
+The source of truth is `skills/kgp-hosting/` in the private KGP-WebHosting-Tools repo. Change it there and copy it here with `scripts/install-skill.sh --devkit PATH`, which refuses host-specific details because this repo is public. Never add IP addresses, cPanel host names, account names, or home paths to this skill.
 
 ---
 
@@ -438,5 +446,5 @@ Create project-specific CLAUDE.md in your project root:
 
 ---
 
-Last Updated: 2026-09-02
+Last Updated: 2026-10-13
 Maintained by: KGProDesign

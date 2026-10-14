@@ -1,9 +1,22 @@
 #!/bin/bash
 # Detects the deployment platform based on project files
-# Returns: netlify | azure-vm | ftp | github-production | unknown
+# Returns: kgp-host | netlify | azure-vm | ftp | github-production | unknown
 
 detect_platform() {
-    # Check for existing profile first
+    # KGP Host wins over any profile: kgp.toml in this folder or a parent, up to the git root (or / outside git)
+    local root dir
+    root="$(git rev-parse --show-toplevel 2>/dev/null || echo /)"
+    dir="$(pwd)"
+    while :; do
+        if [ -f "$dir/kgp.toml" ]; then
+            echo "kgp-host"
+            return 0
+        fi
+        [ "$dir" = "$root" ] || [ "$dir" = "/" ] && break
+        dir="$(dirname "$dir")"
+    done
+
+    # Check for existing profile
     if [ -f ".deployment-profile.json" ]; then
         jq -r '.platform' .deployment-profile.json
         return 0
@@ -47,6 +60,9 @@ detect_platform() {
 explain_detection() {
     local platform=$1
     case $platform in
+        kgp-host)
+            echo "Found kgp.toml - deploy with the kgp-hosting skill (kgp CLI)"
+            ;;
         netlify)
             echo "Found netlify.toml configuration file"
             ;;

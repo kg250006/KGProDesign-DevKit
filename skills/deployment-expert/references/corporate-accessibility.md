@@ -116,6 +116,18 @@ the proxy host's **Advanced → Custom Nginx Configuration** and reload NPM.
 Headers are served by the same NPM/nginx layer — use the nginx snippet above in the
 proxy host config.
 
+### KGP Host — `kgp.toml` `[headers]`
+The platform sends `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, and
+`Cache-Control` with the values above, and HSTS as `max-age=31536000; includeSubDomains` over HTTPS. Add only what
+is missing:
+```toml
+[headers]
+"X-XSS-Protection" = "1; mode=block"
+```
+Differences from the set above: HSTS never carries `preload` (the deploy refuses it with exit 7), `/assets/` is
+cached for a year, and `.htaccess` files in the build are dropped. A `*.sitepage.app` address is a shared platform
+subdomain, so M1 stays blocked until KGP Host supports custom domains. Deploy through the `kgp-hosting` skill.
+
 ### Content-Security-Policy (optional / advanced)
 A CSP header further raises trust but **must be tuned per-site** from the actual resource
 inventory to avoid breaking legitimate resources. Treat as a phase-2 enhancement; do not

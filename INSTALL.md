@@ -8,6 +8,12 @@ Install this plugin directly from your local filesystem using Claude Code's plug
 
 - Claude Code installed (`npm install -g @anthropic-ai/claude-code`)
 - Git installed on your machine
+- Python 3 (the hooks and the static-validation suite use it)
+
+Optional, per feature:
+
+- **Desktop tools:** `pip install -r requirements.txt` in `tools/CronLike/` and `tools/MouseJiggler/`.
+- **KGP Host (`kgp-hosting` skill):** Node 20+, pnpm 9, and the `kgp` CLI on PATH, built from the KGP-WebHosting-Tools repo. Check with `kgp --version` and `kgp whoami --json`.
 
 ### Installation Steps
 
@@ -75,8 +81,8 @@ Navigate to the **Installed** tab to confirm KGP is listed and enabled.
 | Component | Count | Description |
 |-----------|-------|-------------|
 | Agents | 12 | Frontend, Backend, Data, QA, DevOps, Docs, Project Coordinator, Dev Engineer + 4 auditors |
-| Commands | 26 | PRP workflow (create/validate/execute), debugging, plugin authoring, Agent Teams, communication style |
-| Skills | 19 | Reusable knowledge modules for development, design, deployment, and business tasks |
+| Commands | 30 | PRP workflow (create/validate/execute), debugging, plugin authoring, Agent Teams, communication style, desktop tools |
+| Skills | 21 | Reusable knowledge modules for development, design, deployment, KGP Host, and business tasks |
 | Hooks | 3 | Auto-invocation hooks (UserPromptSubmit, SessionStart, PostToolUse) |
 | Tools | 2 | Standalone desktop utilities: CronLike scheduler and MouseJiggler |
 
@@ -157,9 +163,9 @@ To remove the marketplace:
 
 ---
 
-## Remote Installation (Future)
+## Remote Installation
 
-Once the repository is public, install directly from GitHub:
+The repository is public, so you can install directly from GitHub:
 ```
 /plugin marketplace add kg250006/KGProDesign-DevKit
 ```

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Static validation for KGProDesign-DevKit v2.9.0.
+# Static validation for KGProDesign-DevKit v2.10.0.
 # Validates YAML frontmatter, JSON manifests, deletions of obsolete files,
 # absence of obsolete language, and structural elements introduced in v2.2.0.
 # No Claude CLI or plugin installation required.
@@ -132,6 +132,7 @@ YAML_TARGETS=(
   "commands/tools/schedule.md"
   "commands/tools/jiggler.md"
   "skills/desktop-tools/SKILL.md"
+  "skills/kgp-hosting/SKILL.md"
 )
 
 for f in "${YAML_TARGETS[@]}"; do
@@ -186,13 +187,13 @@ validate_json ".claude-plugin/plugin.json"
 validate_json ".claude-plugin/marketplace.json"
 validate_json "hooks/hooks.json"
 
-# v2.9.0 version invariants
+# v2.10.0 version invariants
 if _json_have_reader; then
   ver=$(json_get .claude-plugin/plugin.json ".version")
-  if [ "$ver" = "2.9.0" ]; then
-    pass "plugin.json version is 2.9.0"
+  if [ "$ver" = "2.10.0" ]; then
+    pass "plugin.json version is 2.10.0"
   else
-    fail "plugin.json version is '$ver' (expected 2.9.0)"
+    fail "plugin.json version is '$ver' (expected 2.10.0)"
   fi
 
   mkt_ver=$(json_get .claude-plugin/marketplace.json ".metadata.version")
@@ -401,6 +402,10 @@ REQUIRED=(
   "skills/desktop-tools/workflows/diagnose.md"
   "skills/desktop-tools/workflows/add-tool.md"
   "skills/desktop-tools/templates/tool-reference.md.template"
+  "skills/kgp-hosting/SKILL.md"
+  "skills/kgp-hosting/references/commands.md"
+  "skills/kgp-hosting/references/site-anatomy.md"
+  "skills/kgp-hosting/references/troubleshooting.md"
 )
 
 for f in "${REQUIRED[@]}"; do
@@ -600,6 +605,63 @@ if [ -f "$REG" ] && [ -d "tools" ]; then
   done
 else
   fail "$REG or tools/ missing"
+fi
+
+# --------------------------------------------------------------------
+section "10. KGP Host skill — public-repo safety and routing"
+
+# This repo is public; the skill's source repo is private. No host-specific detail may leak.
+KH="skills/kgp-hosting"
+if [ -d "$KH" ]; then
+  # Keep this pattern identical to the guard in KGP-WebHosting-Tools scripts/install-skill.sh.
+  if grep -rEn '([0-9]{1,3}\.){3}[0-9]{1,3}|/home[0-9]*/|/Users/|hostgator\.com|kgprodux|cpanel_user *=|kgp_[A-Za-z]*token' "$KH"; then
+    fail "$KH contains host-specific details (IPs, home paths, cPanel hosts, or tokens)"
+  else
+    pass "$KH carries no IPs, home paths, cPanel hosts, or tokens"
+  fi
+  for tag in "<prerequisites>" "<guardrails>" "<quick_start>" "<success_criteria>"; do
+    if grep -q "$tag" "$KH/SKILL.md"; then pass "kgp-hosting SKILL.md has $tag"; else fail "kgp-hosting SKILL.md missing $tag"; fi
+  done
+else
+  fail "$KH missing entirely"
+fi
+
+if grep -q "Skill(kgp-hosting)" commands/deploy.md && grep -q "kgp.toml" commands/deploy.md; then
+  pass "/KGP:deploy routes kgp.toml repos to kgp-hosting"
+else
+  fail "/KGP:deploy does not route kgp.toml repos to kgp-hosting"
+fi
+
+if grep -q "kgp-hosting skill" scripts/hooks/suggest-skill.sh; then
+  pass "suggest-skill.sh has a kgp-hosting branch"
+else
+  fail "suggest-skill.sh has no kgp-hosting branch"
+fi
+
+# Every kgp example in the skill follows its own --json --yes rule.
+if grep -rhoE '`kgp [^`]*--json[^`]*`' "$KH" | grep -v -- '--yes' | grep -q .; then
+  fail "$KH has kgp examples with --json but without --yes"
+else
+  pass "$KH kgp examples all pass --json --yes"
+fi
+
+# deployment-expert hands kgp.toml repos to kgp-hosting, found from a subfolder.
+KT="$(mktemp -d)"
+mkdir -p "$KT/sub" && touch "$KT/kgp.toml" "$KT/sub/netlify.toml"
+kp=$(cd "$KT/sub" && bash "$PLUGIN_ROOT/skills/deployment-expert/scripts/detect-platform.sh" 2>/dev/null)
+rm -rf "$KT"
+if [ "$kp" = "kgp-host" ]; then
+  pass "detect-platform.sh reports kgp-host for a kgp.toml repo"
+else
+  fail "detect-platform.sh reports '$kp' for a kgp.toml repo (expected kgp-host)"
+fi
+
+if grep -q "KGP Host" skills/deployment-expert/references/corporate-accessibility.md \
+   && grep -q "preload" skills/deployment-expert/workflows/hardening-remediate.md \
+   && grep -q "sitepage.app" skills/deployment-expert/scripts/assess-hardening.sh; then
+  pass "corporate hardening pass covers KGP Host (headers, no preload, shared subdomain)"
+else
+  fail "corporate hardening pass does not cover KGP Host"
 fi
 
 # --------------------------------------------------------------------

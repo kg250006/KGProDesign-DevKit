@@ -1,13 +1,19 @@
 ---
 name: deploy
-description: Deploy project using deployment-expert skill. Supports Netlify, Azure VM, FTP, and GitHub production branch deployments.
+description: Deploy project using deployment-expert skill (Netlify, Azure VM, FTP, GitHub production branch), or the kgp-hosting skill when the repo has kgp.toml.
 argument-hint: [ship|status|setup|env|troubleshoot]
-allowed-tools: Skill(deployment-expert), Read, Bash, Grep, Glob, Write, Edit, Task
+allowed-tools: Skill(deployment-expert), Skill(kgp-hosting), Read, Bash, Grep, Glob, Write, Edit, Task
 ---
 
 Invoke the deployment-expert skill for: $ARGUMENTS
 
+Check the routing below first. A repo with `kgp.toml` goes to the kgp-hosting skill instead.
+
 ## Smart Routing
+
+**For KGP Host sites** (has `kgp.toml` at the repo root or a parent folder up to the git root):
+→ Invoke the `kgp-hosting` skill instead of deployment-expert, and follow its prerequisites and guardrails
+→ "ship" or "deploy" means a draft release (`kgp deploy --json --yes`); publish only when the user asks for production
 
 **For existing Azure VM apps** (has `.deployment-profile.json` with `platform: "azure-vm"`):
 

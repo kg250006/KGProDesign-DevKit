@@ -1,6 +1,6 @@
 ---
 name: deployment-expert
-description: Deploy projects to any platform - Netlify, Azure VM (SSH/CLI), FTP servers, GitHub production branches with Docker. Auto-detects deployment profiles, manages environment variables, handles forms and build configs. Hardens new sites for corporate-network accessibility (custom domain, security headers, self-hosted assets, filter categorization) so they don't appear broken on enterprise/work computers. Use when deploying, setting up hosting, managing production environments, or when a site renders broken/unstyled/blocked on a corporate network.
+description: Deploy projects to any platform - Netlify, Azure VM (SSH/CLI), FTP servers, GitHub production branches with Docker. Auto-detects deployment profiles, manages environment variables, handles forms and build configs. Hardens new sites for corporate-network accessibility (custom domain, security headers, self-hosted assets, filter categorization) so they don't appear broken on enterprise/work computers. Use when deploying, setting up hosting, managing production environments, or when a site renders broken/unstyled/blocked on a corporate network. Repos with kgp.toml deploy through the kgp-hosting skill; this skill still runs their corporate hardening pass.
 ---
 
 <essential_principles>
@@ -62,6 +62,10 @@ Each platform is a self-contained module:
 - `references/azure-vm.md` - SSH and Azure CLI deployment
 - `references/ftp.md` - FTP/SFTP deployment
 - `references/github-production.md` - Branch-based Docker deployment
+
+**KGP Host** (repos with `kgp.toml`) is not a module here. Deploys, publishes, rollbacks, and status go through the
+`kgp-hosting` skill and the `kgp` CLI. Do not create a `.deployment-profile.json` to deploy such a site. This skill
+still owns the corporate hardening pass for it; see `references/corporate-accessibility.md` (KGP Host section).
 
 Adding a new platform = adding a new reference file + workflow additions.
 </essential_principles>
@@ -136,6 +140,7 @@ When user says "deploy", "ship", "push", "commit to production", "merge to produ
 | ftp | "deploy", "upload" | `workflows/deploy.md` (ftp section) |
 
 **Platform auto-detection (for new apps):**
+- If `kgp.toml` exists → hand off to the `kgp-hosting` skill for deploy, publish, rollback, and status
 - If `.deployment-profile.json` exists → read platform, use fast path
 - If `netlify.toml` exists → suggest Netlify profile
 - If repo has `production` branch → suggest GitHub Production profile
@@ -147,14 +152,15 @@ When user says "deploy", "ship", "push", "commit to production", "merge to produ
 ## Auto-Detection Logic
 
 Check in order:
-1. `.deployment-profile.json` - Explicit profile (use it)
-2. `netlify.toml` - Netlify project
-3. `vercel.json` - Suggest Netlify alternative or add Vercel module
-4. `.azure/`, `azure-pipelines.yml` - Azure project
-5. `production` branch + `Dockerfile` - GitHub Production pattern
-6. `docker-compose.yml` + remote server config - Docker deployment
-7. `.ftpconfig`, `ftp-deploy.json` - FTP project
-8. Ask user
+1. `kgp.toml` - KGP Host site (hand off to the `kgp-hosting` skill; never deploy it over FTP or SSH)
+2. `.deployment-profile.json` - Explicit profile (use it)
+3. `netlify.toml` - Netlify project
+4. `vercel.json` - Suggest Netlify alternative or add Vercel module
+5. `.azure/`, `azure-pipelines.yml` - Azure project
+6. `production` branch + `Dockerfile` - GitHub Production pattern
+7. `docker-compose.yml` + remote server config - Docker deployment
+8. `.ftpconfig`, `ftp-deploy.json` - FTP project
+9. Ask user
 
 When suggesting, explain why:
 "I see `netlify.toml` in your project. This looks like a Netlify deployment. Should I set up the profile for Netlify?"
@@ -261,7 +267,7 @@ git push origin production       # Triggers deployment via cron/webhook
     "lastVerifiedAt": null,
     "overallStatus": "pending|compliant|remediated|blocked|pending-manual",
     "detectedStack": "static|spa|ssr",
-    "detectedHost": "netlify|azure-vm|ftp|github-production",
+    "detectedHost": "netlify|azure-vm|ftp|github-production|kgp-host",
     "lastRunAt": null,
     "mitigations": {
       "M1": { "verdict": "pending|pass|fail|manual-required|not-applicable", "detail": null }
