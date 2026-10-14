@@ -12,7 +12,7 @@ with each release, roll back with it, and run only through `/api/`. There is no 
 | `functions/index.php` | every other `/api/*` path (optional catch-all) |
 | `functions/_shared/*.php` | nothing; `require __DIR__ . '/_shared/name.php'` |
 
-Names are lower-case `a-z`, `0-9`, `_` and `-`, at most 64 characters, one level deep (plus `_shared/`). Each file is
+Names are lower-case `a-z`, `0-9`, `_` and `-` (no dots, so not `x.generated.php`), at most 64 characters, one level deep (plus `_shared/`). Each file is
 at most 1 MiB. A release without functions answers 404 for every `/api/*` path.
 
 ## Helpers
@@ -28,6 +28,7 @@ at most 1 MiB. A release without functions answers 404 for every `/api/*` path.
 | `kgp_rate_limit('bucket', $max, $windowSeconds)` | Fixed window per bucket and client IP; ends with 429 `rate_limited` and `Retry-After`. |
 | `kgp_send_email(['to', 'subject', 'text' or 'html', 'reply_to'])` | Sends through the instance's MailerSend sender; returns `true` when accepted. |
 | `kgp_fetch($method, $url, ['headers', 'json' or 'body', 'timeout', 'follow_redirects'])` | Outbound HTTPS. Returns `['status', 'headers', 'body']`; status 0 means the request failed. |
+| `kgp_mail_configured()` | `true` when the instance mail sender is set up (`kgp server mail set`). |
 | `kgp_defer(fn () => ...)` | Runs after the response is sent (Netlify's `waitUntil`). |
 | `kgp_client_ip()` | The caller's IP (`REMOTE_ADDR`; forwarded headers are not trusted). |
 | `kgp_log('message')` | One line in `kgp functions logs`. Never log secrets or form contents. |
