@@ -2,6 +2,11 @@
 
 All notable changes to KGProDesign-DevKit.
 
+## [2.16.1] - 2026-10-15
+
+### Security
+- **deployment-expert** no longer names a real server. `SKILL.md` and `workflows/troubleshoot.md` showed an Azure VM's IP address and admin user in their SSH examples; both now use `user@host`, as `workflows/azure-vm-ship.md` already did. The address remains in this public repo's history, so treat it as known: allow key-only SSH and limit port 22 in the VM's network security group.
+
 ## [2.16.0] - 2026-10-15
 
 The kgp-hosting skill documents custom domains served through the platform folder on KGP Host, synced from KGP-WebHosting-Tools 8e99e9b (ADR 0008).

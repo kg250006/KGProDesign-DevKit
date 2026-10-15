@@ -544,7 +544,7 @@ cat .deployment-profile.json | jq -r '.azureVm.authMethod, .azureVm.sshKeyPath, 
 **If authMethod is "ssh-key" (traditional SSH):**
 ```bash
 # Use the key specified in the profile
-ssh -i ~/.ssh/kgp_vm_deploy kgpadmin@74.249.103.192
+ssh -i ~/.ssh/kgp_vm_deploy user@host
 ```
 
 **If authMethod is "azure-ad" (Azure AD):**

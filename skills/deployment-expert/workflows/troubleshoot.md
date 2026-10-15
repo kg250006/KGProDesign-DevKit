@@ -452,7 +452,7 @@ cat .deployment-profile.json | jq -r '.azureVm.sshKeyPath, .azureVm.host, .azure
 **Fix:**
 ```bash
 # If authMethod is "ssh-key" (traditional SSH):
-ssh -i ~/.ssh/kgp_vm_deploy kgpadmin@74.249.103.192 "echo 'Connection OK'"
+ssh -i ~/.ssh/kgp_vm_deploy user@host "echo 'Connection OK'"
 
 # If authMethod is "azure-ad":
 az ssh vm --resource-group myRG --name myVM
