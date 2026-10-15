@@ -25,7 +25,7 @@
 
 ## Routing rules
 
-With wildcard addressing (ADR 0007) every `SITE.PLATFORM_DOMAIN` reaches the server through one `*.PLATFORM_DOMAIN` subdomain whose folder is the platform folder; its `.htaccess` sends the request into `sites/SITE/` and the site's own rules below take over. Custom domains point straight at the site folder. Both paths use the same rules. A name with no site gets the platform's "Nothing lives here." page (404).
+With wildcard addressing (ADR 0007) every `SITE.PLATFORM_DOMAIN` reaches the server through one `*.PLATFORM_DOMAIN` subdomain whose folder is the platform folder; its `.htaccess` sends the request into `sites/SITE/` and the site's own rules below take over. Custom domains (ADR 0008) also point at the platform folder, and the same `.htaccess` sends each one into its site's folder. Every path uses the same rules. Any other host that reaches the platform folder, a name with no site included, gets the platform's "Nothing lives here." page (404).
 
 In order, first match wins:
 

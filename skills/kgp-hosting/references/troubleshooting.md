@@ -17,6 +17,7 @@
 | `folder_isolation` | Site folders are inside the main domain's document root (warning). | Informational. |
 | `primary_domain` | The platform domain is the account's primary domain (warning). | Informational; affects mail moves. |
 | `reserved_names` | A site uses a reserved name, or a non-KGP subdomain exists. | Rename or remove it (owner). |
+| `custom_hosts` | Wildcard addressing only (ADR 0008): the platform folder's `.htaccess` does not match the site records, a custom domain has no cPanel domain, or one points somewhere other than the platform folder or its site folder. Warns for a domain still at its site folder. | `kgp server wildcard` (owner); for a missing cPanel domain, `kgp domains add DOMAIN --site SITE` (owner). |
 
 ## Common symptoms
 

@@ -2,6 +2,16 @@
 
 All notable changes to KGProDesign-DevKit.
 
+## [2.16.0] - 2026-10-15
+
+The kgp-hosting skill documents custom domains served through the platform folder on KGP Host, synced from KGP-WebHosting-Tools 8e99e9b (ADR 0008).
+
+### Changed
+- **`references/sites-domains-certificates.md`**: with wildcard addressing `kgp domains add` points the cPanel domain at the platform folder and the router there sends the name to the site (`document_root` and `router` in the result); `domain_not_attached` from `kgp domains remove`; a custom domain shares the platform folder, so HostGator should not count it as a website; older domains move with `kgp server wildcard`.
+- **`references/site-anatomy.md`**: custom domains are routed by the platform folder's `.htaccess` like `SITE.PLATFORM_DOMAIN`; any other host that reaches the platform folder gets the "Nothing lives here." page.
+- **`references/troubleshooting.md`**: the doctor's `custom_hosts` check.
+- Version 2.16.0 in `plugin.json`, `marketplace.json`, the README footer and `scripts/tests/test-static-validation.sh`.
+
 ## [2.15.0] - 2026-10-15
 
 The kgp-hosting skill documents wildcard site addresses, custom domains and the self-renewing wildcard certificate on KGP Host, synced from KGP-WebHosting-Tools (ADR 0007).

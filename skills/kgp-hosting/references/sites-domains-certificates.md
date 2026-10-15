@@ -41,16 +41,23 @@ domain on the account.
 
 1. The owner asks; you run `kgp domains add DOMAIN --json --yes` (add `--primary` to make it the main address;
    every other address then 301s to it). It creates a cPanel addon domain (or a subdomain when DOMAIN is under a
-   domain of the account) pointing at the site folder, adds the name to the site's host allowlist, requests
-   AutoSSL, and prints the DNS records in `dns.records` / `instructions_md`.
+   domain of the account), adds the name to the site's host allowlist, requests AutoSSL, and prints the DNS
+   records in `dns.records` / `instructions_md`. With wildcard addressing the cPanel domain points at the
+   platform folder and the router there sends the name to the site (ADR 0008; `document_root` and `router` in
+   the result); otherwise it points at the site folder.
 2. Give those records to the domain owner. Typical: `www` CNAME to `SITE.PLATFORM_DOMAIN`; the bare domain an A
    record to the server IP that the command prints (or the DNS provider's ALIAS/flattening). Never change DNS
    yourself.
 3. `kgp domains status DOMAIN --json --yes` shows `dns` (`ok` or `waiting for customer DNS`) and the certificate
    state. AutoSSL issues the domain's own certificate once DNS reaches the server, usually within minutes.
-4. `kgp domains remove DOMAIN --yes --json` (owner only) detaches it and removes its cPanel domain.
+4. `kgp domains remove DOMAIN --yes --json` (owner only) detaches it and removes its cPanel domain. Exit 7
+   `domain_not_attached` means the site has no such domain; nothing changed.
 
-Each custom domain uses one cPanel addon-domain slot; sites on the wildcard use none.
+Each custom domain uses one cPanel addon-domain entry (unlimited on the plan); sites on the wildcard use none.
+With wildcard addressing a custom domain shares the platform folder, so HostGator, which appears to count one
+website per document root, should not count it as a website (ADR 0008; PRD V16 records the check). Domains added
+before ADR 0008 still point at their site folder until the owner runs `kgp server wildcard`; the doctor's
+`custom_hosts` check warns about them.
 
 ## Which certificate covers what
 
