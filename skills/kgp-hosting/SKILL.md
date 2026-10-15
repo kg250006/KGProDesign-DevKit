@@ -1,6 +1,6 @@
 ---
 name: kgp-hosting
-description: Deploys, publishes, rolls back, and diagnoses websites hosted on KGP Host (sitepage.app or a customer domain) safely through the kgp CLI, including PHP functions under /api/, runtime env vars, redirects, custom domains, and Netlify migrations. Use when the repo contains kgp.toml, when asked to deploy, publish, roll back, check status, or fix a broken KGP-hosted site, when writing or debugging functions/*.php, setting env vars, adding redirects, headers or a custom domain, or when moving a site from Netlify.
+description: Deploys, publishes, rolls back, and diagnoses websites hosted on KGP Host (sitepage.app or a customer domain) safely through the kgp CLI, including PHP functions under /api/, runtime env vars, redirects, custom domains, the *.sitepage.app wildcard and its certificate, and Netlify migrations. Use when the repo contains kgp.toml, when asked to deploy, publish, roll back, check status, or fix a broken KGP-hosted site, when writing or debugging functions/*.php, setting env vars, adding redirects, headers or a custom domain, when a site shows "Nothing lives here." or a certificate error, when checking or renewing the wildcard certificate, or when moving a site from Netlify.
 ---
 
 <objective>
@@ -45,7 +45,8 @@ Check these before the first kgp call. Stop and tell the user what is missing in
 - `functions/NAME.php` answers `/api/NAME` and `/api/NAME/...`; `functions/index.php` answers any other `/api/*` path; `functions/_shared/` is for `require` only. Functions deploy and roll back with the release. `/api/*` is reserved: a release without functions answers 404 there. Details and the helper API: [references/functions.md](references/functions.md).
 - Runtime env vars (`kgp env set`) are write-only secrets for functions. They apply on the next request and are not part of releases. A deploy fails (exit 7, `secret_in_build`) if the static build contains a runtime value.
 - Redirects come from `[[redirects]]` in kgp.toml and from `_redirects` / `_headers` files at the root of the publish folder; those two files are compiled into the rules and not served.
-- Custom domains are attached with `kgp domains add`, which prints the DNS record for the domain owner to set. Never change DNS yourself.
+- Site addresses come from one `*.PLATFORM_DOMAIN` cPanel subdomain when the instance uses `site_addressing = "wildcard"` (sitepage.app does): `kgp sites create` makes no cPanel call, and a name without a site shows the 404 "Nothing lives here." page (`X-KGP-No-Site: 1`). The wildcard's Let's Encrypt certificate renews itself from a daily cPanel cron job (acme.sh, DNS-01 through a permanent `_acme-challenge` CNAME); check it with `kgp server cert status --json --yes`. Details: [references/sites-domains-certificates.md](references/sites-domains-certificates.md).
+- Custom domains are attached with `kgp domains add`, which creates a cPanel addon domain, requests AutoSSL, and prints the DNS record for the domain owner to set. Never change DNS yourself.
 - Page analytics come from the instance's self-hosted Matomo (cookieless, no consent banner). `kgp analytics add-site --json --yes` gives a site its Matomo id in `kgp.toml`; `kgp analytics snippet --format js --json --yes` prints the tracker for the React app. Deploys add the stats origin to a site's own Content-Security-Policy. Details: [references/analytics.md](references/analytics.md).
 - Every `kgp_send_email()` call is logged on the server for 90 days (sent, failed or rejected), with its bodies and salted hashes of the sender's IP, never the raw IP. Read it with `kgp mail log --json --yes` and `kgp mail show ID --json --yes`. A blocked or capped sender gets `false` from `kgp_send_email()` and a `rejected` `abuse_limit` entry. A site can push its log to a WordPress site with the kgp-email-log plugin (`kgp mail wp`).
 </how_it_works>
@@ -69,10 +70,11 @@ Never:
 - edit files on the server, in cPanel, or through the cPanel API directly;
 - change DNS records or nameservers;
 - pass a token or secret as a command-line argument (use `KGP_CPANEL_TOKEN`, `KGP_AGENT_SECRET`, or `kgp login --token-stdin`);
-- run an owner-only command without an explicit user request: `kgp sites create|delete`, `kgp instance add|remove`, `kgp login|logout`, `kgp server init|upgrade`, `kgp server mail set`, `kgp domains add|remove`, `kgp env set|unset|import`, `kgp migrate netlify --write`, `kgp mail block|unblock`, `kgp mail limits` with values, `kgp mail wp set|unlink`, `kgp analytics configure|install|upgrade|wp-token|invite`, `kgp analytics add-site --wordpress` (the full list is in [references/commands.md](references/commands.md));
+- run an owner-only command without an explicit user request: `kgp sites create|delete`, `kgp instance add|remove`, `kgp login|logout` (including `kgp login --acme`), `kgp server init|upgrade`, `kgp server wildcard`, `kgp server cert setup`, a production `kgp server cert run`, `kgp server mail set`, `kgp domains add|remove`, `kgp env set|unset|import`, `kgp migrate netlify --write`, `kgp mail block|unblock`, `kgp mail limits` with values, `kgp mail wp set|unlink`, `kgp analytics configure|install|upgrade|wp-token|invite`, `kgp analytics add-site --wordpress` (the full list is in [references/commands.md](references/commands.md));
 - paste the Matomo `wp-connect` token or any Matomo credential into chat, files or tickets;
 - pass a WordPress application password as an argument (use `kgp mail wp set ... --app-password-stdin`);
 - paste an email body from `kgp mail show` into chat, tickets or commits unless the user asks; summarise it instead;
+- run `kgp server cert run --force` against production unasked (Let's Encrypt allows 5 duplicates a week), or touch `~/kgp-acme`, the `# kgp-acme` cron line, or the `_acme-challenge` CNAME;
 - publish to production without an explicit user request.
 
 Always use `--json --yes` and read results from stdout only. Logs and build output go to stderr.
@@ -102,7 +104,8 @@ The deployment-expert skill's corporate hardening pass also applies to KGP-hoste
 
 <troubleshooting>
 See [references/troubleshooting.md](references/troubleshooting.md) for doctor check ids and fixes, the delay after
-`kgp sites create`, certificate waits, and 404s caused by using the wrong host. Commands are listed in
+`kgp sites create`, certificate waits, and 404s caused by using the wrong host. Site addresses, custom domains and
+certificate renewal: [references/sites-domains-certificates.md](references/sites-domains-certificates.md). Commands are listed in
 [references/commands.md](references/commands.md); the site layout is in [references/site-anatomy.md](references/site-anatomy.md).
 </troubleshooting>
 

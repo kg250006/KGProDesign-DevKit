@@ -35,9 +35,11 @@ Add `--json --yes` to every call, as shown.
 | Analytics install state | `kgp analytics status --json --yes` |
 | Give a site its Matomo id (writes kgp.toml) | `kgp analytics add-site --json --yes` |
 | Tracker code for the React app | `kgp analytics snippet --format js --json --yes` |
+| Wildcard certificate state (days left, cron, last run) | `kgp server cert status --json --yes` |
+| Try the renewal safely (Let's Encrypt staging) | `kgp server cert run --staging --json --yes` |
 
 Owner-only commands (run only on an explicit request): `kgp sites create`, `kgp sites delete`, `kgp server init`,
-`kgp server upgrade`, `kgp server mail set`, `kgp instance add`, `kgp instance remove`, `kgp login`, `kgp logout`,
+`kgp server upgrade`, `kgp server wildcard`, `kgp server cert setup`, `kgp server cert run` (production), `kgp server mail set`, `kgp instance add`, `kgp instance remove`, `kgp login`, `kgp logout`,
 `kgp domains add`, `kgp domains remove`, `kgp env set`, `kgp env unset`, `kgp env import`, `kgp migrate netlify --write`,
 `kgp mail block`, `kgp mail unblock`, `kgp mail limits` with values, `kgp mail wp set`, `kgp mail wp unlink`,
 `kgp analytics configure`, `kgp analytics install`, `kgp analytics upgrade`, `kgp analytics add-site --wordpress`,

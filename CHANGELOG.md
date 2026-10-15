@@ -2,6 +2,20 @@
 
 All notable changes to KGProDesign-DevKit.
 
+## [2.15.0] - 2026-10-15
+
+The kgp-hosting skill documents wildcard site addresses, custom domains and the self-renewing wildcard certificate on KGP Host, synced from KGP-WebHosting-Tools (ADR 0007).
+
+### Added
+- **`references/sites-domains-certificates.md`**: `site_addressing` / `dns_authority` / `[acme]` instance keys; sites on the `*.PLATFORM_DOMAIN` wildcard (no cPanel subdomain per site, the 404 "Nothing lives here." page, legacy explicit subdomains); adding a custom domain (addon domain, AutoSSL, DNS handed to the domain owner); which certificate covers each name; how the wildcard certificate is issued and renewed (acme.sh in cPanel cron, DNS-01 through the permanent `_acme-challenge` CNAME, KGP's deploy hook); `kgp server cert status`, doctor `ssl` / `acme_alias`, failure signals; owner-only commands and the Let's Encrypt rate limit.
+
+### Changed
+- **`SKILL.md`**: wildcard addressing and certificate renewal in `<how_it_works>`; `kgp server wildcard`, `kgp server cert setup`, production `kgp server cert run` and `kgp login --acme` are owner-only; never force a production certificate run or touch the renewal folder, cron line or CNAME.
+- **`references/commands.md`**: `kgp server cert status` and a staging run; the new owner-only commands.
+- **`references/site-anatomy.md`**: routing through the wildcard and the platform router.
+- **`references/troubleshooting.md`**: `acme_alias` and the wildcard `ssl` rule; the no-site page on a site that exists; every wildcard site failing HTTPS at once.
+- Version 2.15.0 in `plugin.json`, `marketplace.json`, the README footer and `scripts/tests/test-static-validation.sh`.
+
 ## [2.14.0] - 2026-10-14
 
 The kgp-hosting skill documents site analytics on KGP Host (self-hosted Matomo), synced from KGP-WebHosting-Tools.
