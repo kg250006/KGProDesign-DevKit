@@ -40,7 +40,7 @@ Add `--json --yes` to every call, as shown.
 
 Owner-only commands (run only on an explicit request): `kgp sites create`, `kgp sites delete`, `kgp server init`,
 `kgp server upgrade`, `kgp server wildcard`, `kgp server cert setup`, `kgp server cert run` (production), `kgp server mail set`, `kgp instance add`, `kgp instance remove`, `kgp login`, `kgp logout`,
-`kgp domains add`, `kgp domains remove`, `kgp env set`, `kgp env unset`, `kgp env import`, `kgp migrate netlify --write`,
+`kgp domains add`, `kgp domains remove`, `kgp domains park`, `kgp domains move`, `kgp env set`, `kgp env unset`, `kgp env import`, `kgp migrate netlify --write`,
 `kgp mail block`, `kgp mail unblock`, `kgp mail limits` with values, `kgp mail wp set`, `kgp mail wp unlink`,
 `kgp analytics configure`, `kgp analytics install`, `kgp analytics upgrade`, `kgp analytics add-site --wordpress`,
 `kgp analytics wp-token`, `kgp analytics invite`.

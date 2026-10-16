@@ -53,11 +53,27 @@ domain on the account.
 4. `kgp domains remove DOMAIN --yes --json` (owner only) detaches it and removes its cPanel domain. Exit 7
    `domain_not_attached` means the site has no such domain; nothing changed.
 
-Each custom domain uses one cPanel addon-domain entry (unlimited on the plan); sites on the wildcard use none.
-With wildcard addressing a custom domain shares the platform folder, so HostGator, which appears to count one
-website per document root, should not count it as a website (ADR 0008; PRD V16 records the check). Domains added
+Each custom domain uses one cPanel addon-domain entry (unlimited on the plan) and one HostGator "website" slot
+(20 on the Baby plan), even though it shares the platform folder (PRD V16); sites on the wildcard use neither. Domains added
 before ADR 0008 still point at their site folder until the owner runs `kgp server wildcard`; the doctor's
 `custom_hosts` check warns about them.
+
+## Parking a client domain
+
+Until a client's site is ready, its domain can show the KG ProDesign parked page (`parked.PLATFORM_DOMAIN`, ADR 0009).
+Wildcard instances only; both commands are owner-only.
+
+1. `kgp domains park DOMAIN --json --yes` attaches it to the parked site exactly like `kgp domains add`, but never as
+   primary. Give the DNS records it prints to the domain owner. The page names the domain, links to KG ProDesign's
+   get-started and contact pages, and is `noindex`.
+2. When the site is ready (and deployed): `kgp domains move DOMAIN --to SITE --primary --json --yes`. Only the
+   allowlists and the router change; the cPanel domain and its certificate stay. If SITE refuses the domain, it goes
+   back to the parked site.
+
+Errors: `domain_not_parked` (not on the parked site: use `kgp domains remove`, then `kgp domains add`),
+`domain_not_at_base` (owner runs `kgp server wildcard`), `site_not_found` from `park` (the parked site does not exist
+yet; its `hint` says how to create it), `parked_site_mismatch` (the configured site is not serving the parked page;
+nothing changed; tell the owner). A parked domain still uses one HostGator website slot.
 
 ## Which certificate covers what
 

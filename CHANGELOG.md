@@ -2,6 +2,15 @@
 
 All notable changes to KGProDesign-DevKit.
 
+## [2.16.2] - 2026-10-16
+
+The kgp-hosting skill documents parking client domains on the KG ProDesign parked page and corrects the HostGator website count, synced from KGP-WebHosting-Tools ebee6b2 (ADR 0008, ADR 0009).
+
+### Changed
+- **`references/sites-domains-certificates.md`**: each custom domain uses one HostGator "website" slot even though it shares the platform folder (the 2.16.0 text said it should not; a test on 2026-10-15 showed it does). New section "Parking a client domain": `kgp domains park DOMAIN` attaches it to the parked site (`parked.PLATFORM_DOMAIN`, never primary); `kgp domains move DOMAIN --to SITE --primary` hands it to the client's site without touching cPanel; errors `domain_not_parked`, `domain_not_at_base`, `site_not_found`, `parked_site_mismatch`.
+- **`references/commands.md`**: `kgp domains park` and `kgp domains move` in the owner-only list.
+- Version 2.16.2 in `plugin.json`, `marketplace.json`, the README footer and `scripts/tests/test-static-validation.sh`.
+
 ## [2.16.1] - 2026-10-15
 
 ### Security
