@@ -21,8 +21,12 @@ Add `--json --yes` to every call, as shown.
 | Runtime env var names (never values) | `kgp env list --json --yes` |
 | Functions in the live release | `kgp functions list --json --yes` |
 | Function errors | `kgp functions logs --json --yes` |
+| Per-request log (method, path, status, ms; no query strings) | `kgp functions logs --requests --since 2h --json --yes` |
+| Replay a contract file against the site | `kgp functions contract run --file contracts.yaml --json --yes` |
+| Compare two bases with the same contract file | `kgp functions contract run --compare https://A https://B --file contracts.yaml --json --yes` |
 | Run the site and functions locally | `kgp dev` (it keeps running; stop it when done) |
 | What a Netlify site needs to move | `kgp migrate netlify --json --yes` |
+| Migration report (functions, schedules, env names, SDKs, proxy) | `kgp migrate netlify --report --json --yes` |
 | Host names of the site | `kgp domains list --json --yes` |
 | DNS and certificate state of a custom domain | `kgp domains status DOMAIN --json --yes` |
 | Mail the site sent or tried to send (no bodies) | `kgp mail log --since 24h --json --yes` |
@@ -41,7 +45,8 @@ Add `--json --yes` to every call, as shown.
 Owner-only commands (run only on an explicit request): `kgp sites create`, `kgp sites delete`, `kgp server init`,
 `kgp server upgrade`, `kgp server wildcard`, `kgp server cert setup`, `kgp server cert run` (production), `kgp server mail set`, `kgp instance add`, `kgp instance remove`, `kgp login`, `kgp logout`,
 `kgp domains add`, `kgp domains remove`, `kgp domains park`, `kgp domains move`, `kgp env set`, `kgp env unset`, `kgp env import`, `kgp migrate netlify --write`,
-`kgp mail block`, `kgp mail unblock`, `kgp mail limits` with values, `kgp mail wp set`, `kgp mail wp unlink`,
+`kgp mail block`, `kgp mail unblock`, `kgp mail limits` with values, `kgp mail wp set`, `kgp mail wp unlink`, `kgp mail identity set`, `kgp mail identity remove`,
+`kgp deploy --skip-hooks`, `kgp releases publish --skip-hooks`, `kgp rollback --skip-hooks` (publish without the release's predeploy hook; never the answer to `predeploy_failed`),
 `kgp analytics configure`, `kgp analytics install`, `kgp analytics upgrade`, `kgp analytics add-site --wordpress`,
 `kgp analytics wp-token`, `kgp analytics invite`.
 
@@ -49,3 +54,5 @@ Values for `kgp env set` and `kgp server mail set` come from stdin or a file, ne
 `kgp env set NAME < file`, `kgp env import .env.server`, `kgp server mail set --key-stdin < file`. The WordPress
 application password for the email log link comes from stdin too:
 `kgp mail wp set --url https://example.com --user kgp-log --app-password-stdin --json --yes < app-password.txt`.
+
+Sender identities (ADR 0017): `kgp mail identity show --json --yes` and `kgp mail identity verify --json --yes` are safe to run; `kgp mail identity set --from EMAIL --name NAME --key-stdin --json --yes < token.txt` and `kgp mail identity remove --json --yes` are owner actions (the MailerSend token only through stdin).

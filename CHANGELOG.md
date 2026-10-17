@@ -2,6 +2,17 @@
 
 All notable changes to KGProDesign-DevKit.
 
+## [2.17.0] - 2026-10-17
+
+The kgp-hosting skill documents the KGP Host GAPS series (agent 0.10.0), synced from KGP-WebHosting-Tools 036096e (ADRs 0012 to 0018).
+
+### Changed
+- **`references/functions.md`**: Postgres helpers (`kgp_pg_*`, Neon over HTTPS or PDO), `vendor/` dependencies and `_assets/`, the JWT and PDF kit, scheduled functions (`[[schedules]]`), Login with Google / OpenID Connect (`[[auth.providers]]`, sessions, and `relay` for hosts whose firewall refuses Google's callback), site-owned mail identities, attachments and the daily cap, the request log, deploy hooks (`functions/_predeploy.php` with a `schema_migrations` example) and contract tests (`contracts.yaml`).
+- **`references/commands.md`**: rows for `kgp functions logs --requests`, `kgp functions contract run` (single base and `--compare`) and `kgp migrate netlify --report`; `--skip-hooks` on deploy, publish and rollback is owner-only.
+- **`SKILL.md`**: points at the new sections.
+- **`scripts/tests/test-static-validation.sh`**: the public-repo check ignores the loopback address `127.0.0.1` (kgp dev and the local harness), as the source repo's install guard now does.
+- Version 2.17.0 in `plugin.json`, `marketplace.json`, the README footer and `scripts/tests/test-static-validation.sh`.
+
 ## [2.16.2] - 2026-10-16
 
 The kgp-hosting skill documents parking client domains on the KG ProDesign parked page and corrects the HostGator website count, synced from KGP-WebHosting-Tools ebee6b2 (ADR 0008, ADR 0009).

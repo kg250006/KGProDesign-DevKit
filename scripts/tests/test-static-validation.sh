@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Static validation for KGProDesign-DevKit v2.16.2.
+# Static validation for KGProDesign-DevKit v2.17.0.
 # Validates YAML frontmatter, JSON manifests, deletions of obsolete files,
 # absence of obsolete language, and structural elements introduced in v2.2.0.
 # No Claude CLI or plugin installation required.
@@ -188,13 +188,13 @@ validate_json ".claude-plugin/plugin.json"
 validate_json ".claude-plugin/marketplace.json"
 validate_json "hooks/hooks.json"
 
-# v2.16.2 version invariants
+# v2.17.0 version invariants
 if _json_have_reader; then
   ver=$(json_get .claude-plugin/plugin.json ".version")
-  if [ "$ver" = "2.16.2" ]; then
-    pass "plugin.json version is 2.16.2"
+  if [ "$ver" = "2.17.0" ]; then
+    pass "plugin.json version is 2.17.0"
   else
-    fail "plugin.json version is '$ver' (expected 2.16.2)"
+    fail "plugin.json version is '$ver' (expected 2.17.0)"
   fi
 
   mkt_ver=$(json_get .claude-plugin/marketplace.json ".metadata.version")
@@ -617,7 +617,10 @@ section "10. KGP Host skill — public-repo safety and routing"
 KH="skills/kgp-hosting"
 if [ -d "$KH" ]; then
   # Keep this pattern identical to the guard in KGP-WebHosting-Tools scripts/install-skill.sh.
-  if grep -rEn '([0-9]{1,3}\.){3}[0-9]{1,3}|/home[0-9]*/|/Users/|hostgator\.com|kgprodux|cpanel_user *=|kgp_[A-Za-z]*token' "$KH"; then
+  # The loopback address 127.0.0.1 (kgp dev, the local harness) is not host-specific and is ignored.
+  HOSTPAT='([0-9]{1,3}\.){3}[0-9]{1,3}|/home[0-9]*/|/Users/|hostgator\.com|kgprodux|cpanel_user *=|kgp_[A-Za-z]*token'
+  if hits=$(grep -rhE "$HOSTPAT" "$KH" | sed -E 's/127\.0\.0\.1//g' | grep -E "$HOSTPAT"); then
+    printf '%s\n' "$hits"
     fail "$KH contains host-specific details (IPs, home paths, cPanel hosts, or tokens)"
   else
     pass "$KH carries no IPs, home paths, cPanel hosts, or tokens"
