@@ -84,6 +84,8 @@ What would you like to brand?
 **Email (general):** info@kgprodesign.com
 **Email (admin):** KG@KGProDesign.com
 **Website:** kgprodesign.com
+**Contact page:** https://kgprodesign.com/contact/
+**Instagram:** @KGProDesign (https://www.instagram.com/kgprodesign/)
 **GitHub:** https://github.com/kg250006/KGProDesign-DevKit
 
 **Logo files (in plugin directory):**

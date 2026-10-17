@@ -23,6 +23,7 @@ This is the single source of truth for all company data. All branding workflows 
 - **General Email:** info@kgprodesign.com
 - **Admin Email:** KG@KGProDesign.com
 - **Website:** https://kgprodesign.com
+- **Contact page:** https://kgprodesign.com/contact/ (contact form; use for calls to action)
 - **GitHub:** https://github.com/kg250006/KGProDesign-DevKit
 
 </contact>
@@ -44,7 +45,7 @@ This is the single source of truth for all company data. All branding workflows 
 <!-- TO BE PROVIDED — Update handles when ready -->
 - **LinkedIn:** To be provided
 - **Twitter/X:** To be provided
-- **Instagram:** To be provided
+- **Instagram:** [@KGProDesign](https://www.instagram.com/kgprodesign/)
 
 </social>
 

@@ -2,6 +2,15 @@
 
 All notable changes to KGProDesign-DevKit.
 
+## [2.17.1] - 2026-10-17
+
+The kgprodesign-branding skill gains KG ProDesign's Instagram handle and contact page, used by the KGP Client Template's site factory banner.
+
+### Changed
+- **`references/company-info.md`**: Instagram is now [@KGProDesign](https://www.instagram.com/kgprodesign/) (was "To be provided"); new contact page line, https://kgprodesign.com/contact/.
+- **`SKILL.md`**: the quick-reference card lists the Instagram handle and contact page.
+- Version 2.17.1 in `plugin.json`, `marketplace.json`, the README footer and `scripts/tests/test-static-validation.sh`.
+
 ## [2.17.0] - 2026-10-17
 
 The kgp-hosting skill documents the KGP Host GAPS series (agent 0.10.0), synced from KGP-WebHosting-Tools 036096e (ADRs 0012 to 0018).
