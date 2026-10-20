@@ -64,7 +64,8 @@ Until a client's site is ready, its domain can show the KG ProDesign parked page
 Wildcard instances only; both commands are owner-only.
 
 1. `kgp domains park DOMAIN --json --yes` attaches it to the parked site exactly like `kgp domains add`, but never as
-   primary. Give the DNS records it prints to the domain owner. The page names the domain, links to KG ProDesign's
+   primary. Give the DNS records it prints to the domain owner. Exit 7 `domain_taken` means the domain already
+   exists in cPanel; `--adopt` takes it over, but only when the owner asks. The page names the domain, links to KG ProDesign's
    get-started and contact pages, and is `noindex`.
 2. When the site is ready (and deployed): `kgp domains move DOMAIN --to SITE --primary --json --yes`. Only the
    allowlists and the router change; the cPanel domain and its certificate stay. If SITE refuses the domain, it goes
@@ -79,7 +80,7 @@ nothing changed; tell the owner). A parked domain still uses one HostGator websi
 
 | Name | Certificate | Renewed by |
 |---|---|---|
-| `SITE.PLATFORM_DOMAIN` (wildcard sites) | Let's Encrypt `*.PLATFORM_DOMAIN` (also lists the apex) | acme.sh in cPanel cron (below) |
+| `SITE.PLATFORM_DOMAIN` (wildcard sites) | Let's Encrypt `*.PLATFORM_DOMAIN` only (never the apex: a shared certificate let browsers reuse a site's connection for the apex, which answered 421) | acme.sh in cPanel cron (below) |
 | Apex, `www`, `deploy.`, legacy explicit site subdomains | AutoSSL, one per cPanel name | cPanel AutoSSL, automatically |
 | Custom domains | AutoSSL for that domain | cPanel AutoSSL, after the client's DNS points at the server |
 

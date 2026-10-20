@@ -37,10 +37,11 @@ holds at most 5,000 files, 8 MiB per file and 64 MiB in total (agent 0.6.0+; bef
 | `kgp_env('NAME', $default)` | A runtime env var (set with `kgp env set`), or an injected one: `URL`, `SITE_NAME`, `CONTEXT`. |
 | `kgp_cors([$origin, ...], $methods, $credentials, $opts)` | Allows only the listed origins; answers preflight `OPTIONS` with 204. Never `*`. `$opts`: `allow_headers` (default `['Content-Type']`; add `Authorization` for bearer tokens), `preflight_status` (`204` or `200`). |
 | `kgp_rate_limit('bucket', $max, $windowSeconds)` | Fixed window per bucket and client IP; ends with 429 `rate_limited` and `Retry-After`. |
-| `kgp_send_email(['to', 'subject', 'text' or 'html', 'reply_to', 'from_name', 'attachments', 'trusted', 'log_body'])` | Sends through the site's own sender identity when one is registered and verified (`kgp mail identity set`), else through the platform sender; returns `true` when accepted. The sender name is `from_name`, else `[mail] from_name` in `kgp.toml`, else the identity's or the instance's ("KGP Mailer"). The From address is never set per message. `attachments`: a list of `{filename, content or path, type}` (see "Attachments"); `trusted`: skip the per-IP caps for webhook-triggered sends (see "Trusted sends and the daily cap"). |
+| `kgp_send_email(['to', 'subject', 'text' or 'html', 'reply_to', 'from_name', 'attachments', 'trusted', 'log_body', 'identity'])` | Sends through the site's own sender identity when one is registered (`kgp mail identity set`; verification is optional on agent 0.12.0+), else through the platform sender; returns `true` when accepted. `identity`: a named identity (see "Named identities"); that one or an error, never a fallback. The sender name is `from_name`, else `[mail] from_name` in `kgp.toml`, else the identity's or the instance's ("KGP Mailer"). The From address is never set per message. `attachments`: a list of `{filename, content or path, type}` (see "Attachments"); `trusted`: skip the per-IP caps for webhook-triggered sends (see "Trusted sends and the daily cap"). |
 | `kgp_fetch($method, $url, ['headers', 'json' or 'body', 'timeout', 'follow_redirects'])` | Outbound HTTPS. Returns `['status', 'headers', 'body']`; status 0 means the request failed. |
-| `kgp_mail_configured()` | `true` when mail can go out: a verified site identity, else the platform sender (`kgp server mail set`). |
-| `kgp_mail_identity()` | The site's sender identity `{configured, from_email, from_name, reply_to, domain, verified, verified_at}` without the key, or `null` (always `null` under `kgp dev`). |
+| `kgp_mail_configured(?string $name = null)` | `true` when mail can go out: a site identity with a key, else the platform sender (`kgp server mail set`). With a name: `true` only when that named identity exists with a key. (Before agent 0.12.0 an identity also had to be verified.) |
+| `kgp_mail_identity(?string $name = null)` | The site's sender identity `{configured, from_email, from_name, reply_to, domain, verified, verified_at}` without the key, or `null` (always `null` under `kgp dev`). With a name: that identity, with `name` added, or `null`. |
+| `kgp_mail_identities()` | Every sender identity of the site (the shapes above, each with `name`), `default` first; `[]` under `kgp dev`. Agent 0.11.0. |
 | `kgp_mark_trusted()` | Marks the rest of this request as trusted for `kgp_send_email()` (after a webhook signature or session check passed). |
 | `kgp_defer(fn () => ...)` | Runs after the response is sent (Netlify's `waitUntil`). |
 | `kgp_client_ip()` | The caller's IP (`REMOTE_ADDR`; forwarded headers are not trusted). |
@@ -92,7 +93,7 @@ address on a domain verified in that MailerSend account.
 
 ```sh
 kgp mail identity set --from billing@example.org --name "Acme Co" --reply-to help@example.org --key-stdin < token.txt
-kgp mail identity verify        # asks MailerSend whether example.org is verified in that account
+kgp mail identity verify        # optional: asks MailerSend whether example.org is verified in that account
 kgp mail identity show          # never the key
 kgp mail identity remove        # back to the platform sender
 ```
@@ -100,10 +101,48 @@ kgp mail identity remove        # back to the platform sender
 What changes with an identity: the bearer token and the From address of every `kgp_send_email()` call, the default
 `reply_to`, and `identity: site` in the email log. What does not: the one send function, the log, sender blocks, the
 caps. The From address is always the stored one (a per-message `from_name` only changes the display name, and `@`, `<`,
-`>` are stripped from it). Until `kgp mail identity verify` succeeds, every send throws `domain_not_verified` (logged as
-`rejected domain_not_verified`): a configuration error like `mail_not_configured`, not a provider outcome. Changing the
-address or the key resets verification. The key lives in `data/SITE/mail-identity.json` (mode 0600) and never appears
+`>` are stripped from it). On agent 0.12.0+ the identity sends as soon as it has a key, verified or not, like a plain
+MailerSend API call: MailerSend accepts or refuses each email, and a refusal is logged `failed provider_error` with its
+status. `kgp mail identity verify` is an optional check (it needs a token with "Domains: read"); changing the address
+or the key resets its result. On agents before 0.12.0 every send threw `domain_not_verified` until verify succeeded. The key lives in `data/SITE/mail-identity.json` (mode 0600) and never appears
 in any API response, CLI output or log line.
+
+### Named identities
+
+A site can have up to 10 sender identities (ADR 0021, agent 0.11.0). The one above is named `default`. The others
+each have their own name, MailerSend token, From address and verification. Use them when one site sends as two
+senders, for example business mail and the owner's personal-account invoices:
+
+```sh
+kgp mail identity set --identity personal --from kg@personal.example --name "KG" --key-stdin < personal-token.txt
+kgp mail identity verify --identity personal
+kgp mail identity list              # name, From, domain, verified; never a key
+kgp mail identity remove --identity personal
+```
+
+`--identity` names the identity, while `--name` is still the From name. A name is `a-z`, `0-9` and `-`, starts
+with a letter, and is at most 32 characters. `platform` and `site` are reserved. Without `--identity` every command
+works on `default`, exactly as before. Removing `default` leaves the named identities in place.
+
+```php
+// Business mail: the default identity (or the platform sender when the site has none).
+kgp_send_email(['to' => $to, 'subject' => $subject, 'html' => $html]);
+// Personal-account mail: the "personal" identity, or an exception. Never a silent fallback.
+kgp_send_email(['to' => $to, 'subject' => $subject, 'html' => $html, 'identity' => 'personal']);
+// Site code that prefers personal and accepts the default when it is absent decides that itself:
+$which = kgp_mail_configured('personal') ? ['identity' => 'personal'] : [];
+```
+
+- An unknown name throws `identity_not_found` and is logged `rejected identity_not_found`. A named identity with a key
+  sends whether or not it is verified (agent 0.12.0+; older agents threw `domain_not_verified`). A value that is not a name throws `invalid_identity`. The platform never
+  falls back to another identity or to the platform sender.
+- The log entry of a named send has `identity: site` plus `identity_name: personal`. `kgp mail log` shows
+  `site:personal`.
+- All identities share the site's one daily cap. The trusted rule is the same for every identity.
+- Under `kgp dev` nothing is sent, the name is not checked, and the printed line carries `identity_name`.
+- An agent older than 0.11.0 ignores the option and sends through the default path. Check with `kgp instance doctor`
+  (`agent_mail_identities`) before deploying code that depends on it. Site code that must not fall back can test
+  `function_exists('kgp_mail_identities')`.
 
 ### Trusted sends and the daily cap
 
@@ -241,7 +280,9 @@ instance doctor` (`cron_line_present`, `cron_php_matches_web`, `last_tick_recent
 `kgp_log()` lines land in `kgp functions logs` as always.
 
 **Mail from jobs.** Every job's `REMOTE_ADDR` is `127.0.0.1`, so `kgp_rate_limit()` buckets and the email log's
-per-IP cap (10 per hour) apply to all jobs of a site together until PRP-mail-v2-identities exempts scheduler sends.
+per-IP cap (10 per hour) apply to all jobs of a site together. A job that sends mail should call `kgp_mark_trusted()`
+after the `kgp_is_scheduled()` guard. Its sends then skip the per-IP caps and count toward the site's daily cap
+instead (see "Trusted sends and the daily cap").
 
 ### Postgres
 

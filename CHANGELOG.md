@@ -2,6 +2,17 @@
 
 All notable changes to KGProDesign-DevKit.
 
+## [2.18.0] - 2026-10-20
+
+The kgp-hosting skill documents named mail identities, sends without domain verification (agent 0.12.0), the wildcard certificate without the apex, and `kgp domains park --adopt`, synced from KGP-WebHosting-Tools 5a1d912 (ADRs 0007, 0009, 0021).
+
+### Changed
+- **`references/functions.md`**: named sender identities (`--identity NAME`, `kgp_send_email([... 'identity' => NAME])`, `kgp_mail_identities()`, `identity_not_found`); on agent 0.12.0+ an identity sends without verification and `kgp mail identity verify` is optional; scheduled jobs that send mail call `kgp_mark_trusted()`.
+- **`references/commands.md`**: `--identity NAME` and `kgp mail identity list`; set and remove stay owner actions.
+- **`references/sites-domains-certificates.md`**: the wildcard certificate names `*.PLATFORM_DOMAIN` only; `kgp domains park` answers `domain_taken` for a domain already in cPanel, and `--adopt` takes it over only when the owner asks.
+- **`references/troubleshooting.md`**: `421 Misdirected Request` on the apex, and `provider_error` from an unverified MailerSend domain.
+- Version 2.18.0 in `plugin.json`, `marketplace.json`, the README footer and `scripts/tests/test-static-validation.sh`.
+
 ## [2.17.1] - 2026-10-17
 
 The kgprodesign-branding skill gains KG ProDesign's Instagram handle and contact page, used by the KGP Client Template's site factory banner.
