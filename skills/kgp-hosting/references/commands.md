@@ -41,6 +41,13 @@ Add `--json --yes` to every call, as shown.
 | Tracker code for the React app | `kgp analytics snippet --format js --json --yes` |
 | Wildcard certificate state (days left, cron, last run) | `kgp server cert status --json --yes` |
 | Try the renewal safely (Let's Encrypt staging) | `kgp server cert run --staging --json --yes` |
+| WordPress targets on this machine (never the password) | `kgp wp site list --json --yes` |
+| Check a WordPress target's login and role | `kgp wp site test NAME --json --yes` |
+| What a content push would change (writes nothing) | `kgp wp content push wordpress/content --target NAME --dry-run --json --yes` |
+| Push content as drafts (concept and demo targets) | `kgp wp content push wordpress/content --target NAME --json --yes` |
+| Push only some types | `kgp wp content push wordpress/content --target NAME --only posts,pages --json --yes` |
+| Export one type from a site into the folder | `kgp wp content pull --target NAME --type posts --json --yes` |
+| Push and publish (only when asked) | `kgp wp content push wordpress/content --target NAME --publish --json --yes` |
 
 Owner-only commands (run only on an explicit request): `kgp sites create`, `kgp sites delete`, `kgp server init`,
 `kgp server upgrade`, `kgp server wildcard`, `kgp server cert setup`, `kgp server cert run` (production), `kgp server mail set`, `kgp instance add`, `kgp instance remove`, `kgp login`, `kgp logout`,
@@ -48,7 +55,8 @@ Owner-only commands (run only on an explicit request): `kgp sites create`, `kgp 
 `kgp mail block`, `kgp mail unblock`, `kgp mail limits` with values, `kgp mail wp set`, `kgp mail wp unlink`, `kgp mail identity set`, `kgp mail identity remove`,
 `kgp deploy --skip-hooks`, `kgp releases publish --skip-hooks`, `kgp rollback --skip-hooks` (publish without the release's predeploy hook; never the answer to `predeploy_failed`),
 `kgp analytics configure`, `kgp analytics install`, `kgp analytics upgrade`, `kgp analytics add-site --wordpress`,
-`kgp analytics wp-token`, `kgp analytics invite`.
+`kgp analytics wp-token`, `kgp analytics invite`, `kgp wp site add`, `kgp wp site remove`,
+`kgp wp content push --allow-client` (client and other targets) and `--publish` on those targets.
 
 Values for `kgp env set` and `kgp server mail set` come from stdin or a file, never from an argument:
 `kgp env set NAME < file`, `kgp env import .env.server`, `kgp server mail set --key-stdin < file`. The WordPress

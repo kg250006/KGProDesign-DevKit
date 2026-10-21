@@ -290,7 +290,7 @@ All process control goes through `scripts/tools/toolctl.sh`. The four commands a
 
 ## KGP Host
 
-`skills/kgp-hosting/` deploys, publishes, rolls back, and diagnoses sites on KGP Host through the `kgp` CLI. It applies when the repo has `kgp.toml` and takes priority over deployment-expert there. It needs the `kgp` CLI on PATH and a logged-in instance; see its `<prerequisites>` section.
+`skills/kgp-hosting/` deploys, publishes, rolls back, and diagnoses sites on KGP Host through the `kgp` CLI. It applies when the repo has `kgp.toml` and takes priority over deployment-expert there. It needs the `kgp` CLI on PATH and a logged-in instance; see its `<prerequisites>` section. It also pushes posts, pages, media and content-model entries from a repo's `wordpress/content/` folder to WordPress concept, demo or client sites (`kgp wp content push`; drafts unless asked, owner-only for client sites).
 
 The source of truth is `skills/kgp-hosting/` in the private KGP-WebHosting-Tools repo. Change it there and copy it here with `scripts/install-skill.sh --devkit PATH`, which refuses host-specific details because this repo is public. Never add IP addresses, cPanel host names, account names, or home paths to this skill.
 

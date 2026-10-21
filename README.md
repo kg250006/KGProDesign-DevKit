@@ -178,7 +178,7 @@ Control them from any project with the `/KGP:tools:*` commands above, or just de
 
 ## KGP Host
 
-The `kgp-hosting` skill deploys, publishes, rolls back, and diagnoses sites on KGP Host through the `kgp` CLI. It activates in any repo with a `kgp.toml` and never publishes to production unless asked.
+The `kgp-hosting` skill deploys, publishes, rolls back, and diagnoses sites on KGP Host through the `kgp` CLI. It activates in any repo with a `kgp.toml` and never publishes to production unless asked. It also pushes WordPress content (posts, pages, media, content-model entries) from `wordpress/content/` to concept, demo or client sites as drafts, with `kgp wp content push`.
 
 Prerequisite: the `kgp` CLI on PATH (`kgp --version`), built from the KGP-WebHosting-Tools repo, plus a logged-in hosting instance (`kgp whoami --json`). The skill's `<prerequisites>` section has the steps. The skill's source lives in KGP-WebHosting-Tools; copy changes here with that repo's `scripts/install-skill.sh --devkit PATH`.
 
@@ -254,4 +254,4 @@ Recipes: `implementation`, `review`, `research`, `hypothesis`. Classifier + disa
 - Issues: GitHub Issues
 
 ---
-Universal development toolkit | v2.18.0
+Universal development toolkit | v2.19.0

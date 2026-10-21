@@ -1,6 +1,6 @@
 ---
 name: kgp-hosting
-description: Deploys, publishes, rolls back, and diagnoses websites hosted on KGP Host (sitepage.app or a customer domain) safely through the kgp CLI, including PHP functions under /api/, runtime env vars, redirects, custom domains, the *.sitepage.app wildcard and its certificate, and Netlify migrations. Use when the repo contains kgp.toml, when asked to deploy, publish, roll back, check status, or fix a broken KGP-hosted site, when writing or debugging functions/*.php, setting env vars, adding redirects, headers or a custom domain, when a site shows "Nothing lives here." or a certificate error, when checking or renewing the wildcard certificate, or when moving a site from Netlify.
+description: Deploys, publishes, rolls back, and diagnoses KGP Host sites (sitepage.app or a customer domain) through the kgp CLI: PHP functions under /api/, runtime env vars, redirects, custom domains, the *.sitepage.app wildcard certificate, and Netlify migrations. Also pushes posts, pages, media and content to WordPress concept, demo or client sites. Use when the repo contains kgp.toml or wordpress/content/; when asked to deploy, publish, roll back, check status, or fix a broken KGP-hosted site; when writing or debugging functions/*.php, env vars, redirects, headers or a custom domain; when a site shows "Nothing lives here." or a certificate error; when renewing the wildcard certificate; when moving a site from Netlify; or when asked to push, seed or update WordPress content.
 ---
 
 <objective>
@@ -21,6 +21,9 @@ Read it before doing anything:
 - `[mail] from_name`: the sender name for the site's emails (usually the client's company name).
 
 A marked "KGP Hosting" section in `AGENTS.md` or `CLAUDE.md` (written by `kgp link`) also means the repo is KGP-hosted.
+
+A `wordpress/content/` folder means the site's WordPress content is kept in the repo and pushed with
+`kgp wp content push` (see the `wordpress_content` section below). This works with or without `kgp.toml`.
 </detection>
 
 <prerequisites>
@@ -33,6 +36,8 @@ Check these before the first kgp call. Stop and tell the user what is missing in
 2. `kgp whoami --json --yes` shows an instance with `agent_secret: "present"`. If it fails with exit 3 or 7, the
    machine is not logged in. Logging in and `kgp server init` are owner tasks; do not attempt them unasked.
 3. The repo has `kgp.toml`. If not, ask which site to use and run `kgp link --site SITE --json --yes` only after the user confirms.
+4. For WordPress content only: `kgp wp site list --json --yes` shows the target with `credential: "present (…)"`.
+   If not, stop. Adding a target (`kgp wp site add`) is an owner task.
 </prerequisites>
 
 <how_it_works>
@@ -72,13 +77,32 @@ Never:
 - pass a token or secret as a command-line argument (use `KGP_CPANEL_TOKEN`, `KGP_AGENT_SECRET`, or `kgp login --token-stdin`);
 - run an owner-only command without an explicit user request: `kgp sites create|delete`, `kgp instance add|remove`, `kgp login|logout` (including `kgp login --acme`), `kgp server init|upgrade`, `kgp server wildcard`, `kgp server cert setup`, a production `kgp server cert run`, `kgp server mail set`, `kgp domains add|remove`, `kgp env set|unset|import`, `kgp migrate netlify --write`, `kgp mail block|unblock`, `kgp mail limits` with values, `kgp mail wp set|unlink`, `kgp mail identity set|remove`, `kgp analytics configure|install|upgrade|wp-token|invite`, `kgp analytics add-site --wordpress` (the full list is in [references/commands.md](references/commands.md));
 - paste the Matomo `wp-connect` token or any Matomo credential into chat, files or tickets;
-- pass a WordPress application password as an argument (use `kgp mail wp set ... --app-password-stdin`);
+- pass a WordPress application password as an argument (use `kgp mail wp set ... --app-password-stdin`), print one, or create one;
+- run `kgp wp site add|remove`, pass `--allow-client`, or `--publish` to a client or other WordPress target without an explicit owner request;
 - paste an email body from `kgp mail show` into chat, tickets or commits unless the user asks; summarise it instead;
 - run `kgp server cert run --force` against production unasked (Let's Encrypt allows 5 duplicates a week), or touch `~/kgp-acme`, the `# kgp-acme` cron line, or the `_acme-challenge` CNAME;
 - publish to production without an explicit user request.
 
 Always use `--json --yes` and read results from stdout only. Logs and build output go to stderr.
 </guardrails>
+
+<wordpress_content>
+Content for concept, demo and client sites lives in `wordpress/content/REST_BASE.json` (posts, pages, content-model
+entries) and is pushed to a named WordPress target. Details, the file format and the error codes are in
+[references/wordpress-content.md](references/wordpress-content.md).
+
+- Allowed unasked on targets of kind `concept` or `demo`: `kgp wp site list|test`, `kgp wp content pull`, and
+  `kgp wp content push` as drafts.
+- Owner only: `kgp wp site add|remove`, any `--allow-client` (client and other targets), and `--publish` on a client
+  or other target. `--publish` on concept and demo targets needs the user to ask for publishing.
+
+1. `kgp wp site list --json --yes`: the target exists, and its kind is right.
+2. `kgp wp content push wordpress/content --target NAME --dry-run --json --yes`: read each entry's `action` and `changed`.
+3. `kgp wp content push wordpress/content --target NAME --json --yes`: writes drafts. Report `counts` and `media`.
+4. Publish only when asked: the same command with `--publish`.
+
+A push matches entries by slug, never deletes, never lowers a status, and a second identical run writes nothing.
+</wordpress_content>
 
 <corporate_hardening>
 The deployment-expert skill's corporate hardening pass also applies to KGP-hosted sites, with these differences:
@@ -128,5 +152,6 @@ with a 200 redirect to `/api/NAME` and a PHP function.
 - Every kgp call used `--json --yes`, and decisions came from stdout and the exit code.
 - Nothing was published to production unless the user asked for it.
 - No secret appeared in a command line, `kgp.toml`, the build output, function source, or a message to the user.
-- Owner actions (domains, mail, deleting sites) ran only on an explicit request.
+- Owner actions (domains, mail, deleting sites, WordPress targets, client content) ran only on an explicit request.
+- WordPress content pushes ran `--dry-run` first, wrote drafts, and published only when asked.
 </success_criteria>
