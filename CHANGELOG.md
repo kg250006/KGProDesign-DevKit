@@ -4,7 +4,7 @@ All notable changes to KGProDesign-DevKit.
 
 ## [2.19.0] - 2026-10-20
 
-The kgp-hosting skill pushes WordPress content: posts, pages, media and content-model entries from a repo's `wordpress/content/` folder to concept, demo or client sites through `kgp wp site` and `kgp wp content`. Synced from KGP-WebHosting-Tools 39b65bd (ADR 0022).
+The kgp-hosting skill pushes WordPress content: posts, pages, media and content-model entries from a repo's `wordpress/content/` folder to concept, demo or client sites through `kgp wp site` and `kgp wp content`. Synced from KGP-WebHosting-Tools 39b65bd (ADR 0023; renumbered from 0022 after a clash with the release-preset ADR).
 
 ### Added
 - **`references/wordpress-content.md`**: targets and their kinds (`concept`, `demo`, `client`, `other`), the content file format (one `REST_BASE.json` per type, entries keyed by slug, Markdown bodies, featured images, ACF fields, terms), the dry-run, push and publish workflow, `kgp wp content pull`, and the error codes.
