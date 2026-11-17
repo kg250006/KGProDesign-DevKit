@@ -54,4 +54,5 @@ them in Matomo without the owner.
 ## Owner-only commands
 
 `kgp analytics configure`, `install`, `upgrade`, `add-site --wordpress`, `wp-token` and `invite` change the shared
-Matomo or create access. Run them only when the owner asks. `kgp analytics status --json --yes` is always safe.
+Matomo or create access. Run them only when the owner asks. `kgp analytics status --json --yes` is always safe. `wp-token` prints a secret and
+refuses `--json` without `--show-token`; `invite --id N` targets a Matomo site id instead of a KGP site.

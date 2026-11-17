@@ -87,7 +87,7 @@ A header, cookie or redirect target with a line break is such an error (`invalid
 
 ### Sender identity
 
-By default every site sends through the platform's MailerSend sender (`kgp server mail set`, From `noreply@kgprodesign.com`
+By default every site sends through the platform's MailerSend sender (`kgp server mail set`, From the platform's `noreply@` address
 unless the owner changed it). A site may register its own sender (ADR 0017): its own MailerSend API token and a From
 address on a domain verified in that MailerSend account.
 
@@ -245,7 +245,7 @@ function = "cleanup"
 cron = "@daily"
 ```
 
-**The 15-minute rule.** HostGator resets cron intervals under 15 minutes (terms 7a(8)), so the platform runs one
+**The 15-minute rule.** The host does not allow cron intervals under 15 minutes, so the platform runs one
 `*/15` tick per account and every schedule must fire on a quarter hour: the minute field may only name `0`, `15`,
 `30`, `45` (lists and ranges of those), `*/15` or `*/30`. `* * * * *`, `*/5` and `10 9 * * *` are config errors
 (exit 7) naming the rule, at `kgp deploy` and again on the agent. Netlify allowed one minute; this is the one
@@ -286,7 +286,7 @@ instead (see "Trusted sends and the daily cap").
 
 ### Postgres
 
-Functions query an external Postgres database (Neon for kgprodesign.com; any `postgresql://` URL works) through
+Functions query an external Postgres database (for example Neon; any `postgresql://` URL works) through
 `kgp_pg_*` (agent 0.5.0+, ADR 0012). The owner sets the URL once, from a file, never as an argument:
 
 ```sh

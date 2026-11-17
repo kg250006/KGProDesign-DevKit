@@ -7,7 +7,10 @@ repo, so nobody types it into wp-admin. Add `--json --yes` to every call.
 ## Targets
 
 A target is a WordPress site this machine can write to: a name, the site address, a WordPress user and a kind.
-The user's Application Password stays in the OS keychain. It is never in the repo, an argument or the output.
+The user's Application Password is stored on the machine, never in the repo, an argument or the output. It is
+either in a mode-600 file, `~/.deployment-expert/kgp-wp-NAME.json` (`credential_ref = "file"`), or in the OS keychain
+(service `kgp-wp`). Unattended machines use the file, because the keychain asks for approval again from time to
+time and stops autonomous pushes. kgp reads either one itself.
 
 | Kind | Meaning | Agent may push drafts? |
 |---|---|---|
@@ -17,7 +20,7 @@ The user's Application Password stays in the OS keychain. It is never in the rep
 | `other` | anything else | no: owner only, needs `--allow-client` |
 
 ```bash
-kgp wp site list --json --yes          # targets on this machine; "credential": "present (keychain)" or "missing"
+kgp wp site list --json --yes          # targets; "credential": "present (file)", "present (keychain)" or "missing"
 kgp wp site test demo-site --json --yes # logs in; reports roles, can_edit, can_publish, warnings
 ```
 
@@ -29,6 +32,17 @@ holding the password can call the API directly.
 If the target is missing, or its credential is `missing`, stop. Ask the owner to add it on this machine
 (`kgp wp site add` is an owner action; the owner's new-device runbook has the steps). Never create a WordPress
 user, an Application Password or a keychain item yourself.
+
+When the owner asks you to add a target, store it in a file and pipe the password in from where the owner keeps it,
+without showing it:
+
+```bash
+kgp wp site add NAME --url https://wp.example.com/site --user LOGIN --kind demo \
+  --credential file --app-password-stdin --json --yes < PASSWORD_FILE
+```
+
+The result reports `roles`, `can_edit` and `warnings`. An Application Password works on every subsite where its
+user is a member, so one Editor service user can serve several targets: add each subsite once.
 
 ## The content folder
 
@@ -113,6 +127,51 @@ To start from content that already exists on a site, pull one type into the fold
 ```bash
 kgp wp content pull --target demo-site --type posts --json --yes   # writes wordpress/content/posts.json
 ```
+
+## Content models: post types, fields, taxonomies and terms
+
+The kgp-content-models plugin gives each subsite its post types (presets such as `testimonial`, `team`, `faq`,
+`gallery`, `event`, `menu_item`, `product`, `service`, `case_study`, `location`, `site_section`, `site_settings`,
+`release`), their ACF fields, and taxonomies with starting terms, all from one JSON config per site. A client repo
+keeps its copy at `wordpress/content-models.json`. A push refuses a REST base, taxonomy or term the site does not
+have, so add those to the config first.
+
+No kgp command changes the config. Use the plugin's REST route as the target's service user:
+
+```
+GET  https://SITE/wp-json/kgp/v1/content-models/config   -> {site_id, version, config, writable}
+PUT  https://SITE/wp-json/kgp/v1/content-models/config   body {"config": FULL_CONFIG}
+```
+
+- **Who:** an Editor on the subsite whose login is in the config's `managers` list, or a site administrator. Check
+  `managers` in the GET result. If the service user is not listed, stop and ask the owner. Only a network super
+  admin can change `managers`.
+- **Additive only:** add presets, `extra_fields`, taxonomies (`taxonomies` items need `name`, `rest_base`, `labels`
+  and `object_types`) and terms (`{slug, name}` in a taxonomy's `terms`, at most 100 per taxonomy). Never remove or
+  rename anything, change a REST base or a field type, or send `force`. Starting terms are created on the next
+  request after the PUT.
+- **How:** GET, change the `config` object, PUT the whole object back, then GET again to confirm. Keep
+  `wordpress/content-models.json` in the repo equal to what you PUT. The schema is
+  `wordpress/plugins/kgp-content-models/content-models.schema.json` in KGP-WebHosting-Tools.
+- **Login:** Basic auth with the service user and the target's Application Password. This is the one case where you
+  read a target's credential file, and only for a target with `credential_ref = "file"`. Read it into a shell
+  variable inside the command and never print it:
+
+```bash
+P=$(node -e 'process.stdout.write(JSON.parse(require("fs").readFileSync(process.env.HOME+"/.deployment-expert/kgp-wp-NAME.json","utf8")).app_password)')
+curl -s -u "LOGIN:$P" https://SITE/wp-json/kgp/v1/content-models/config > cm.json    # then edit .config, write body.json
+curl -s -u "LOGIN:$P" -X PUT -H 'Content-Type: application/json' --data-binary @body.json \
+  https://SITE/wp-json/kgp/v1/content-models/config; unset P
+```
+
+| PUT answer | Meaning and fix |
+|---|---|
+| `200 {config, previous_backup}` | Saved; the old file was backed up |
+| `422 invalid` | `errors` lists what the schema refused. Fix the config |
+| `409 not_additive` | `violations` lists removals or renames. Put them back; never use `force` |
+| `403 managers_locked` / `force_forbidden` | Only a super admin can do that. Ask the owner |
+| `401` / `403` | Wrong password, or the user is not a manager Editor on this subsite. Report it to the owner |
+| no route (404) | The site has no valid config yet. The owner uploads the first one |
 
 ## Errors
 

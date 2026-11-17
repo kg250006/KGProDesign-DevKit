@@ -2,6 +2,19 @@
 
 All notable changes to KGProDesign-DevKit.
 
+## [2.20.0] - 2026-11-17
+
+The kgp-hosting skill catches up with the platform: custom domains and the primary address, the KGP Console, newer `kgp.toml` keys, missing commands and owner-only flags, doctor checks, and file-stored WordPress credentials. Synced from KGP-WebHosting-Tools 1169e72 and fd45cd1.
+
+### Changed
+- **`SKILL.md`**: covers sites with functions, schedules, Postgres and login, not only static files. Detection lists the newer `kgp.toml` keys. A primary custom domain 301s plain http and every other address to `https://PRIMARY/`. `kgp env get` reads public vars. The console is described as a browser UI with no CLI capability. Domain parking and website slots are explained. The owner-only list adds `--reserved-ok`, `domains park|move` and `--adopt`, `env set --public`, `console sessions revoke` and `--skip-hooks`. `not_yet` no longer claims that Postgres and schedules are missing.
+- **`references/sites-domains-certificates.md`**: what `domains add` creates (`addon`, `subdomain`, `www alias`), whole-name addon labels, the generic cPanel "Error ID" (not necessarily the website limit), `--no-wait` and `--adopt`, primary redirects including http to https, and deploying before making a domain primary. Host-specific plan details are removed.
+- **`references/commands.md`**: about 20 new rows, including `deploy --message`, `releases delete`, `sites list`, `instance list|show`, `env get`, schedules, auth providers, `server probe|cron status|mail status` and console reads. More owner-only flags, and a new ask-first list.
+- **`references/troubleshooting.md`**: rows for the agent, cron and console doctor checks. The new-site and AutoSSL delays apply to subdomain addressing only. Adds plain http on a non-primary domain, the cPanel "Error ID", and the identity verify `provider_error` fix.
+- **`references/wordpress-content.md`**: WordPress Application Passwords can live in a mode-600 file (`credential_ref = "file"`) as well as the keychain; adding a target with `--credential file`.
+- **`references/site-anatomy.md`**, **`references/analytics.md`**, **`references/functions.md`**: the full `kgp.toml` key list, `wp-token --show-token` and `invite --id`; host-specific wording removed.
+- Version 2.20.0 in `plugin.json`, `marketplace.json`, the README footer and `scripts/tests/test-static-validation.sh`, which now also requires `analytics.md` and `sites-domains-certificates.md`.
+
 ## [2.19.0] - 2026-10-20
 
 The kgp-hosting skill pushes WordPress content: posts, pages, media and content-model entries from a repo's `wordpress/content/` folder to concept, demo or client sites through `kgp wp site` and `kgp wp content`. Synced from KGP-WebHosting-Tools 39b65bd (ADR 0023; renumbered from 0022 after a clash with the release-preset ADR).

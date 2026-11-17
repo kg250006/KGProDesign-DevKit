@@ -8,27 +8,41 @@ Add `--json --yes` to every call, as shown.
 | Deploy for review (not live) | `kgp deploy --json --yes` |
 | Deploy without rebuilding | `kgp deploy --no-build --json --yes` |
 | Deploy another folder | `kgp deploy --dir out --json --yes` |
+| Deploy with a note stored on the release | `kgp deploy --message "TEXT" --json --yes` |
 | Publish a reviewed release (only when asked) | `kgp releases publish RELEASE_ID --json --yes` |
 | Deploy straight to production (only when asked) | `kgp deploy --prod --rollback-on-fail --json --yes` |
 | List releases | `kgp releases list --json --yes` |
 | Roll back to the previous release | `kgp rollback --json --yes` |
 | Roll back to a specific release | `kgp rollback RELEASE_ID --json --yes` |
 | Keep a release forever / let it expire | `kgp releases pin RELEASE_ID --json --yes` / `kgp releases unpin RELEASE_ID --json --yes` |
+| Delete a release that is not live or previous (ask first) | `kgp releases delete RELEASE_ID --json --yes` |
+| Sites on the instance | `kgp sites list --json --yes` |
+| Instances on this machine / one instance's settings | `kgp instance list --json --yes` / `kgp instance show --json --yes` |
 | Site details | `kgp sites info SITE --json --yes` |
 | Link a repo to an existing site | `kgp link --site SITE --json --yes` |
 | Check the hosting setup | `kgp instance doctor --json --yes` |
 | Which credentials are in use | `kgp whoami --json --yes` |
 | Runtime env var names (never values) | `kgp env list --json --yes` |
+| Value of a public env var (secrets answer exit 7 `env_write_only`) | `kgp env get NAME --json --yes` |
 | Functions in the live release | `kgp functions list --json --yes` |
-| Function errors | `kgp functions logs --json --yes` |
+| Function errors | `kgp functions logs --json --yes` (`--tail N` for more lines) |
+| Scheduled functions and their next run | `kgp functions schedules list --json --yes` |
+| Past scheduled runs | `kgp functions schedules runs --json --yes` |
+| Run a scheduled function now (runs real code; ask first) | `kgp functions schedules run NAME --json --yes` |
+| Login providers of the site (OIDC) | `kgp functions auth providers --json --yes` |
 | Per-request log (method, path, status, ms; no query strings) | `kgp functions logs --requests --since 2h --json --yes` |
 | Replay a contract file against the site | `kgp functions contract run --file contracts.yaml --json --yes` |
+| Contract file against `kgp dev` or another base | `kgp functions contract run --base http://127.0.0.1:PORT --file contracts.yaml --json --yes` |
 | Compare two bases with the same contract file | `kgp functions contract run --compare https://A https://B --file contracts.yaml --json --yes` |
 | Run the site and functions locally | `kgp dev` (it keeps running; stop it when done) |
 | What a Netlify site needs to move | `kgp migrate netlify --json --yes` |
 | Migration report (functions, schedules, env names, SDKs, proxy) | `kgp migrate netlify --report --json --yes` |
 | Host names of the site | `kgp domains list --json --yes` |
 | DNS and certificate state of a custom domain | `kgp domains status DOMAIN --json --yes` |
+| Scheduler cron line and last tick | `kgp server cron status --json --yes` |
+| What the host supports (PHP version, zip, upload limits) | `kgp server probe --json --yes` |
+| Platform mail sender state | `kgp server mail status --json --yes` |
+| KGP Console sessions and users (read only) | `kgp console sessions list --json --yes` / `kgp console users list --json --yes` |
 | Mail the site sent or tried to send (no bodies) | `kgp mail log --since 24h --json --yes` |
 | Only refused mail | `kgp mail log --status rejected --json --yes` |
 | One log entry with its bodies (do not paste bodies unasked) | `kgp mail show ENTRY_ID --json --yes` |
@@ -46,17 +60,23 @@ Add `--json --yes` to every call, as shown.
 | What a content push would change (writes nothing) | `kgp wp content push wordpress/content --target NAME --dry-run --json --yes` |
 | Push content as drafts (concept and demo targets) | `kgp wp content push wordpress/content --target NAME --json --yes` |
 | Push only some types | `kgp wp content push wordpress/content --target NAME --only posts,pages --json --yes` |
-| Export one type from a site into the folder | `kgp wp content pull --target NAME --type posts --json --yes` |
+| Export one type from a site into the folder | `kgp wp content pull --target NAME --type posts --json --yes` (`--status`, `--out`, `--force`) |
 | Push and publish (only when asked) | `kgp wp content push wordpress/content --target NAME --publish --json --yes` |
+| Add a post type, field, taxonomy or term (additive) | GET then PUT `/wp-json/kgp/v1/content-models/config`; see [wordpress-content.md](wordpress-content.md) |
+| Where kgp reads secrets (`file`, `keychain`, `env`) | `kgp whoami --json --yes` (`token_source`) |
 
-Owner-only commands (run only on an explicit request): `kgp sites create`, `kgp sites delete`, `kgp server init`,
-`kgp server upgrade`, `kgp server wildcard`, `kgp server cert setup`, `kgp server cert run` (production), `kgp server mail set`, `kgp instance add`, `kgp instance remove`, `kgp login`, `kgp logout`,
-`kgp domains add`, `kgp domains remove`, `kgp domains park`, `kgp domains move`, `kgp env set`, `kgp env unset`, `kgp env import`, `kgp migrate netlify --write`,
+Owner-only commands (run only on an explicit request): `kgp sites create` (and `--reserved-ok`), `kgp sites delete`, `kgp server init` (and `--rotate-secret`, `--console-secret-stdin`),
+`kgp server upgrade` (and `--config`), `kgp server wildcard`, `kgp server cert setup`, `kgp server cert run` (production), `kgp server mail set`, `kgp instance add`, `kgp instance remove`, `kgp login`, `kgp logout`,
+`kgp domains add`, `kgp domains remove`, `kgp domains park`, `kgp domains move` (and `--adopt` on add and park), `kgp env set` (including `--public` and `--multiline`), `kgp env unset`, `kgp env import` (including `--replace`), `kgp console sessions revoke`, `kgp migrate netlify --write`,
 `kgp mail block`, `kgp mail unblock`, `kgp mail limits` with values, `kgp mail wp set`, `kgp mail wp unlink`, `kgp mail identity set`, `kgp mail identity remove`,
 `kgp deploy --skip-hooks`, `kgp releases publish --skip-hooks`, `kgp rollback --skip-hooks` (publish without the release's predeploy hook; never the answer to `predeploy_failed`),
 `kgp analytics configure`, `kgp analytics install`, `kgp analytics upgrade`, `kgp analytics add-site --wordpress`,
 `kgp analytics wp-token`, `kgp analytics invite`, `kgp wp site add`, `kgp wp site remove`,
 `kgp wp content push --allow-client` (client and other targets) and `--publish` on those targets.
+
+Ask before running, even though they are not owner-only: `kgp releases delete` (cannot be undone),
+`kgp functions schedules run NAME` (runs real code: mail, database writes), `kgp instance use` (changes this
+machine's default instance) and `kgp unlink` (removes the repo's link to its site).
 
 Values for `kgp env set` and `kgp server mail set` come from stdin or a file, never from an argument:
 `kgp env set NAME < file`, `kgp env import .env.server`, `kgp server mail set --key-stdin < file`. The WordPress

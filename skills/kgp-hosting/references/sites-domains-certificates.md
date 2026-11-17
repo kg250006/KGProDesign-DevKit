@@ -53,8 +53,27 @@ domain on the account.
 4. `kgp domains remove DOMAIN --yes --json` (owner only) detaches it and removes its cPanel domain. Exit 7
    `domain_not_attached` means the site has no such domain; nothing changed.
 
-Each custom domain uses one cPanel addon-domain entry (unlimited on the plan) and one HostGator "website" slot
-(20 on the Baby plan), even though it shares the platform folder (PRD V16); sites on the wildcard use neither. Domains added
+Details of `kgp domains add`:
+
+- The result's `cpanel` field says what was created: `addon` (a new domain), `subdomain` (a name under a domain the
+  account already has) or `www alias`. `www.NAME` when NAME is already attached to the same target rides cPanel's
+  built-in www alias of NAME: no cPanel change is made, and the doctor accepts it. Add the bare domain first, then
+  `www.NAME`.
+- An addon domain's cPanel label is built from the whole domain name (`acme.org` → `acmeorg`, hashed when longer
+  than 30 characters), so sibling domains such as `acme.org` and `acme.com` no longer collide. A generic cPanel
+  "request failed (Error ID …)" from `domains add` is not necessarily the plan's website limit: report the exact
+  error to the owner instead of guessing.
+- `--no-wait` returns at once instead of waiting for DNS and the certificate; check later with `kgp domains status`.
+  `--adopt` takes over a domain that already exists in cPanel (wildcard instances only, owner decision).
+- With `--primary`, every other address of the site (including `SITE.PLATFORM_DOMAIN` and `www`) answers 301 to
+  `https://PRIMARY/`, and plain `http://PRIMARY` answers 301 to https. Paths under `/.well-known/` stay on http so
+  certificate validation keeps working. Without a primary, plain http is not redirected (HSTS is sent over https only).
+- `kgp deploy --prod` verifies the live release on the site's primary address. Deploy a site at least once before
+  making a domain primary (`domains move --primary`): a never-deployed site has no rules to send the 301.
+
+Each custom or parked domain uses one cPanel addon-domain entry and one of the hosting plan's limited "website"
+slots, even though it shares the platform folder (PRD V16); sites on the wildcard use neither. Ask the owner before
+adding a domain when slots may be short. Domains added
 before ADR 0008 still point at their site folder until the owner runs `kgp server wildcard`; the doctor's
 `custom_hosts` check warns about them.
 
@@ -74,7 +93,7 @@ Wildcard instances only; both commands are owner-only.
 Errors: `domain_not_parked` (not on the parked site: use `kgp domains remove`, then `kgp domains add`),
 `domain_not_at_base` (owner runs `kgp server wildcard`), `site_not_found` from `park` (the parked site does not exist
 yet; its `hint` says how to create it), `parked_site_mismatch` (the configured site is not serving the parked page;
-nothing changed; tell the owner). A parked domain still uses one HostGator website slot.
+nothing changed; tell the owner). A parked domain still uses one website slot.
 
 ## Which certificate covers what
 

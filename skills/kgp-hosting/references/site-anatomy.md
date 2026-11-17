@@ -4,7 +4,7 @@
 
 | File | Purpose |
 |---|---|
-| `kgp.toml` | Links the repo to a site: `site`, optional `instance`, `spa`, `[build] command` / `publish`, optional `[verify]`, `[headers]`, `[functions] dir`, and `[[redirects]]`. No secrets. |
+| `kgp.toml` | Links the repo to a site: `site`, optional `instance`, `spa`, `[build] command` / `publish`, optional `[verify]`, `[headers]`, `[functions] dir` / `timezone` / `netlify_compat`, `[[redirects]]`, `[mail] from_name`, `[analytics] site_id`, `[[schedules]]`, `[hooks] predeploy` and `[[auth.providers]]`. No secrets. |
 | `functions/` | PHP functions served under `/api/` (see [functions.md](functions.md)). Not part of the build output. |
 | `.env.kgp-dev` | Local env for `kgp dev`. Never committed, never uploaded. |
 | `AGENTS.md`, `CLAUDE.md` | Contain a "KGP Hosting" section between `BEGIN KGP HOSTING` and `END KGP HOSTING` markers, managed by `kgp link`. Do not edit inside the markers. |
