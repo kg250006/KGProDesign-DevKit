@@ -1,6 +1,6 @@
 ---
 name: kgp-hosting
-description: Deploys, publishes, rolls back, and diagnoses KGP Host sites (sitepage.app or a customer domain) through the kgp CLI: PHP functions under /api/, runtime env vars, redirects, custom domains, the *.sitepage.app wildcard certificate, and Netlify migrations. Also pushes posts, pages, media and content to WordPress concept, demo or client sites, and adds content-model post types, fields, taxonomies and terms. Use when the repo contains kgp.toml or wordpress/content/; when asked to deploy, publish, roll back, check status, or fix a broken KGP-hosted site; when writing or debugging functions/*.php, env vars, redirects, headers or a custom domain; when a site shows "Nothing lives here." or a certificate error; when renewing the wildcard certificate; when moving a site from Netlify; when asked to push, seed or update WordPress content; or when building a front end that shows WordPress posts or content-model entries.
+description: Deploys, publishes, rolls back, and diagnoses KGP Host sites (sitepage.app or a customer domain) through the kgp CLI: PHP functions under /api/, runtime env vars, redirects, custom domains, the *.sitepage.app wildcard certificate, and Netlify migrations. Also pushes posts, pages, media and content to WordPress concept, demo or client sites, and adds content-model post types, fields, taxonomies and terms. Use when the repo contains kgp.toml or wordpress/content/; when asked to deploy, publish, roll back, check status, or fix a broken KGP-hosted site; when writing or debugging functions/*.php, env vars, redirects, headers or a custom domain; when a site shows "Nothing lives here." or a certificate error; when renewing the wildcard certificate; when moving a site from Netlify; when asked to push, seed or update WordPress content; when building a front end that shows WordPress posts or content-model entries; or when a site collects newsletter or mailing-list signups, event signups or orders.
 ---
 
 <objective>
@@ -122,6 +122,12 @@ a post type, field, taxonomy or term the site does not have yet, add it to the s
 5. Publish only when asked: the same command with `--publish`.
 
 A push matches entries by slug, never deletes, never lowers a status, and a second identical run writes nothing.
+
+Newsletter signups, event signups and orders are personal data, not content: the engine keeps them in private
+tables switched on in the content-model config (`"subscribers": true`, `overrides.event.signups`,
+`overrides.product.orders`), and the site's PHP function relays to them. A site with a newsletter form uses the
+subscribers module with an `/unsubscribe` page, never a Google Sheet or a site database. Details:
+[references/wordpress-data.md](references/wordpress-data.md).
 </wordpress_content>
 
 <corporate_hardening>
@@ -163,7 +169,9 @@ certificate renewal: [references/sites-domains-certificates.md](references/sites
 <not_yet>
 Previews, forms (Netlify form markup), edge functions, Node functions, redirect conditions (country, language, role),
 signed redirects, query-parameter matching, and proxying to external URLs are not available. A form is a PHP
-function (see "Example: a contact form" in [references/functions.md](references/functions.md)). Postgres
+function (see "Example: a contact form" in [references/functions.md](references/functions.md)); a newsletter list is
+the WordPress subscribers module ([references/wordpress-data.md](references/wordpress-data.md)), and campaigns are sent
+from the client's email service, not the platform. Postgres
 (`kgp_pg_*`) and `[[schedules]]` (on the 15-minute grid) do exist; see functions.md. When asked for one of these, say so instead of improvising (for example, do not add PHP to
 the build output or write `.htaccess` rules by hand). Edge-function work such as share previews can usually be done
 with a 200 redirect to `/api/NAME` and a PHP function.

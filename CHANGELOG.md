@@ -2,6 +2,18 @@
 
 All notable changes to KGProDesign-DevKit.
 
+## [2.21.0] - 2026-11-17
+
+The kgp-hosting skill knows the content-model engine's private data modules, so a site with a newsletter form keeps its list in WordPress (subscribers module, engine 1.8.0) instead of a Google Sheet. Synced from KGP-WebHosting-Tools PRP-CM-02 (ADR 0029).
+
+### Added
+- **`references/wordpress-data.md`**: event signups, product orders and newsletter subscribers. It covers the config keys that turn each module on, who manages it in wp-admin, the relay rules (service account env vars, https only, no redirects, no logged personal data, one answer for new and existing emails), the signup and public unsubscribe contracts, the `/unsubscribe` page that posts on click, campaigns sent from the client's email service with `unsubscribe_url` as a merge field, and importing an old list.
+
+### Changed
+- **`SKILL.md`**: the description triggers on newsletter, mailing-list and event signups and on orders. `wordpress_content` points newsletter forms at the subscribers module. `not_yet` says campaigns are not sent from the platform.
+- **`references/functions.md`**: a newsletter signup relay example.
+- Version 2.21.0 in `plugin.json`, `marketplace.json`, the README footer and `scripts/tests/test-static-validation.sh`, which now also requires `wordpress-data.md`.
+
 ## [2.20.0] - 2026-11-17
 
 The kgp-hosting skill catches up with the platform: custom domains and the primary address, the KGP Console, newer `kgp.toml` keys, missing commands and owner-only flags, doctor checks, and file-stored WordPress credentials. Synced from KGP-WebHosting-Tools 1169e72 and fd45cd1.

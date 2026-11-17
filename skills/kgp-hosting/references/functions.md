@@ -692,6 +692,45 @@ $sent = kgp_send_email([
 kgp_respond($sent ? 200 : 503, $sent ? ['ok' => true] : ['error' => 'send_failed']);
 ```
 
+## Example: a newsletter signup relay
+
+Stores the signup in the site's WordPress subscribers list (engine 1.8.0, `"subscribers": true`; see
+[wordpress-data.md](wordpress-data.md)). The consent wording is the checkbox label, kept here, not sent by the browser.
+
+```php
+<?php
+const NEWSLETTER_CONSENT = 'Yes, send me news and ways to help. Unsubscribe any time.';  // = the checkbox label
+kgp_method('POST');
+kgp_rate_limit('newsletter', 5, 900);
+$b = kgp_json_body();
+if (($b['website'] ?? '') !== '') {                       // honeypot: pretend it worked
+    kgp_respond(200, ['ok' => true]);
+}
+$email = filter_var(trim((string) ($b['email'] ?? '')), FILTER_VALIDATE_EMAIL);
+if ($email === false || ($b['consent'] ?? null) !== true) {
+    kgp_respond(400, ['error' => 'validation_error']);
+}
+$base = rtrim((string) kgp_env('WP_API_URL', ''), '/');
+$user = (string) kgp_env('WP_SIGNUPS_USER', '');
+$pass = (string) kgp_env('WP_SIGNUPS_APP_PASSWORD', '');
+if (!str_starts_with($base, 'https://') || $user === '' || $pass === '') {
+    kgp_respond(503, ['error' => 'newsletter_unavailable']);
+}
+$res = kgp_fetch('POST', $base . '/kgp/v1/subscribers', [
+    'headers' => ['Authorization' => 'Basic ' . base64_encode("$user:$pass")],
+    'json' => ['email' => strtolower($email), 'name' => trim((string) ($b['name'] ?? '')),
+        'source' => (string) ($b['sourcePage'] ?? ''), 'consent_text' => NEWSLETTER_CONSENT],
+    'timeout' => 8,
+    'follow_redirects' => false,                           // never replay the credential
+]);
+$status = (int) $res['status'];
+if ($status === 400) {
+    kgp_respond(400, ['error' => 'validation_error']);
+}
+// New (201) and already on the list (200) look the same to the visitor.
+kgp_respond($status === 201 || $status === 200 ? 200 : 503, $status === 201 || $status === 200 ? ['ok' => true] : ['error' => 'newsletter_unavailable']);
+```
+
 ## Porting a Netlify (Node) function
 
 1. Keep the same path, method, status codes, JSON fields, rate limits and honeypot order; the site's front end
