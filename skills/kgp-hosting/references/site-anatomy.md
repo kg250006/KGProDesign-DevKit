@@ -20,7 +20,7 @@
 ## Releases
 
 - Release ids are 26-character, time-sortable ids. The live release's id is in the `X-KGP-Release` response header.
-- The agent keeps the newest 10 releases plus the live, previous, and pinned ones.
+- The agent keeps the newest 5 releases plus the live, previous, and pinned ones (the instance's `max_releases`, one rule for every site; agent 0.13.1+ also trims every site once a day). Pin a release you must keep longer.
 - Rollback publishes an older release; it takes seconds because nothing is uploaded.
 
 ## Routing rules

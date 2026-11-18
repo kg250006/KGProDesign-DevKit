@@ -2,6 +2,14 @@
 
 All notable changes to KGProDesign-DevKit.
 
+## [2.21.1] - 2026-11-17
+
+The kgp-hosting skill states the new release retention: KGP Host agent 0.13.1 keeps the newest 5 releases per site (plus live, previous and pinned) under one instance-wide rule, and trims every site once a day. Synced from KGP-WebHosting-Tools fdec1ec.
+
+### Changed
+- **`references/site-anatomy.md`**: "keeps the newest 10 releases" is now 5, with the daily trim and the advice to pin a release that must be kept.
+- Version 2.21.1 in `plugin.json`, `marketplace.json`, the README footer and `scripts/tests/test-static-validation.sh`.
+
 ## [2.21.0] - 2026-11-17
 
 The kgp-hosting skill knows the content-model engine's private data modules, so a site with a newsletter form keeps its list in WordPress (subscribers module, engine 1.8.0) instead of a Google Sheet. Synced from KGP-WebHosting-Tools PRP-CM-02 (ADR 0029).
