@@ -55,6 +55,7 @@ Add `--json --yes` to every call, as shown.
 | Tracker code for the React app | `kgp analytics snippet --format js --json --yes` |
 | Wildcard certificate state (days left, cron, last run) | `kgp server cert status --json --yes` |
 | Try the renewal safely (Let's Encrypt staging) | `kgp server cert run --staging --json --yes` |
+| Weekly backup state (last run, sets, Drive copy, quota) | `kgp server backup status --json --yes` |
 | WordPress targets on this machine (never the password) | `kgp wp site list --json --yes` |
 | Check a WordPress target's login and role | `kgp wp site test NAME --json --yes` |
 | What a content push would change (writes nothing) | `kgp wp content push wordpress/content --target NAME --dry-run --json --yes` |
@@ -66,7 +67,7 @@ Add `--json --yes` to every call, as shown.
 | Where kgp reads secrets (`file`, `keychain`, `env`) | `kgp whoami --json --yes` (`token_source`) |
 
 Owner-only commands (run only on an explicit request): `kgp sites create` (and `--reserved-ok`), `kgp sites delete`, `kgp server init` (and `--rotate-secret`, `--console-secret-stdin`),
-`kgp server upgrade` (and `--config`), `kgp server wildcard`, `kgp server cert setup`, `kgp server cert run` (production), `kgp server mail set`, `kgp instance add`, `kgp instance remove`, `kgp login`, `kgp logout`,
+`kgp server upgrade` (and `--config`), `kgp server wildcard`, `kgp server cert setup`, `kgp server cert run` (production), `kgp server backup setup`, `kgp server backup config`, `kgp server backup run`, `kgp server backup drive connect`, `kgp server backup drive disconnect`, `kgp server mail set`, `kgp instance add`, `kgp instance remove`, `kgp login`, `kgp logout`,
 `kgp domains add`, `kgp domains remove`, `kgp domains park`, `kgp domains move` (and `--adopt` on add and park), `kgp env set` (including `--public` and `--multiline`), `kgp env unset`, `kgp env import` (including `--replace`), `kgp console sessions revoke`, `kgp migrate netlify --write`,
 `kgp mail block`, `kgp mail unblock`, `kgp mail limits` with values, `kgp mail wp set`, `kgp mail wp unlink`, `kgp mail identity set`, `kgp mail identity remove`,
 `kgp deploy --skip-hooks`, `kgp releases publish --skip-hooks`, `kgp rollback --skip-hooks` (publish without the release's predeploy hook; never the answer to `predeploy_failed`),

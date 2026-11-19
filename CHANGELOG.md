@@ -2,6 +2,15 @@
 
 All notable changes to KGProDesign-DevKit.
 
+## [2.22.0] - 2026-11-18
+
+The kgp-hosting skill knows the weekly server backups (ADR 0030): `kgp server backup status` is a safe read, and `kgp server backup setup|config|run|drive connect|drive disconnect` are owner-only actions. Synced from KGP-WebHosting-Tools 23e1a5f.
+
+### Changed
+- **`references/commands.md`**: a "Weekly backup state" row (`kgp server backup status --json --yes`) and the backup commands in the owner-only list.
+- **`SKILL.md`**: the owner-only commands include `kgp server backup setup|config|run|drive connect|drive disconnect`.
+- Version 2.22.0 in `plugin.json`, `marketplace.json`, the README footer and `scripts/tests/test-static-validation.sh`.
+
 ## [2.21.1] - 2026-11-17
 
 The kgp-hosting skill states the new release retention: KGP Host agent 0.13.1 keeps the newest 5 releases per site (plus live, previous and pinned) under one instance-wide rule, and trims every site once a day. Synced from KGP-WebHosting-Tools fdec1ec.
