@@ -85,7 +85,8 @@ What would you like to brand?
 **Company:** KG ProDesign LLC (always "LLC" on formal and printed materials)
 **Founder:** Kenrick "KG" Goldson
 **Tagline:** Ideas Into Intelligent Solutions
-**Featured services:** Web Design · Web Hosting on SitePage.app · Web Consulting · AI Dev Tools
+**Positioning:** the tech team for your business
+**Featured services:** Web Design · Web Hosting on SitePage.app · Ongoing Tech Support · Web Consulting · AI Dev Tools
 **Founded:** 2005
 **Phone:** 407-900-7724
 **Email (general):** info@kgprodesign.com

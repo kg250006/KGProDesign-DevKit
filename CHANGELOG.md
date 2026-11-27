@@ -13,6 +13,7 @@ KG ProDesign rebranded to the **KGP hexagon shield** identity. The `kgprodesign-
   - print pieces: a two-sided business card and a two-sided 4x6 flyer, as printer PDFs, crop-mark PDFs and phone PNGs
   - Anton and Inter fonts (OFL), `brand-guide.html`, `BRAND.md`, `palette.json`
 - **`workflows/brand-print.md`**: printer files and specs, what's on each piece, QR UTM tags, how to rebuild. `SKILL.md` gets a "Print / handouts" route.
+- **Positioning "the tech team for your business":** the handouts and `company-info.md` add a fifth featured service, **Ongoing Tech Support** (updates, fixes, anything tech), for owners whose site already works. The handout QR codes open `kgprodesign.com/start` with UTM tags (`utm_medium=card` or `flyer`).
 - **Footer credit stamp** for client sites in `templates/footer-html.md` and `footer-react.md`. The label is "Dev & Hosted By" when KG ProDesign hosts the site, otherwise "Developed By". The name is live text.
 
 ### Changed

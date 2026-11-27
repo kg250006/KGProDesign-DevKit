@@ -30,6 +30,8 @@ All paths are under `${CLAUDE_PLUGIN_ROOT}/templates/brand-2026/`. Copy the file
 
 ## Step 3: What's on them (so you can describe or quote them)
 
+**Positioning (2026-11-27):** two audiences. (1) People who need something built. (2) Owners whose website already works, who should remember KG as **the tech team for their business**: updates, fixes, anything tech. The line to say when handing it over: *"Even if your website's fine, keep this. When you need an update or anything tech, I want to be your tech team."*
+
 **Business card**
 - **Front (black):**
   - the KGP shield with KG PRODESIGN LLC
@@ -37,24 +39,24 @@ All paths are under `${CLAUDE_PLUGIN_ROOT}/templates/brand-2026/`. Copy the file
   - EST. 2005
 - **Back (white):**
   - KENRICK “KG” GOLDSON, FOUNDER · KG PRODESIGN LLC
-  - the four featured services, each with a short line (see `references/company-info.md` → Featured services)
+  - five services, each with a short line: Web Design, SitePage.app Hosting, **Ongoing Tech Support**, Web Consulting, AI Dev Tools (copy in `references/company-info.md`)
   - 321-427-6753 · KG@KGProDesign.com · kgprodesign.com · IG @KGProDesign · github.com/kgprodesign
-  - a shield, then "SCAN TO START" over the QR code
+  - a shield, then "SCAN · TALK TO KG" over the QR code
 
 **Flyer 4x6**
 - **Front (black):**
   - the logo with LLC
-  - YOUR WEBSITE, HANDLED. START TO FINISH.
-  - "One partner for design, hosting, and advice, so you can focus on your business."
-  - the four services on a maroon band
+  - **THE TECH TEAM / FOR YOUR BUSINESS.**
+  - "Building new or keeping what works? One call covers design, hosting, updates, and anything tech."
+  - the five services on a maroon band, with Ongoing Tech Support on its own row
   - the tagline, kgprodesign.com and the phone
 - **Back (white):**
-  - YOUR WEB PARTNER SINCE 2005, with a large shield badge
-  - the four services with one-line benefits
+  - **YOUR TECH PARTNER / SINCE 2005**, with a large shield badge
+  - the five services with one-line benefits
   - KG's name and title
-  - a black footer with SCAN TO START YOUR PROJECT, the QR code and all contacts
+  - a black footer: **NEW PROJECT OR TECH HELP? SCAN TO TALK TO KG**, the QR code and all contacts
 
-**QR codes:** they open `https://kgprodesign.com/contact/` with `utm_source=print&utm_campaign=road-2026`, plus `utm_medium=card` or `utm_medium=flyer`, so leads can be traced to the piece. Keep the tags if the code is reused.
+**QR codes:** they open `https://kgprodesign.com/start` with `utm_source=print&utm_campaign=road-2026`, plus `utm_medium=card` or `utm_medium=flyer`, so leads can be traced to the piece. Keep the tags if the code is reused, and check that the page still loads before reprinting.
 
 **The phone number is 321-427-6753 on handouts only.** Everywhere else, use the company number 407-900-7724 (`references/company-info.md`).
 

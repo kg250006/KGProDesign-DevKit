@@ -81,13 +81,14 @@ KG ProDesign LLC, a Goldson Solutions company, has been building custom technolo
 
 ### Featured services (lead with these: print handouts, in-person, banners)
 
-These are the four services KG leads with when meeting people. The approved copy (marketing strategist, 2026-11-27) is below. Keep the names as written:
+These are the five services KG leads with when meeting people. **Positioning:** be *the tech team for your business*, for people who need something built **and** for owners whose site already works (updates, fixes, anything tech). The approved copy (marketing strategist, 2026-11-27) is below. Keep the names as written:
 
 | Service | Short line (card) | One-liner (flyer) |
 |---|---|---|
 | **Web Design** | Sites that win customers | A site that earns trust and turns visitors into customers. |
 | **Web Hosting on SitePage.app** | Fast, secure, fully managed | Fast, secure hosting on your own domain. No tech headaches. |
-| **Web Consulting** | Straight answers, clear plan | Not sure what your site needs? Get a clear plan. |
+| **Ongoing Tech Support** | Site updates + anything tech | Your site already works? We keep it updated, fix what breaks, and handle anything tech. |
+| **Web Consulting** | Straight answers, clear plan | Not sure what your site or business needs next? Get straight answers and a clear plan. |
 | **AI Dev Tools** | For dev teams: ship faster | For software developers: AI tools and automations that cut the busywork so your team ships faster. |
 
 SitePage.app is KG ProDesign's own hosting platform (sites live at `*.sitepage.app` or the client's domain).
