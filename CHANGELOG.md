@@ -2,6 +2,35 @@
 
 All notable changes to KGProDesign-DevKit.
 
+## [2.23.0] - 2026-11-27
+
+KG ProDesign rebranded to the **KGP hexagon shield** identity. The `kgprodesign-branding` skill now carries the full new brand kit, a maroon web accent, a footer credit stamp for client sites, and print-ready handouts. The red-slash script logo is retired.
+
+### Added
+- **`templates/brand-2026/`**: the complete kit (SVG master + PNG):
+  - shield, horizontal/stacked/tagline lockups, wordmarks, squares, app/PWA icons, favicons
+  - social banners, OG image, post templates
+  - print pieces: a two-sided business card and a two-sided 4x6 flyer, as printer PDFs, crop-mark PDFs and phone PNGs
+  - Anton and Inter fonts (OFL), `brand-guide.html`, `BRAND.md`, `palette.json`
+- **`workflows/brand-print.md`**: printer files and specs, what's on each piece, QR UTM tags, how to rebuild. `SKILL.md` gets a "Print / handouts" route.
+- **Footer credit stamp** for client sites in `templates/footer-html.md` and `footer-react.md`. The label is "Dev & Hosted By" when KG ProDesign hosts the site, otherwise "Developed By". The name is live text.
+
+### Changed
+- **Web theme (option B):**
+  - Urban Gray Pearl's accent is maroon: `#8C2828` in light mode, `#E07070` in dark mode, where accent buttons use dark text.
+  - Sora stays the web font. Still Night Pearl is unchanged.
+  - Updated in `references/color-system.md`, `templates/kgprodesign-style-guide-2026.html`, and the template fallbacks.
+- **References:**
+  - `logo-assets.md`: new inventory and decision tree.
+  - `typography.md`: Anton logo lettering.
+  - `company-info.md`: founder, tagline "Ideas Into Intelligent Solutions", GitHub org, Instagram, handout-only phone, featured services.
+  - `brand-voice.md`.
+- **Workflows and templates:** they point at `brand-2026/`. PWA icons, banners and the OG image are no longer flagged missing. The email signature is maroon.
+- Version 2.23.0 in `plugin.json`, `marketplace.json`, the README footer and `scripts/tests/test-static-validation.sh`.
+
+### Removed
+- The old logos (`KGProDesign_LOGO.png`, `KGProDesign_wht.png`, `favicon.jpg`) moved to `templates/legacy/` for history only.
+
 ## [2.22.0] - 2026-11-18
 
 The kgp-hosting skill knows the weekly server backups (ADR 0030): `kgp server backup status` is a safe read, and `kgp server backup setup|config|run|drive connect|drive disconnect` are owner-only actions. Synced from KGP-WebHosting-Tools 23e1a5f.

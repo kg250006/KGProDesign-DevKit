@@ -254,4 +254,4 @@ Recipes: `implementation`, `review`, `research`, `hypothesis`. Classifier + disa
 - Issues: GitHub Issues
 
 ---
-Universal development toolkit | v2.22.0
+Universal development toolkit | v2.23.0
