@@ -2,13 +2,39 @@
 
 Extracted from `templates/kgprodesign-style-guide-2026.html`. Use `--kgp-*` CSS custom properties in all branded outputs.
 
+<brand_identity>
+
+## Brand Identity Colors (2026 rebrand)
+
+These are the **logo and brand** colors. They apply to the shield, social banners, post graphics, email signatures and the footer credit stamp.
+
+| Token | Hex | Use |
+|---|---|---|
+| Black | `#000000` | Shield field, brand backgrounds |
+| White | `#FFFFFF` | Letters, ring, text on dark |
+| **Maroon** | `#8C2828` | Screen brand red: shield rim, underline bars, accents. 2.4:1 on black, so **never text on dark** |
+| Maroon print | `#6E1F1F` | The same red for print and paper |
+| Maroon light | `#A33A3A` | Maroon **text** on dark backgrounds, large text only (3.2:1 on black) |
+
+```css
+--kgp-brand-black: #000000;
+--kgp-brand-white: #FFFFFF;
+--kgp-brand-maroon: #8C2828;
+--kgp-brand-maroon-print: #6E1F1F;
+--kgp-brand-maroon-light: #A33A3A;
+```
+
+**Web UI themes: decided 2026-11-27 (option B).** The default **Urban Gray Pearl** theme now uses the brand maroon as its accent (buttons, links, focus rings), and sites keep the **Sora** font. In dark mode the accent is the light maroon tint `#E07070`, because the darker maroons fail as text on dark backgrounds, and accent buttons there use dark text (`--kgp-text-on-accent`). **Still Night Pearl** keeps its indigo/purple accent as the alternate creative theme. Semantic colors (success, warning, error, info) are unchanged.
+
+</brand_identity>
+
 <theme_overview>
 
 ## Themes
 
 | Theme | Description | Use When |
 |-------|-------------|----------|
-| **Urban Gray Pearl** (default) | Slate gray palette with blue accent | Most applications, professional/corporate |
+| **Urban Gray Pearl** (default) | Slate gray palette with **maroon accent** (2026 rebrand) | Most applications, professional/corporate |
 | **Still Night Pearl** | Indigo palette with purple accent | Creative/premium applications, alternative branding |
 
 Each theme has **light** and **dark** mode variants.
@@ -34,11 +60,11 @@ Set theme: `<html data-theme="urban-gray" data-mode="light">`
 --kgp-primary-800: #1E293B;
 --kgp-primary-900: #0F172A;
 
-/* Accent (blue) */
---kgp-accent: #3B82F6;
---kgp-accent-light: #DBEAFE;
---kgp-accent-dark: #1D4ED8;
---kgp-accent-hover: #2563EB;
+/* Accent (maroon: 2026 rebrand, web theme option B) */
+--kgp-accent: #8C2828;
+--kgp-accent-light: #F7E8E8;
+--kgp-accent-dark: #6E1F1F;
+--kgp-accent-hover: #7A2323;
 
 /* Backgrounds */
 --kgp-bg-base: #FFFFFF;
@@ -55,7 +81,7 @@ Set theme: `<html data-theme="urban-gray" data-mode="light">`
 /* Borders */
 --kgp-border-light: #E5E7EB;
 --kgp-border-medium: #D4D4D8;
---kgp-border-focus: #3B82F6;
+--kgp-border-focus: #8C2828;
 
 /* Semantic */
 --kgp-success: #22C55E;
@@ -71,11 +97,12 @@ Set theme: `<html data-theme="urban-gray" data-mode="light">`
 ## Urban Gray Pearl — Dark Mode
 
 ```css
-/* Accent (lighter blue for dark bg) */
---kgp-accent: #60A5FA;
---kgp-accent-light: #1E3A5F;
---kgp-accent-dark: #93C5FD;
---kgp-accent-hover: #3B82F6;
+/* Accent (light maroon tint for dark bg: 6.4:1 on #09090B) */
+--kgp-accent: #E07070;
+--kgp-accent-light: #3A1616;
+--kgp-accent-dark: #F09A9A;
+--kgp-accent-hover: #E88080;
+--kgp-text-on-accent: #09090B;   /* dark text on the light-maroon accent: 6.4:1 */
 
 /* Backgrounds */
 --kgp-bg-base: #09090B;
@@ -91,7 +118,7 @@ Set theme: `<html data-theme="urban-gray" data-mode="light">`
 /* Borders */
 --kgp-border-light: #27272A;
 --kgp-border-medium: #3F3F46;
---kgp-border-focus: #60A5FA;
+--kgp-border-focus: #E07070;
 ```
 
 Set with: `<html data-theme="urban-gray" data-mode="dark">`

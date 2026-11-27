@@ -57,7 +57,7 @@ Copy and customize. Replace `{LOGO_FILE}` with the correct variant for your back
     <a href="mailto:info@kgprodesign.com" style="
       display: inline-block;
       padding: 12px 32px;
-      background: var(--kgp-accent, #3B82F6);
+      background: var(--kgp-accent, #8C2828);
       color: #FFFFFF;
       text-decoration: none;
       border-radius: var(--kgp-radius-md, 8px);

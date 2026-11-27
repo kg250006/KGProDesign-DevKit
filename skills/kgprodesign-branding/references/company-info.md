@@ -81,8 +81,7 @@ KG ProDesign LLC, a Goldson Solutions company, has been building custom technolo
 
 ## Tagline
 
-<!-- TO BE PROVIDED — Update when ready -->
-To be provided
+Ideas Into Intelligent Solutions
 
 </tagline>
 

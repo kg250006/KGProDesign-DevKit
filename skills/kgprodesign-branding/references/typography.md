@@ -1,5 +1,16 @@
 # KG ProDesign — Typography System
 
+<logo_lettering>
+
+## Logo Lettering (2026 rebrand)
+
+The "KG PRODESIGN" name in the logos is **Anton**, set in all caps with slightly open spacing. The letter outlines are **built into the logo files** (`templates/brand-2026/`), so no font install is needed.
+- Never retype the logo in a font. Use the wordmark or lockup files.
+- Plain-text "KG ProDesign" in running text, or in the footer credit stamp, is fine. The stamp sets it in Inter, 500 weight, 12px.
+- Brand graphics (banners, post templates) use Anton for headlines and Inter for supporting text.
+
+</logo_lettering>
+
 <font_stack>
 
 ## Font Families

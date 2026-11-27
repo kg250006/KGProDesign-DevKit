@@ -46,9 +46,9 @@ Key rules for email signatures:
 
 Provide:
 - **Bio:** Use the one-line description from `references/brand-voice.md`
-- **Profile picture:** Copy `${CLAUDE_PLUGIN_ROOT}/templates/KGProDesign_logo_square.png` (square format) if available, or `favicon.jpg`
+- **Profile picture:** Copy `${CLAUDE_PLUGIN_ROOT}/templates/brand-2026/social/kgp-profile-800.png` (padded for circular crops)
 - **Website link:** https://kgprodesign.com
-- **Cover image:** FLAG MISSING — needs `KGProDesign_og.png` or similar
+- **Cover image:** `${CLAUDE_PLUGIN_ROOT}/templates/brand-2026/social/`: `kgp-youtube-banner-2560x1440.png`, `kgp-x-header-1500x500.png`, `kgp-facebook-cover-1640x624.png`, `kgp-linkedin-banner-1584x396.png`. Each keeps the logo inside that platform's safe area.
 
 ### Business Card
 

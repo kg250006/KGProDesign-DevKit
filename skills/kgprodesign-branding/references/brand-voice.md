@@ -80,6 +80,6 @@ Suggested candidates (for consideration):
 - Share technical insights and project highlights
 - Respond promptly and helpfully
 - Use the company description (one-line version) in all bios
-- Profile picture: use `KGProDesign_logo_square.png`
+- Profile picture: use `templates/brand-2026/social/kgp-profile-800.png`
 
 </social_voice>

@@ -11,16 +11,18 @@ All company information lives in `references/company-info.md`. Never hard-code c
 
 ### 2. Logo Selection Logic
 
-Choose the correct logo variant based on the destination background:
+**Rebranded 2026-11-27:** the KGP hexagon shield + "KG PRODESIGN" in Anton, black / white / maroon `#8C2828`. All files are in `${CLAUDE_PLUGIN_ROOT}/templates/brand-2026/` (SVG master + PNGs). The old red-slash logo in `templates/legacy/` is retired, so never use it.
 
-- **Dark background** (black, navy, dark gray, dark theme) → `KGProDesign_wht.png` (white outlined "ProDesign")
-- **Light background** (white, cream, light gray, light theme) → `KGProDesign_LOGO.png` (black "ProDesign")
-- **Square / icon context** (favicon, app icon, avatar) → `favicon.jpg` or the square logo
-- **SVG needed** → Flag as missing asset; do not substitute a PNG where SVG is required
+Choose the variant from the destination:
 
-Never guess at a logo variant. If the background context is ambiguous, ask the user.
+- **Dark background** → `lockup-horizontal/kgp-lockup-h-dark.svg` (white lettering)
+- **Light background** → `lockup-horizontal/kgp-lockup-h-light.svg` (black lettering)
+- **Square / icon** (favicon, app icon, avatar) → `favicon/`, `square/`, `social/kgp-profile-800.png`
+- **A client's site KG ProDesign built** → the **footer credit stamp** only (`templates/footer-html.md`). The label is "Dev & Hosted By" if KG ProDesign hosts the site, or "Developed By" if not. Ask if hosting is unknown.
 
-**Always copy logos into the target project** from `${CLAUDE_PLUGIN_ROOT}/templates/`. Never reference the plugin path in generated code — the plugin path may change between versions or machines. See `references/logo-assets.md` for copy commands.
+Never guess at a variant. If the background or hosting is ambiguous, ask the user. The full decision tree is in `references/logo-assets.md`.
+
+**Always copy logos into the target project** from `${CLAUDE_PLUGIN_ROOT}/templates/brand-2026/`. Never reference the plugin path in generated code — the plugin path may change between versions or machines. See `references/logo-assets.md` for copy commands.
 
 ### 3. Style Guide Compliance
 
@@ -88,23 +90,27 @@ What would you like to brand?
 **Instagram:** @KGProDesign (https://www.instagram.com/kgprodesign/)
 **GitHub:** https://github.com/kg250006/KGProDesign-DevKit
 
-**Logo files (in plugin directory):**
+**Logo files** (in `${CLAUDE_PLUGIN_ROOT}/templates/brand-2026/`):
 | File | Use On |
 |------|--------|
-| `${CLAUDE_PLUGIN_ROOT}/templates/KGProDesign_LOGO.png` | Light backgrounds |
-| `${CLAUDE_PLUGIN_ROOT}/templates/KGProDesign_wht.png` | Dark backgrounds |
-| `${CLAUDE_PLUGIN_ROOT}/templates/favicon.jpg` | Favicons, small icons |
+| `lockup-horizontal/kgp-lockup-h-light.svg` | Light backgrounds (nav, header) |
+| `lockup-horizontal/kgp-lockup-h-dark.svg` | Dark backgrounds (nav, header) |
+| `lockup-tagline/kgp-lockup-tagline-{dark,light}.svg` | Logo + tagline (banners, decks, email headers) |
+| `mark/kgp-mark-color.svg` | The shield alone, on any background |
+| `favicon/favicon.ico` + `favicon.svg` | Favicons |
+| `social/` | Profile picture, OG image, YouTube / X / Facebook / LinkedIn banners |
 
 To copy a logo into the current project:
 ```bash
-cp "${CLAUDE_PLUGIN_ROOT}/templates/KGProDesign_LOGO.png" ./public/images/
+cp "${CLAUDE_PLUGIN_ROOT}/templates/brand-2026/lockup-horizontal/kgp-lockup-h-light.svg" ./public/images/
 ```
 
 **Copyright:** `© {CURRENT_YEAR} KG ProDesign LLC`
 
-**Primary font:** Sora (Google Fonts)
-**Primary theme:** Urban Gray Pearl
-**Accent color:** `#3B82F6` (blue)
+**Brand colors (identity):** black `#000000`, white `#FFFFFF`, maroon `#8C2828` (`#6E1F1F` in print)
+**Logo lettering:** Anton, all caps (built into the logo files; never retype it)
+**Web UI font:** Sora (Google Fonts)
+**Web UI theme:** Urban Gray Pearl with the **maroon accent** (`#8C2828` light mode, `#E07070` dark mode). Decided 2026-11-27; see `references/color-system.md`
 
 </quick_reference>
 
@@ -140,11 +146,12 @@ All in `workflows/`:
 <success_criteria>
 
 A well-branded output:
-- Uses the correct logo variant for the background context
+- Uses the correct 2026 shield logo variant for the background context (never the retired red-slash logo)
 - Contains accurate company info pulled from `references/company-info.md`
 - Uses dynamic copyright year format (`© {CURRENT_YEAR} KG ProDesign LLC`)
 - References `--kgp-*` CSS variables where applicable
 - Uses Sora font family
+- Uses the footer credit stamp (with the right hosting label) on client sites
 - Flags any missing assets needed rather than substituting
 - Produces copy-paste-ready code for the target platform
 
