@@ -1,0 +1,34 @@
+{
+  "black": {
+    "hex": "#000000",
+    "role": "primary background, shield field"
+  },
+  "white": {
+    "hex": "#FFFFFF",
+    "role": "letters, ring, primary text on dark"
+  },
+  "maroon": {
+    "hex": "#8C2828",
+    "role": "screen brand red: shield rim, underline bars, accents (2.4:1 on black: never text on dark)"
+  },
+  "maroon_print": {
+    "hex": "#6E1F1F",
+    "role": "print / on-paper version of the brand red (the draft's maroon)"
+  },
+  "maroon_light": {
+    "hex": "#A33A3A",
+    "role": "maroon accent ON DARK backgrounds (3.2:1 on black; large text only)"
+  },
+  "charcoal": {
+    "hex": "#1A1A1A",
+    "role": "surfaces"
+  },
+  "rim_charcoal": {
+    "hex": "#272323",
+    "role": "ghost shield-rim lines on banners/templates (inner line #1D1A1A)"
+  },
+  "gray": {
+    "hex": "#8F8F8F",
+    "role": "secondary text, rules"
+  }
+}

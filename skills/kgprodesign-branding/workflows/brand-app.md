@@ -34,18 +34,18 @@ Ask what branding is needed:
 
 Copy needed logos from the plugin into the project:
 ```bash
-cp "${CLAUDE_PLUGIN_ROOT}/templates/{SELECTED_LOGO}" ./{project-asset-dir}/
+cp "${CLAUDE_PLUGIN_ROOT}/templates/brand-2026/{SELECTED_LOGO}" ./{project-asset-dir}/
 ```
 
 | Context | Source File | Notes |
 |---------|------------|-------|
-| App icon (iOS) | `${CLAUDE_PLUGIN_ROOT}/templates/KGProDesign_logo_square.png` | Resize to required sizes (1024x1024 source) |
-| App icon (macOS) | `${CLAUDE_PLUGIN_ROOT}/templates/KGProDesign_logo_square.png` | macOS icons can be rounded |
-| Splash (dark bg) | `${CLAUDE_PLUGIN_ROOT}/templates/KGProDesign_wht.png` | Centered on dark launch screen |
-| Splash (light bg) | `${CLAUDE_PLUGIN_ROOT}/templates/KGProDesign_LOGO.png` | Centered on light launch screen |
-| About screen | Either variant based on screen bg | Use selection logic from logo-assets.md |
-| PWA icon 192 | FLAG MISSING | Needs `KGProDesign_logo_192.png` |
-| PWA icon 512 | FLAG MISSING | Needs `KGProDesign_logo_512.png` |
+| App icon (iOS) | `${CLAUDE_PLUGIN_ROOT}/templates/brand-2026/square/kgp-square-black-1024.png` | 1024x1024 source; resize to required sizes |
+| App icon (macOS) | `${CLAUDE_PLUGIN_ROOT}/templates/brand-2026/square/kgp-square-black-1024.png` | macOS icons can be rounded |
+| Splash (dark bg) | `${CLAUDE_PLUGIN_ROOT}/templates/brand-2026/lockup-stacked/kgp-lockup-stacked-dark.svg` | Centered on dark launch screen |
+| Splash (light bg) | `${CLAUDE_PLUGIN_ROOT}/templates/brand-2026/lockup-stacked/kgp-lockup-stacked-light.svg` | Centered on light launch screen |
+| About screen | Stacked or horizontal lockup by screen bg | Use selection logic from logo-assets.md |
+| PWA icon 192 | `${CLAUDE_PLUGIN_ROOT}/templates/brand-2026/square/icon-192.png` | On black |
+| PWA icon 512 | `${CLAUDE_PLUGIN_ROOT}/templates/brand-2026/square/icon-512.png` | On black |
 
 ## Step 4: Generate Branded Output
 

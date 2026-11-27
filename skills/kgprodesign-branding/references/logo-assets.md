@@ -1,17 +1,39 @@
 # KG ProDesign — Logo Assets & Selection Logic
 
+> **Rebranded 2026-11-27.** The identity is now the **KGP hexagon shield** with **KG ProDesign**
+> lettering in Anton (all caps), in black / white / maroon `#8C2828` (`#6E1F1F` in print). The red-slash script logo
+> (`KGProDesign_LOGO.png`, `KGProDesign_wht.png`, `favicon.jpg`) is **retired**. Those files are kept in
+> `templates/legacy/` for history only. Never use them in new work.
+
 <inventory>
 
 ## Logo Inventory
 
-All logos live in the plugin's `templates/` directory. When working in another project, use `${CLAUDE_PLUGIN_ROOT}/templates/` to resolve the absolute path.
+All files are in `${CLAUDE_PLUGIN_ROOT}/templates/brand-2026/`. **SVG is the master format.** Every version has an SVG, so use the SVG wherever the target supports it, and the PNGs elsewhere.
 
-| File | Plugin Path | Dimensions | Description | Background |
-|------|-------------|-----------|-------------|------------|
-| **Horizontal (dark text)** | `${CLAUDE_PLUGIN_ROOT}/templates/KGProDesign_LOGO.png` | ~1100x400 | Red "KG" + **black** "ProDesign", transparent bg | For **light** backgrounds |
-| **Horizontal (white text)** | `${CLAUDE_PLUGIN_ROOT}/templates/KGProDesign_wht.png` | ~993x309 | Red "KG" + **white outlined** "ProDesign", transparent bg | For **dark** backgrounds |
-| **Square (dark bg)** | `${CLAUDE_PLUGIN_ROOT}/templates/KGProDesign_logo_square.png` (if copied) or external | 1024x1024 | Full logo on dark background with diamond accent | App icons, social avatars |
-| **Favicon** | `${CLAUDE_PLUGIN_ROOT}/templates/favicon.jpg` | ~200x200 | Red "KG" lettermark crop | Browser favicons, small icons |
+"**dark**" means made **for dark backgrounds** (white lettering). "**light**" means for light backgrounds (black lettering).
+
+| Version | Files | What it is |
+|---|---|---|
+| **Shield (full color)** | `mark/kgp-mark-color.svg`, `-1024.png` | Maroon rim, white ring, black field, white KGP. It carries its own black field, so it works on **any** background |
+| **Shield (one color)** | `mark/kgp-mark-mono-{white,black,maroon}.svg`, `-1024.png` | Solid shield with the letters knocked out, for print, engraving, embroidery and stamps |
+| **Horizontal lockup** | `lockup-horizontal/kgp-lockup-h-{dark,light}.svg`, `-64.png`, `-64@2x.png`; `kgp-lockup-h-on-{black,white}.png` | Shield + "KG ProDesign" on one line, for nav bars and headers |
+| **Stacked lockup** | `lockup-stacked/kgp-lockup-stacked-{dark,light}.svg`, `-512.png` | Shield above the name, for about pages, splash screens and documents |
+| **Lockup + tagline** | `lockup-tagline/kgp-lockup-tagline-{dark,light}.svg`, `-128/256/512.png` | Lockup with the name underlined in maroon and the tagline below, for banners, decks and email headers |
+| **Wordmark** | `wordmark/kgp-wordmark-{dark,light}.svg`, `-128.png` | The lettering only |
+| **Square** | `square/kgp-square-{black,white}.svg`, `-1024.png`, `-400.png` | Shield centered with padding, for avatars and app-icon sources |
+| **App / PWA icons** | `square/apple-touch-icon.png` (180), `icon-192.png`, `icon-512.png` | On black |
+| **Favicon** | `favicon/favicon.ico` (16/32/48), `favicon.svg`, `favicon-{16,32,48}.png` | Transparent background. 16/32px use the small-size shield (thick rim, no ring), 48px the full shield |
+| **Share card** | `social/kgp-og-image-1200x630.png` | Open Graph / link preview |
+| **Profile picture** | `social/kgp-profile-800.png` | Padded for circular crops |
+| **Social banners** | `social/kgp-{youtube-banner-2560x1440,x-header-1500x500,facebook-cover-1640x624,linkedin-banner-1584x396}.png` | Each keeps the logo inside its platform's safe area |
+| **Post templates** | `templates/post-template.png`, `post-template-white.png` | 4:5 layout guides (a guide, not law) |
+| **Print** | `print/` | Business card and 4x6 flyer: printer PDFs, `-cropmarks.pdf`, and phone PNGs in `print/share/`. See `workflows/brand-print.md` |
+| **Fonts** | `fonts/Anton-Regular.ttf`, `fonts/Inter-Variable.ttf` (+ OFL licenses) | For brand graphics. The logo files already contain the lettering as outlines |
+| **Brand guide** | `brand-guide.html` | The full visual guide: every version, palette, spacing, banners, print, footer stamp |
+| **Rules** | `BRAND.md`, `palette.json` | Clear space, minimum sizes, colors, don'ts |
+
+The lettering is **Anton**, set in all caps as **KG PRODESIGN** with slightly open spacing. The outlines are built into the files, so no font install is needed.
 
 </inventory>
 
@@ -19,31 +41,29 @@ All logos live in the plugin's `templates/` directory. When working in another p
 
 ## Copying Logos to Your Project
 
-When branding a project outside the plugin directory, copy the needed logo files into the project's asset directory. Use `$CLAUDE_PLUGIN_ROOT` to locate the source files.
-
-**Common patterns:**
+**Always copy, and never reference the plugin path in production code.** The plugin path changes between versions and machines.
 
 ```bash
-# Web project (public/images/)
-cp "${CLAUDE_PLUGIN_ROOT}/templates/KGProDesign_LOGO.png" ./public/images/
-cp "${CLAUDE_PLUGIN_ROOT}/templates/KGProDesign_wht.png" ./public/images/
-cp "${CLAUDE_PLUGIN_ROOT}/templates/favicon.jpg" ./public/
+B="${CLAUDE_PLUGIN_ROOT}/templates/brand-2026"
 
-# React/Next.js (src/assets/ or public/)
-cp "${CLAUDE_PLUGIN_ROOT}/templates/KGProDesign_LOGO.png" ./src/assets/
-cp "${CLAUDE_PLUGIN_ROOT}/templates/KGProDesign_wht.png" ./src/assets/
+# Web project
+mkdir -p ./public/images
+cp "$B/lockup-horizontal/kgp-lockup-h-dark.svg" "$B/lockup-horizontal/kgp-lockup-h-light.svg" ./public/images/
+cp "$B/mark/kgp-mark-color.svg" ./public/images/
+cp "$B/favicon/favicon.ico" "$B/favicon/favicon.svg" ./public/
+cp "$B/square/apple-touch-icon.png" "$B/square/icon-192.png" "$B/square/icon-512.png" ./public/
+cp "$B/social/kgp-og-image-1200x630.png" ./public/og-image.png
 
-# iOS/macOS (copy to Xcode asset catalog source)
-cp "${CLAUDE_PLUGIN_ROOT}/templates/KGProDesign_LOGO.png" ./Assets.xcassets/KGProDesign.imageset/
-
-# General (project root images/)
-mkdir -p ./images
-cp "${CLAUDE_PLUGIN_ROOT}/templates/KGProDesign_LOGO.png" ./images/
-cp "${CLAUDE_PLUGIN_ROOT}/templates/KGProDesign_wht.png" ./images/
-cp "${CLAUDE_PLUGIN_ROOT}/templates/favicon.jpg" ./images/
+# iOS / macOS app icon source (1024x1024)
+cp "$B/square/kgp-square-black-1024.png" ./AppIcon-1024.png
 ```
 
-**Always copy — never reference the plugin path in production code.** The plugin path may change between versions or machines. Copy the files into the project so they are self-contained.
+```html
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta property="og:image" content="https://YOUR-DOMAIN/og-image.png">
+```
 
 </copy_to_project>
 
@@ -52,50 +72,56 @@ cp "${CLAUDE_PLUGIN_ROOT}/templates/favicon.jpg" ./images/
 ## Logo Selection Decision Tree
 
 ```
-Is the background DARK? (black, navy, dark gray, dark theme, #000-#444)
-  ├── YES → Copy & use: KGProDesign_wht.png (white outlined text)
-  └── NO → Is the background LIGHT? (white, cream, light gray, #CCC-#FFF)
-       ├── YES → Copy & use: KGProDesign_LOGO.png (black text)
-       └── UNSURE → ASK THE USER. Never guess.
+Is it a KGP-owned product or page (header, nav, about page)?
+  ├── Dark background  → lockup-horizontal/kgp-lockup-h-dark.svg
+  ├── Light background → lockup-horizontal/kgp-lockup-h-light.svg
+  ├── Centered / hero  → lockup-stacked/kgp-lockup-stacked-{dark,light}.svg
+  └── Tiny space, busy or photo background → mark/kgp-mark-color.svg (it carries its own black field)
 
-Is the context a SQUARE/ICON? (favicon, app icon, profile picture, avatar)
-  ├── YES, browser favicon → Copy & use: favicon.jpg
-  ├── YES, app icon (iOS/macOS) → Copy & use: KGProDesign_logo_square.png
-  └── YES, social media avatar → Copy & use: KGProDesign_logo_square.png
+Is it a CLIENT site KG ProDesign built? → Use the FOOTER CREDIT STAMP (templates/footer-html.md),
+  never a full logo. The label depends on hosting:
+  ├── KG ProDesign hosts it → "Dev & Hosted By"
+  └── Hosted elsewhere      → "Developed By"
+  Unsure who hosts it? ASK. Never guess.
 
-Source all files from: ${CLAUDE_PLUGIN_ROOT}/templates/
-Always copy into the target project — never reference the plugin path in production.
+Is it a SQUARE / ICON? (favicon, app icon, avatar)
+  ├── Browser favicon → favicon/favicon.ico + favicon.svg
+  ├── App icon        → square/kgp-square-black-1024.png
+  └── Social avatar   → social/kgp-profile-800.png
 
-Is SVG required? (scalable web logo, print)
-  └── YES → FLAG AS MISSING. No SVG versions currently exist.
+One-color reproduction (print, engraving, embroidery)? → mark/kgp-mark-mono-{black,white,maroon}.svg
+
+Background is neither clearly dark nor light? → ASK THE USER. Never guess.
 ```
 
 ### Quick Reference
 
-| Destination | Logo File |
-|-------------|-----------|
-| Dark website footer | `KGProDesign_wht.png` |
-| Light website header | `KGProDesign_LOGO.png` |
-| Dark sidebar / nav | `KGProDesign_wht.png` |
-| White about page | `KGProDesign_LOGO.png` |
-| Browser favicon | `favicon.jpg` |
-| iOS app icon | `KGProDesign_logo_square.png` |
-| Email signature (light bg) | `KGProDesign_LOGO.png` (scale to ~200px wide) |
-| Email signature (dark bg) | `KGProDesign_wht.png` (scale to ~200px wide) |
-| README badge | `KGProDesign_LOGO.png` (inline, ~120px wide) |
-| Social media avatar | `KGProDesign_logo_square.png` |
-| Open Graph / share card | FLAG MISSING — needs `KGProDesign_og.png` |
+| Destination | File |
+|-------------|------|
+| Dark site header / nav | `lockup-horizontal/kgp-lockup-h-dark.svg` |
+| Light site header / nav | `lockup-horizontal/kgp-lockup-h-light.svg` |
+| About page / splash | `lockup-stacked/kgp-lockup-stacked-{dark,light}.svg` |
+| Client-site footer credit | Footer stamp: shield SVG + "KG ProDesign" as **text** (see `templates/footer-html.md`) |
+| Browser favicon | `favicon/favicon.ico` + `favicon/favicon.svg` |
+| iOS / macOS app icon | `square/kgp-square-black-1024.png` |
+| Social avatar | `social/kgp-profile-800.png` |
+| Open Graph / share card | `social/kgp-og-image-1200x630.png` |
+| Email signature | `lockup-horizontal/kgp-lockup-h-light-64@2x.png` (hosted URL, displayed at 200px wide) |
+| README badge | `lockup-horizontal/kgp-lockup-h-light-64@2x.png` (hosted URL) |
 
 </selection_logic>
 
 <brand_colors>
 
-## Logo Color Palette
+## Logo Colors
 
-The "KG" lettermark uses a signature red. The exact hex should be confirmed, but approximate values:
-- **KG Red (approximate):** `#B91C1C` (dark crimson red)
-- **ProDesign Black:** `#1A1A1A` (near-black, used in dark text variant)
-- **ProDesign White Outline:** `#FFFFFF` with dark stroke (used in white variant)
+| Token | Hex | Role |
+|---|---|---|
+| Black | `#000000` | Shield field, primary background |
+| White | `#FFFFFF` | Letters and ring |
+| **Maroon** | `#8C2828` | **Screen brand red.** The shield rim, underline bars and accents. 2.4:1 on black, so never use it for text on dark |
+| Maroon print | `#6E1F1F` | The same red for print and paper |
+| Maroon light | `#A33A3A` | Maroon text on dark backgrounds (3.2:1 on black, so large text only) |
 
 </brand_colors>
 
@@ -103,33 +129,22 @@ The "KG" lettermark uses a signature red. The exact hex should be confirmed, but
 
 ## Clear Zone & Minimum Size
 
-- **Clear zone:** Maintain padding equal to the height of the "K" letterform on all sides
-- **Minimum width (horizontal logo):** 120px for web, 1 inch for print
-- **Minimum size (square logo):** 32x32px for web icons, 16x16px for favicons
-- **Do not:** rotate, stretch, recolor, add effects, or place on busy backgrounds without sufficient contrast
+- **Clear zone:** leave at least the width of the P's stem (about 7.5% of the shield's height) on every side.
+- **Minimum:** shield 32px, horizontal lockup 32px tall, wordmark letters 12px tall. The 16 and 32px favicons use a small-size shield with a thick rim and no white ring, so they stay red and crisp. From 48px up, use the full shield.
+- **Don't:**
+  - stretch, rotate or recolor the shield's layers
+  - add effects
+  - put the full-color shield on a busy photo without a dark plate
+  - set the logo name in another font or retype it by hand. Use the wordmark and lockup files. Plain-text "KG ProDesign" in running text or the footer credit is fine
 
 </clear_zone>
 
 <missing_assets>
 
-## Missing Assets Checklist
+## Asset Status
 
-Assets that should be created for full branding coverage:
+Everything on the 2025 missing-assets list now exists: SVG versions of every logo, an SVG favicon, the OG image, PWA icons at 192 and 512, an email-size lockup, and a confirmed brand red (`#8C2828` on screen, `#6E1F1F` in print).
 
-- [ ] **`KGProDesign_LOGO.svg`** — SVG version of horizontal logo (scalable for web/print)
-- [ ] **`KGProDesign_wht.svg`** — SVG version of white variant
-- [ ] **`KGProDesign_favicon.svg`** — Modern SVG favicon for browsers
-- [ ] **`KGProDesign_og.png`** — Open Graph social sharing image (1200x630, dark bg with centered logo)
-- [ ] **`KGProDesign_logo_192.png`** — PWA icon (192x192, derived from square)
-- [ ] **`KGProDesign_logo_512.png`** — PWA icon (512x512, derived from square)
-- [ ] **`KGProDesign_email_200.png`** — Email signature logo (~200px wide, derived from horizontal)
-- [ ] **Confirmed "KG Red" hex value** — exact brand red from original design files
-
-### How to Create Missing Assets
-
-1. **SVG versions:** Export from original vector source (Illustrator/Figma). If only raster exists, use a vector tracing tool.
-2. **OG image:** Create 1200x630 dark background (#0F172A) with centered horizontal white logo, company tagline below.
-3. **PWA icons:** Resize `KGProDesign_logo_square.png` to 192x192 and 512x512.
-4. **Email logo:** Resize `KGProDesign_LOGO.png` to 200px wide, maintaining aspect ratio.
+Still open: **hosted public URLs** for the email signature and README logos. Upload `kgp-lockup-h-light-64@2x.png` to kgprodesign.com and record the URL here.
 
 </missing_assets>

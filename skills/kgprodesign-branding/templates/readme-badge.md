@@ -57,4 +57,4 @@ Copyright (c) present KG ProDesign LLC
 </div>
 ```
 
-Replace `{PUBLIC_LOGO_URL}` with a hosted URL for the logo image (use `KGProDesign_LOGO.png` for light README backgrounds).
+Replace `{PUBLIC_LOGO_URL}` with a hosted URL for the logo image. Use `brand-2026/lockup-horizontal/kgp-lockup-h-light-64@2x.png` for light README backgrounds and `kgp-lockup-h-dark-64@2x.png` for dark ones.

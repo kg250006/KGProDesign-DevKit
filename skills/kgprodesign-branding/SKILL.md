@@ -11,16 +11,18 @@ All company information lives in `references/company-info.md`. Never hard-code c
 
 ### 2. Logo Selection Logic
 
-Choose the correct logo variant based on the destination background:
+**Rebranded 2026-11-27:** the KGP hexagon shield + "KG PRODESIGN" in Anton, black / white / maroon `#8C2828`. All files are in `${CLAUDE_PLUGIN_ROOT}/templates/brand-2026/` (SVG master + PNGs). The old red-slash logo in `templates/legacy/` is retired, so never use it.
 
-- **Dark background** (black, navy, dark gray, dark theme) → `KGProDesign_wht.png` (white outlined "ProDesign")
-- **Light background** (white, cream, light gray, light theme) → `KGProDesign_LOGO.png` (black "ProDesign")
-- **Square / icon context** (favicon, app icon, avatar) → `favicon.jpg` or the square logo
-- **SVG needed** → Flag as missing asset; do not substitute a PNG where SVG is required
+Choose the variant from the destination:
 
-Never guess at a logo variant. If the background context is ambiguous, ask the user.
+- **Dark background** → `lockup-horizontal/kgp-lockup-h-dark.svg` (white lettering)
+- **Light background** → `lockup-horizontal/kgp-lockup-h-light.svg` (black lettering)
+- **Square / icon** (favicon, app icon, avatar) → `favicon/`, `square/`, `social/kgp-profile-800.png`
+- **A client's site KG ProDesign built** → the **footer credit stamp** only (`templates/footer-html.md`). The label is "Dev & Hosted By" if KG ProDesign hosts the site, or "Developed By" if not. Ask if hosting is unknown.
 
-**Always copy logos into the target project** from `${CLAUDE_PLUGIN_ROOT}/templates/`. Never reference the plugin path in generated code — the plugin path may change between versions or machines. See `references/logo-assets.md` for copy commands.
+Never guess at a variant. If the background or hosting is ambiguous, ask the user. The full decision tree is in `references/logo-assets.md`.
+
+**Always copy logos into the target project** from `${CLAUDE_PLUGIN_ROOT}/templates/brand-2026/`. Never reference the plugin path in generated code — the plugin path may change between versions or machines. See `references/logo-assets.md` for copy commands.
 
 ### 3. Style Guide Compliance
 
@@ -51,7 +53,8 @@ What would you like to brand?
 3. **App** — splash screen, about dialog, app icon
 4. **Communications** — email signature, social media, marketing materials
 5. **Legal text** — copyright notice, license header, terms
-6. **Just give me the brand info** — logo files, colors, contact info, all data
+6. **Print / handouts** — business card, 4x6 flyer, printer files, phone-ready PNGs
+7. **Just give me the brand info** — logo files, colors, contact info, all data
 
 **Wait for response before proceeding.**
 
@@ -64,11 +67,12 @@ What would you like to brand?
 | 1 | "website", "footer", "header", "contact page", "about page", "web" | `workflows/brand-website.md` |
 | 2 | "project", "repo", "readme", "github", "open source", "badge" | `workflows/brand-project.md` |
 | 3 | "app", "splash", "about dialog", "icon", "ios", "macos", "swift" | `workflows/brand-app.md` |
-| 4 | "email", "signature", "social", "marketing", "business card" | `workflows/brand-communications.md` |
+| 4 | "email", "signature", "social", "marketing", "banner", "post template" | `workflows/brand-communications.md` |
 | 5 | "copyright", "license", "legal", "terms", "privacy" | `workflows/brand-legal.md` |
-| 6 | "info", "data", "brand info", "all", "dump", "logo", "colors" | Read references directly (no workflow) |
+| 6 | "business card", "flyer", "print", "handout", "printer", "bleed", "QR" | `workflows/brand-print.md` |
+| 7 | "info", "data", "brand info", "all", "dump", "logo", "colors" | Read references directly (no workflow) |
 
-**For option 6:** Read `references/company-info.md`, `references/logo-assets.md`, and `references/color-system.md`, then present a complete brand summary to the user.
+**For option 7:** Read `references/company-info.md`, `references/logo-assets.md`, and `references/color-system.md`, then present a complete brand summary to the user.
 
 **After reading the workflow, follow it exactly.**
 
@@ -78,7 +82,11 @@ What would you like to brand?
 
 ## KG ProDesign — Quick Reference
 
-**Company:** KG ProDesign LLC
+**Company:** KG ProDesign LLC (always "LLC" on formal and printed materials)
+**Founder:** Kenrick "KG" Goldson
+**Tagline:** Ideas Into Intelligent Solutions
+**Positioning:** the tech team for your business
+**Featured services:** Web Design · Web Hosting on SitePage.app · Ongoing Tech Support · Web Consulting · AI Dev Tools
 **Founded:** 2005
 **Phone:** 407-900-7724
 **Email (general):** info@kgprodesign.com
@@ -86,25 +94,35 @@ What would you like to brand?
 **Website:** kgprodesign.com
 **Contact page:** https://kgprodesign.com/contact/
 **Instagram:** @KGProDesign (https://www.instagram.com/kgprodesign/)
+**GitHub (org):** https://github.com/kgprodesign
+**Handout phone:** 321-427-6753 (business card and flyer only)
 **GitHub:** https://github.com/kg250006/KGProDesign-DevKit
 
-**Logo files (in plugin directory):**
+**Logo files** (in `${CLAUDE_PLUGIN_ROOT}/templates/brand-2026/`):
 | File | Use On |
 |------|--------|
-| `${CLAUDE_PLUGIN_ROOT}/templates/KGProDesign_LOGO.png` | Light backgrounds |
-| `${CLAUDE_PLUGIN_ROOT}/templates/KGProDesign_wht.png` | Dark backgrounds |
-| `${CLAUDE_PLUGIN_ROOT}/templates/favicon.jpg` | Favicons, small icons |
+| `lockup-horizontal/kgp-lockup-h-light.svg` | Light backgrounds (nav, header) |
+| `lockup-horizontal/kgp-lockup-h-dark.svg` | Dark backgrounds (nav, header) |
+| `lockup-tagline/kgp-lockup-tagline-{dark,light}.svg` | Logo + tagline (banners, decks, email headers) |
+| `mark/kgp-mark-color.svg` | The shield alone, on any background |
+| `favicon/favicon.ico` + `favicon.svg` | Favicons |
+| `social/` | Profile picture, OG image, YouTube / X / Facebook / LinkedIn banners |
+| `templates/post-template{,-white}.png` | 4:5 social post layout guides |
+| `print/` | Business card + 4x6 flyer (printer PDFs, crop-mark PDFs, `share/` PNGs) |
+| `brand-guide.html` | The full visual brand guide (open it in a browser) |
+| `fonts/` | Anton + Inter (OFL) for brand graphics |
 
 To copy a logo into the current project:
 ```bash
-cp "${CLAUDE_PLUGIN_ROOT}/templates/KGProDesign_LOGO.png" ./public/images/
+cp "${CLAUDE_PLUGIN_ROOT}/templates/brand-2026/lockup-horizontal/kgp-lockup-h-light.svg" ./public/images/
 ```
 
 **Copyright:** `© {CURRENT_YEAR} KG ProDesign LLC`
 
-**Primary font:** Sora (Google Fonts)
-**Primary theme:** Urban Gray Pearl
-**Accent color:** `#3B82F6` (blue)
+**Brand colors (identity):** black `#000000`, white `#FFFFFF`, maroon `#8C2828` (`#6E1F1F` in print)
+**Logo lettering:** Anton, all caps (built into the logo files; never retype it)
+**Web UI font:** Sora (Google Fonts)
+**Web UI theme:** Urban Gray Pearl with the **maroon accent** (`#8C2828` light mode, `#E07070` dark mode). Decided 2026-11-27; see `references/color-system.md`
 
 </quick_reference>
 
@@ -133,6 +151,7 @@ All in `workflows/`:
 | brand-project.md | README, GitHub repo, open-source project branding |
 | brand-app.md | Splash screens, about dialogs, app icons (iOS/macOS) |
 | brand-communications.md | Email signatures, social media, marketing materials |
+| brand-print.md | Business card, 4x6 flyer, printer files and specs, reprints |
 | brand-legal.md | Copyright notices, license headers, legal text |
 
 </workflows_index>
@@ -140,11 +159,12 @@ All in `workflows/`:
 <success_criteria>
 
 A well-branded output:
-- Uses the correct logo variant for the background context
+- Uses the correct 2026 shield logo variant for the background context (never the retired red-slash logo)
 - Contains accurate company info pulled from `references/company-info.md`
 - Uses dynamic copyright year format (`© {CURRENT_YEAR} KG ProDesign LLC`)
 - References `--kgp-*` CSS variables where applicable
 - Uses Sora font family
+- Uses the footer credit stamp (with the right hosting label) on client sites
 - Flags any missing assets needed rather than substituting
 - Produces copy-paste-ready code for the target platform
 

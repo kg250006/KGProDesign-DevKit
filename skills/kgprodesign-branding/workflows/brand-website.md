@@ -34,19 +34,22 @@ Ask (or detect from the project) what framework is being used:
 ## Step 3: Determine Background Context & Copy Logo
 
 For logo placement, determine the background color of the destination:
-- **Dark footer/header** → `KGProDesign_wht.png`
-- **Light footer/header** → `KGProDesign_LOGO.png`
-- If unknown, check the site's CSS or ask the user
+- **Dark footer/header** → `brand-2026/lockup-horizontal/kgp-lockup-h-dark.svg`
+- **Light footer/header** → `brand-2026/lockup-horizontal/kgp-lockup-h-light.svg`
+- **A client's site** (not a KGP product) → no KGP logo in the header. Add only the **footer credit stamp** (`templates/footer-html.md`): "Dev & Hosted By" if KG ProDesign hosts it, otherwise "Developed By"
+- If the background or hosting is unknown, check the site's CSS or ask the user
 
 **Copy the selected logo into the project** using the plugin path:
 ```bash
 # Determine the project's image directory (public/images/, src/assets/, etc.)
-cp "${CLAUDE_PLUGIN_ROOT}/templates/{SELECTED_LOGO}" ./{project-image-dir}/
+cp "${CLAUDE_PLUGIN_ROOT}/templates/brand-2026/{SELECTED_LOGO}" ./{project-image-dir}/
 ```
 
-Also copy the favicon if needed:
+Also copy the favicon set and share image if needed (KGP-owned sites):
 ```bash
-cp "${CLAUDE_PLUGIN_ROOT}/templates/favicon.jpg" ./public/
+B="${CLAUDE_PLUGIN_ROOT}/templates/brand-2026"
+cp "$B/favicon/favicon.ico" "$B/favicon/favicon.svg" "$B/square/apple-touch-icon.png" ./public/
+cp "$B/social/kgp-og-image-1200x630.png" ./public/og-image.png
 ```
 
 Never reference the plugin path in the generated code — always use the project-local copy.

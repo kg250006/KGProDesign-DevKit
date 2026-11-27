@@ -31,7 +31,7 @@ Key elements:
 - "Built by KG ProDesign LLC" attribution
 - Link to kgprodesign.com
 - Copyright notice
-- Optional: logo image (use `KGProDesign_LOGO.png` — README backgrounds are typically light)
+- Optional: logo image (use `brand-2026/lockup-horizontal/kgp-lockup-h-light-64@2x.png` via a hosted URL; README backgrounds are typically light)
 
 ### GitHub Repository Setup
 

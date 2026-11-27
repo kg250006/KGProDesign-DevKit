@@ -35,7 +35,7 @@ Copy and customize for your contact page.
         border-radius: var(--kgp-radius-lg, 12px);
       ">
         <h3 style="font-size: var(--kgp-text-base, 16px); font-weight: var(--kgp-font-semibold, 600); margin-bottom: 8px;">Phone</h3>
-        <a href="tel:+14079007724" style="color: var(--kgp-accent, #3B82F6); text-decoration: none; font-size: var(--kgp-text-lg, 18px);">
+        <a href="tel:+14079007724" style="color: var(--kgp-accent, #8C2828); text-decoration: none; font-size: var(--kgp-text-lg, 18px);">
           (407) 900-7724
         </a>
       </div>
@@ -47,7 +47,7 @@ Copy and customize for your contact page.
         border-radius: var(--kgp-radius-lg, 12px);
       ">
         <h3 style="font-size: var(--kgp-text-base, 16px); font-weight: var(--kgp-font-semibold, 600); margin-bottom: 8px;">Email</h3>
-        <a href="mailto:info@kgprodesign.com" style="color: var(--kgp-accent, #3B82F6); text-decoration: none;">
+        <a href="mailto:info@kgprodesign.com" style="color: var(--kgp-accent, #8C2828); text-decoration: none;">
           info@kgprodesign.com
         </a>
         <br/>
@@ -63,7 +63,7 @@ Copy and customize for your contact page.
         border-radius: var(--kgp-radius-lg, 12px);
       ">
         <h3 style="font-size: var(--kgp-text-base, 16px); font-weight: var(--kgp-font-semibold, 600); margin-bottom: 8px;">Website</h3>
-        <a href="https://kgprodesign.com" style="color: var(--kgp-accent, #3B82F6); text-decoration: none;">
+        <a href="https://kgprodesign.com" style="color: var(--kgp-accent, #8C2828); text-decoration: none;">
           kgprodesign.com
         </a>
       </div>
