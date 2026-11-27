@@ -19,14 +19,24 @@ This is the single source of truth for all company data. All branding workflows 
 
 ## Contact Information
 
-- **Phone:** 407-900-7724
+- **Phone:** 407-900-7724 (company number; use this everywhere by default)
+- **Handout / mobile phone:** 321-427-6753. **Only** on the printed business card and flyer (KG's choice, 2026-11-27); don't use it elsewhere unless asked
 - **General Email:** info@kgprodesign.com
-- **Admin Email:** KG@KGProDesign.com
+- **Admin / direct Email:** KG@KGProDesign.com (KG's direct address; used on the printed handouts)
 - **Website:** https://kgprodesign.com
 - **Contact page:** https://kgprodesign.com/contact/ (contact form; use for calls to action)
-- **GitHub:** https://github.com/kg250006/KGProDesign-DevKit
+- **GitHub (organization):** https://github.com/kgprodesign
+- **GitHub (DevKit repo):** https://github.com/kg250006/KGProDesign-DevKit
 
 </contact>
+
+<people>
+
+## People
+
+- **Founder:** Kenrick "KG" Goldson. On print: KENRICK “KG” GOLDSON, FOUNDER · KG PRODESIGN LLC
+
+</people>
 
 <address>
 
@@ -42,10 +52,11 @@ This is the single source of truth for all company data. All branding workflows 
 
 ## Social Media
 
-<!-- TO BE PROVIDED — Update handles when ready -->
+<!-- LinkedIn and X still to be provided -->
+- **Instagram:** [@KGProDesign](https://www.instagram.com/kgprodesign/) (printed as "IG @KGProDesign")
+- **GitHub:** [github.com/kgprodesign](https://github.com/kgprodesign)
 - **LinkedIn:** To be provided
 - **Twitter/X:** To be provided
-- **Instagram:** [@KGProDesign](https://www.instagram.com/kgprodesign/)
 
 </social>
 
@@ -67,6 +78,21 @@ KG ProDesign LLC, a Goldson Solutions company, has been building custom technolo
 <services>
 
 ## Services
+
+### Featured services (lead with these: print handouts, in-person, banners)
+
+These are the four services KG leads with when meeting people. The approved copy (marketing strategist, 2026-11-27) is below. Keep the names as written:
+
+| Service | Short line (card) | One-liner (flyer) |
+|---|---|---|
+| **Web Design** | Sites that win customers | A site that earns trust and turns visitors into customers. |
+| **Web Hosting on SitePage.app** | Fast, secure, fully managed | Fast, secure hosting on your own domain. No tech headaches. |
+| **Web Consulting** | Straight answers, clear plan | Not sure what your site needs? Get a clear plan. |
+| **AI Dev Tools** | For dev teams: ship faster | For software developers: AI tools and automations that cut the busywork so your team ships faster. |
+
+SitePage.app is KG ProDesign's own hosting platform (sites live at `*.sitepage.app` or the client's domain).
+
+### Full service list
 
 - Custom Software Development
 - Web Application Design & Development

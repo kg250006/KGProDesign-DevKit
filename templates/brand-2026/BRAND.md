@@ -1,6 +1,6 @@
 # KG ProDesign — Brand Kit 2026
 
-> **Plugin copy (subset).** The full kit (every size, post templates, fonts, and the scripts that rebuild it) lives in the KGP-ContentCreatorApp repo at `assets/brands/kgprodesign/kit-2026/`. Paths below that are missing here (`templates/`) are in that repo.
+> **Plugin copy.** Every artwork file is here: logos, social banners, post templates, print pieces, fonts, and `brand-guide.html`. The scripts that rebuild them (`kgp_geometry.py`, `build_kit.py`, `build_print.py`, `build_guide.py`) live in the KGP-ContentCreatorApp repo at `assets/brands/kgprodesign/kit-2026/`. Change the art there, rebuild, then copy the outputs back here.
 
 Adopted 2026-11-27. Replaces the red-slash script logo and #A51414 red.
 Every file here is generated from **`kgp_geometry.py`** by **`build_kit.py`**:
@@ -15,6 +15,10 @@ monogram. It was rebuilt as true vector from KG's draft as a rule-based system:
 - letters sit 57u inside the black field, with stroke ~125u and gaps 62u
 - K and P are exact mirror images
 - the letter tops follow the shield's shoulders, and the bottoms follow its V
+
+## Tagline
+
+**Ideas Into Intelligent Solutions.** Chosen by KG on 2026-11-27. It goes on the business card front. The banners and lockup-with-tagline keep the descriptive line "Custom software, web apps & digital product design".
 
 ## Colors
 
@@ -54,6 +58,8 @@ Maroon `#8C2828` on black is 2.4:1. Use it there for decoration (the rim, rules)
 | Apple / PWA icons | `square/apple-touch-icon.png`, `square/icon-192.png`, `square/icon-512.png` |
 | Banners | `social/` holds YouTube 2560x1440, X 1500x500, Facebook 1640x624, LinkedIn 1584x396, and link preview (OG) 1200x630 |
 | Post templates | `templates/post-template{,-white}.png` |
+| Business card (2-sided) | `print/business-card-2-sided.pdf` (bleed file) or `-cropmarks.pdf` (local shops). 3.5x2in + 0.125in bleed, 300 dpi, TrimBox/BleedBox set |
+| Flyer 4x6 (2-sided) | `print/flyer-4x6.pdf` (page 1 front, page 2 back) or `-cropmarks.pdf`. 4x6in + 0.125in bleed, 300 dpi, TrimBox/BleedBox set |
 | Post watermark | Wired in `profiles/brands/kgprodesign.json` (horizontal lockup @2x) |
 
 "dark" = made **for dark backgrounds** (white lettering). "light" = for light backgrounds.

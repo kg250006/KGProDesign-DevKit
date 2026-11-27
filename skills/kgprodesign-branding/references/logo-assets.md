@@ -26,6 +26,11 @@ All files are in `${CLAUDE_PLUGIN_ROOT}/templates/brand-2026/`. **SVG is the mas
 | **Favicon** | `favicon/favicon.ico` (16/32/48), `favicon.svg`, `favicon-{16,32,48}.png` | Transparent background. 16/32px use the small-size shield (thick rim, no ring), 48px the full shield |
 | **Share card** | `social/kgp-og-image-1200x630.png` | Open Graph / link preview |
 | **Profile picture** | `social/kgp-profile-800.png` | Padded for circular crops |
+| **Social banners** | `social/kgp-{youtube-banner-2560x1440,x-header-1500x500,facebook-cover-1640x624,linkedin-banner-1584x396}.png` | Each keeps the logo inside its platform's safe area |
+| **Post templates** | `templates/post-template.png`, `post-template-white.png` | 4:5 layout guides (a guide, not law) |
+| **Print** | `print/` | Business card and 4x6 flyer: printer PDFs, `-cropmarks.pdf`, and phone PNGs in `print/share/`. See `workflows/brand-print.md` |
+| **Fonts** | `fonts/Anton-Regular.ttf`, `fonts/Inter-Variable.ttf` (+ OFL licenses) | For brand graphics. The logo files already contain the lettering as outlines |
+| **Brand guide** | `brand-guide.html` | The full visual guide: every version, palette, spacing, banners, print, footer stamp |
 | **Rules** | `BRAND.md`, `palette.json` | Clear space, minimum sizes, colors, don'ts |
 
 The lettering is **Anton**, set in all caps as **KG PRODESIGN** with slightly open spacing. The outlines are built into the files, so no font install is needed.

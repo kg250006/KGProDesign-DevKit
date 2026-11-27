@@ -53,7 +53,8 @@ What would you like to brand?
 3. **App** — splash screen, about dialog, app icon
 4. **Communications** — email signature, social media, marketing materials
 5. **Legal text** — copyright notice, license header, terms
-6. **Just give me the brand info** — logo files, colors, contact info, all data
+6. **Print / handouts** — business card, 4x6 flyer, printer files, phone-ready PNGs
+7. **Just give me the brand info** — logo files, colors, contact info, all data
 
 **Wait for response before proceeding.**
 
@@ -66,11 +67,12 @@ What would you like to brand?
 | 1 | "website", "footer", "header", "contact page", "about page", "web" | `workflows/brand-website.md` |
 | 2 | "project", "repo", "readme", "github", "open source", "badge" | `workflows/brand-project.md` |
 | 3 | "app", "splash", "about dialog", "icon", "ios", "macos", "swift" | `workflows/brand-app.md` |
-| 4 | "email", "signature", "social", "marketing", "business card" | `workflows/brand-communications.md` |
+| 4 | "email", "signature", "social", "marketing", "banner", "post template" | `workflows/brand-communications.md` |
 | 5 | "copyright", "license", "legal", "terms", "privacy" | `workflows/brand-legal.md` |
-| 6 | "info", "data", "brand info", "all", "dump", "logo", "colors" | Read references directly (no workflow) |
+| 6 | "business card", "flyer", "print", "handout", "printer", "bleed", "QR" | `workflows/brand-print.md` |
+| 7 | "info", "data", "brand info", "all", "dump", "logo", "colors" | Read references directly (no workflow) |
 
-**For option 6:** Read `references/company-info.md`, `references/logo-assets.md`, and `references/color-system.md`, then present a complete brand summary to the user.
+**For option 7:** Read `references/company-info.md`, `references/logo-assets.md`, and `references/color-system.md`, then present a complete brand summary to the user.
 
 **After reading the workflow, follow it exactly.**
 
@@ -80,7 +82,10 @@ What would you like to brand?
 
 ## KG ProDesign — Quick Reference
 
-**Company:** KG ProDesign LLC
+**Company:** KG ProDesign LLC (always "LLC" on formal and printed materials)
+**Founder:** Kenrick "KG" Goldson
+**Tagline:** Ideas Into Intelligent Solutions
+**Featured services:** Web Design · Web Hosting on SitePage.app · Web Consulting · AI Dev Tools
 **Founded:** 2005
 **Phone:** 407-900-7724
 **Email (general):** info@kgprodesign.com
@@ -88,6 +93,8 @@ What would you like to brand?
 **Website:** kgprodesign.com
 **Contact page:** https://kgprodesign.com/contact/
 **Instagram:** @KGProDesign (https://www.instagram.com/kgprodesign/)
+**GitHub (org):** https://github.com/kgprodesign
+**Handout phone:** 321-427-6753 (business card and flyer only)
 **GitHub:** https://github.com/kg250006/KGProDesign-DevKit
 
 **Logo files** (in `${CLAUDE_PLUGIN_ROOT}/templates/brand-2026/`):
@@ -99,6 +106,10 @@ What would you like to brand?
 | `mark/kgp-mark-color.svg` | The shield alone, on any background |
 | `favicon/favicon.ico` + `favicon.svg` | Favicons |
 | `social/` | Profile picture, OG image, YouTube / X / Facebook / LinkedIn banners |
+| `templates/post-template{,-white}.png` | 4:5 social post layout guides |
+| `print/` | Business card + 4x6 flyer (printer PDFs, crop-mark PDFs, `share/` PNGs) |
+| `brand-guide.html` | The full visual brand guide (open it in a browser) |
+| `fonts/` | Anton + Inter (OFL) for brand graphics |
 
 To copy a logo into the current project:
 ```bash
@@ -139,6 +150,7 @@ All in `workflows/`:
 | brand-project.md | README, GitHub repo, open-source project branding |
 | brand-app.md | Splash screens, about dialogs, app icons (iOS/macOS) |
 | brand-communications.md | Email signatures, social media, marketing materials |
+| brand-print.md | Business card, 4x6 flyer, printer files and specs, reprints |
 | brand-legal.md | Copyright notices, license headers, legal text |
 
 </workflows_index>

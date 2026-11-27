@@ -82,3 +82,7 @@ Present the branded output. For email signatures, provide copy-paste HTML.
 - Social media bio uses approved company description
 
 </success_criteria>
+
+### Business cards, flyers, printed handouts
+
+Use `workflows/brand-print.md`. Finished, print-ready files already exist in `templates/brand-2026/print/`.
